@@ -67,7 +67,7 @@
   .sec-title{ font-size:11px; letter-spacing:.28em; color:var(--gold); text-transform:uppercase; margin-bottom:8px; font-weight:700; }
 
   /* ── 2단 레이아웃: 본문 + 우측 고정 패널 — 두 열의 아래 끝이 맞도록 서로 늘린다 ── */
-  .layout{ display:grid; grid-template-columns:minmax(0,1fr) 270px; gap:16px; align-items:stretch; }
+  .layout{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:16px; align-items:stretch; }
   .main-col{ display:flex; flex-direction:column; min-width:0; }
   .main-col .sec{ flex:1; display:flex; flex-direction:column; }
   .main-col .players{ flex:1; }
@@ -80,7 +80,7 @@
   .roles{ display:flex; gap:8px; flex-wrap:wrap; padding:4px 0 4px; }
   /* 역할 타일: 5인(탐험가 2장 = 8장)일 때도 한 줄에 들어가는 최대 폭.
      화면이 낮으면 자동 축소해 하단 액션바와 겹치지 않게 */
-  .role{ position:relative; width:132px; border:1px solid var(--line); background:var(--panel); border-radius:3px; padding:0; overflow:hidden; text-align:left; }
+  .role{ position:relative; width:131px; border:1px solid var(--line); background:var(--panel); border-radius:3px; padding:0; overflow:hidden; text-align:left; }
   @media (max-height:800px){ .role{ width:104px; } }
   .role .coin{ position:absolute; top:5px; right:5px; background:#e8c95c; border:1px solid #b89a30; color:#4a3b0a; font-size:11px; font-weight:700; min-width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:3; }
   .role.taken .img, .role.taken .rolefb{ opacity:.35; }
@@ -97,8 +97,7 @@
   img.zoom{ display:none; }
   /* 건설 중에는 구입 가능한 건물만 호버 확대, 구경 모드에서는 전체 확대 */
   .shop-modal.buying .shopb.buyable:hover img.zoom,
-  .shop-modal:not(.buying) .shopb:hover img.zoom,
-  .cell:not(.land):not(.clickable):hover img.zoom{
+  .shop-modal:not(.buying) .shopb:hover img.zoom{
     display:block; position:fixed; inset:auto; left:50%; top:50%; transform:translate(-50%,-50%);
     width:380px; height:auto; z-index:999;
     box-shadow:0 8px 30px rgba(0,0,0,.45); border-radius:4px; pointer-events:none; background:#fff; }
@@ -111,8 +110,8 @@
   @media (max-width:1080px){ .strip{ grid-template-columns:1fr 1fr; } }
   .card{ background:rgba(246,240,222,.78); border:1px solid var(--line); padding:7px 9px; border-radius:3px; }
   /* 배 카드 폭은 적재 칸 수에 맞게 — 칸이 카드 밖으로 삐져나가지 않게 */
-  .ships{ display:flex; gap:6px; flex-wrap:nowrap; justify-content:space-between; }
-  .ship{ flex:0 1 auto; min-width:0; border:1px solid var(--line); border-radius:3px; background:#fff; padding:7px 6px 8px; text-align:center; }
+  .ships{ display:flex; gap:5px; flex-wrap:nowrap; justify-content:space-between; }
+  .ship{ flex:0 1 auto; min-width:0; border:1px solid var(--line); border-radius:3px; background:#fff; padding:7px 10px 9px; text-align:center; }
   .ship.full{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
   .ship .cap{ font-size:10px; color:var(--dim); margin-bottom:5px; }
   .ship .cap b{ color:var(--ink); font-size:11px; }
@@ -161,13 +160,15 @@
   /* 요약 카드: 자리 순서대로 좌우 배치, 남는 폭을 나눠 가진다 */
   .pboard.collapsed{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:3px; padding:6px 9px; cursor:pointer; }
   .pboard.collapsed:hover{ background:#f3ecdb; }
-  .chead{ display:flex; gap:5px; align-items:center; font-weight:700; font-size:12.5px; flex-wrap:wrap; }
-  .cstat{ font-size:11px; color:var(--dim); }
-  .cstat b{ color:var(--ink); font-size:12px; }
-  .csec{ font-size:9px; letter-spacing:.2em; color:var(--gold); font-weight:700; }
-  .crow{ display:flex; gap:2px 5px; flex-wrap:wrap; align-items:center; font-size:10px; }
+  .pdot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; flex-shrink:0; }
+  .chead{ display:flex; gap:5px; align-items:center; font-weight:700; font-size:14px; flex-wrap:wrap; }
+  .cstat{ font-size:12.5px; color:var(--dim); }
+  .cstat b{ color:var(--ink); font-size:14px; }
+  .csec{ font-size:10.5px; letter-spacing:.2em; color:var(--gold); font-weight:700; }
+  .crow{ display:grid; grid-template-columns:repeat(2,auto); justify-content:start; gap:4px 14px; font-size:11.5px; }
+  .cg{ display:flex; align-items:center; gap:4px; }
   .crow .goodchip{ width:16px; height:18px; }
-  .clist{ font-size:10px; line-height:1.3; color:#4b4237; }
+  .clist{ font-size:11.5px; line-height:1.4; color:#4b4237; }
   .clist .un{ color:var(--dim); }
   .dim{ color:var(--dim); }
   .pboard.collapsed .expand{ display:none; }
@@ -179,12 +180,22 @@
      토지 옆 영역을 가득 채우고, 내용이 넘치면 세로 기준으로 다음 열에 이어진다 */
   .preswrap{ flex:1; min-width:0; display:flex; flex-direction:column; }
   /* 높이 = 토지 그리드(타일 2줄 + 간격)와 동일 — 아래 끝이 토지 타일 바닥과 맞는다 */
-  .pres{ height:calc(59px * 92 / 70 * 2 + 4px); min-width:0; display:flex; flex-direction:column; flex-wrap:wrap; align-content:flex-start;
+  .pres{ min-height:calc(59px * 92 / 70 * 2 + 4px); min-width:0; display:flex; flex-direction:column; flex-wrap:wrap; align-content:flex-start;
     gap:6px; column-gap:22px; font-size:12px;
     background:rgba(255,255,255,.4); border:1px solid var(--line); border-radius:3px; padding:9px 12px; }
-  .pres-g{ display:flex; align-items:center; gap:7px; white-space:nowrap; width:118px; }
-  .pres-g b{ margin-left:auto; font-size:13.5px; }
-  .pres-g.dim{ color:var(--dim); }
+  .pres{ flex-wrap:nowrap; flex-direction:column; gap:10px; align-items:stretch; }
+  .pgroup{ min-width:0; }
+  .pgroup.pg-goods{ border-top:1px solid var(--line); padding-top:9px; }
+  .pg-title{ font-size:10.5px; letter-spacing:.22em; color:var(--gold); font-weight:700; margin-bottom:5px; }
+  /* 자원: 2×2 — 주화·승점 / 일꾼 */
+  .pres-stats{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 18px; }
+  .prow{ display:flex; align-items:center; gap:8px; font-size:13px; }
+  .prow b{ margin-left:auto; font-size:14.5px; }
+  /* 상품: 가로 3개씩 2줄 */
+  .pres-goods{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px 14px; }
+  .pgood{ display:flex; align-items:center; gap:7px; font-size:12.5px; white-space:nowrap; }
+  .pgood b{ margin-left:auto; font-size:13.5px; }
+  .pres-empty{ color:var(--dim); font-size:12px; }
   /* 타일에 인쇄된 것과 같은 금화(숫자 포함)·검은 육각 승점 */
   .tok-coin{ flex-shrink:0; width:22px; height:22px; border-radius:50%; border:1px solid #b89a30;
     background:radial-gradient(circle at 35% 30%, #f4e096, #e8c95c 55%, #d4af4a);
@@ -197,6 +208,8 @@
   @media (max-width:1000px){ .players{ flex-wrap:wrap; } .pboard.collapsed{ flex:1 1 45%; } }
   .phead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
   .phead .nm{ font-weight:700; font-size:15px; }
+  .gov-ic{ display:inline-flex; width:22px; height:15px; flex-shrink:0; }
+  .gov-ic svg{ width:100%; height:100%; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
   .phead .tag{ font-size:10.5px; padding:2px 7px; border-radius:2px; background:#e2d7c2; color:#5d5346; }
   .phead .tag.gov{ background:var(--ink); color:var(--bg); }
   .phead .stats{ margin-left:auto; display:flex; gap:10px; font-size:12.5px; }
@@ -254,6 +267,22 @@
   .actionbar button.hot{ background:var(--accent); border-color:var(--accent); font-weight:700; }
   .actionbar button.hot:hover{ background:var(--accent-deep); }
   .actionbar button:disabled{ opacity:.4; cursor:default; }
+
+  /* 이벤트 토스트: 양피지 카드 + 플레이어 색 띠, 해당 패널 위에서 떠오르며 사라진다 */
+  .toast{ position:fixed; transform:translateX(-50%); z-index:300; pointer-events:none;
+    background:var(--panel); color:var(--ink); border:1px solid #a98e5f; border-left:4px solid var(--tc,#7a5c39);
+    padding:8px 16px; border-radius:3px; font-size:13.5px; white-space:nowrap;
+    box-shadow:0 6px 18px rgba(60,45,20,.35);
+    animation:toastup 2.4s ease-out forwards; }
+  .toast.big{ font-size:16px; padding:12px 26px; border-left-width:5px; animation-duration:2.6s; }
+  @keyframes toastup{ 0%{opacity:0; margin-top:10px;} 10%{opacity:1; margin-top:0;} 70%{opacity:1; margin-top:-14px;} 100%{opacity:0; margin-top:-38px;} }
+  /* 역할 선택 스플래시: 역할 카드 이미지가 중앙에 잠깐 크게 */
+  .rsplash{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:310; pointer-events:none;
+    text-align:center; animation:rsplash 1s ease forwards; }
+  .rsplash img{ width:168px; border-radius:6px; box-shadow:0 16px 44px rgba(0,0,0,.5); display:block; margin:0 auto; }
+  .rsplash .who{ margin-top:9px; font-weight:700; font-size:15px; color:#fff; background:var(--tc,#7a5c39);
+    display:inline-block; padding:4px 16px; border-radius:3px; box-shadow:0 3px 10px rgba(0,0,0,.35); }
+  @keyframes rsplash{ 0%{opacity:0; scale:.85;} 8%{opacity:1; scale:1;} 86%{opacity:1; scale:1;} 100%{opacity:0; scale:.97;} }
 
   /* log */
   .log{ margin-top:16px; background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:8px 12px; max-height:110px; overflow-y:auto; font-size:12px; line-height:1.7; color:#4b4237; }
@@ -361,6 +390,9 @@ const ROLES = {
   prospector2:{ nm:'탐험가', rn:'VII', ph:'행동 없음', desc:'선택자만 공급처에서 1주화를 받습니다.\n다른 플레이어의 행동은 없습니다.' },
 };
 
+/* 플레이어 식별 색 — 이름·보드 테두리·역할 선점 표시·토스트에 공통 사용 */
+const PCOLOR = ['#b5533c','#3f6b9e','#6f8c2f','#96588f','#b8860b'];
+
 const PLANT_NM = { corn:'옥수수', fruit:'과일', sugar:'설탕', tobacco:'담배', coffee:'커피', quarry:'채석장' };
 
 /* 이미지 규칙: img/역할_개척자.png · img/건물_소형과일공장.png · img/농장_옥수수.png (없으면 자동 텍스트 폴백) */
@@ -372,6 +404,38 @@ function imgTag(cat, nm, cls){
 /* ═══════════════════════════ 게임 상태 ═══════════════════════════ */
 let G = null;           // 게임 상태 (JSON 직렬화 가능)
 let uiSel = null;       // 임시 UI 선택 상태 (모집 배치 등)
+
+/* ── 이벤트 토스트 (뷰 전용 — 게임 상태와 무관, 헤드리스에선 무시) ── */
+let toastLive={};
+function toast(html, sel, big, color){
+  if(typeof document==='undefined'||!document.body||!document.createElement) return;
+  try{
+    const key='@center';  // 전부 중앙에 뜨므로 한 줄로 선다
+    const t=document.createElement('div');
+    t.className='toast'+(big?' big':'');
+    if(color) t.style.setProperty('--tc', color);
+    t.innerHTML=html;
+    // 모든 알림은 화면 가운데(상단부)에서 뜬다 — sel은 겹침 그룹 구분에만 사용
+    let x=Math.round(innerWidth/2), y=big?Math.round(innerHeight*0.26):Math.round(innerHeight*0.16);
+    const n=(toastLive[key]||0); toastLive[key]=n+1;         // 같은 자리에 겹치면 위로 줄 선다
+    t.style.left=x+'px'; t.style.top=(y-n*36)+'px';
+    document.body.appendChild(t);
+    setTimeout(()=>{ try{t.remove();}catch(_){} toastLive[key]=Math.max(0,(toastLive[key]||1)-1); }, big?2600:2400);
+  }catch(e){}
+}
+/* 역할 선택: 역할 카드 이미지가 중앙에 잠깐 크게 떴다 사라진다 */
+function roleSplash(roleId, p){
+  if(typeof document==='undefined'||!document.body||!document.createElement) return;
+  try{
+    const d=document.createElement('div');
+    d.className='rsplash';
+    d.style.setProperty('--tc', PCOLOR[p.i]);
+    d.innerHTML='<img src="img/역할_'+ROLES[roleId].nm+'.png" onerror="this.remove()">'
+      +'<div class="who">'+esc(p.name)+' — '+ROLES[roleId].nm+'</div>';
+    document.body.appendChild(d);
+    setTimeout(()=>{ try{d.remove();}catch(_){} }, 1050);
+  }catch(e){}
+}
 
 /* ── 화면 상태 ──
    G에 넣지 않는 순수 뷰 상태. 저장/되돌리기와 무관하며 새로고침하면 기본값으로 돌아간다. */
@@ -491,7 +555,7 @@ function refillDisplay(){
 /* ═══════════════════════════ 유틸 ═══════════════════════════ */
 const P = i => G.players[i];
 function log(html){ G.log.push(html); if(G.log.length>400) G.log.shift(); }
-function pname(p){ return '<b>'+p.name+'</b>'; }
+function pname(p){ return '<b style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+'</b>'; }
 function occupied(b){ return b.w>0; }
 function hasB(p,id){ return p.buildings.some(b=>b.id===id); }
 function occB(p,id){ const b=p.buildings.find(b=>b.id===id); return b&&b.w>0; }
@@ -512,6 +576,7 @@ function takeWorkerSupplyFirst(){ // 병원/학교용: 공급처 → 인력시�
 
 /* ═══════════════════════════ 라운드 / 역할 선택 ═══════════════════════════ */
 function startRound(){
+  toast('<b>라운드 '+G.round+'</b> 시작 — 주지사 <b>'+esc(P(G.governor).name)+'</b>', null, true);
   G.roles.forEach(r=>r.takenBy=null);
   G.chooserQueue=[];
   if(G.n===2){
@@ -536,6 +601,7 @@ function pickRole(pi, roleIdx){
   r.takenBy=pi;
   if(r.coins>0){ p.coins+=r.coins; log(pname(p)+' — 타일 위 '+r.coins+'주화 획득'); r.coins=0; }
   log(pname(p)+'이(가) <b>'+ROLES[r.id].nm+'</b> 역할을 선택했습니다.');
+  roleSplash(r.id, p);
   G.chooserIdx++;
   startPhase(r.id, pi);
 }
@@ -584,6 +650,7 @@ function settlerCanQuarry(pi){
 }
 function settlerPlace(p, type, fromDeck){
   p.land.push({type, w:0});
+  toast(pname(p)+' — <b>'+PLANT_NM[type]+'</b> 개척', '#card-plants', false, PCOLOR[p.i]);
   // 병원: 더미(대규모 농장)로 가져온 타일에는 적용 안 됨
   if(!fromDeck && occB(p,'b_hosp')){
     if(takeWorkerSupplyFirst()){ p.land[p.land.length-1].w=1; log(pname(p)+' — 병원 기능으로 일꾼 1개를 새 타일에 배치'); }
@@ -694,6 +761,33 @@ function mayorAutoPlace(p){
   for(const s of score){ if(pool<=0) break; s.apply(); pool--; }
   p.stored=pool;
 }
+/* 사람용 자동 배치: 이미 놓인 일꾼은 건드리지 않고, 보관 일꾼만 좋은 빈 칸부터 채운다 */
+function mayorAutoFill(p){
+  const late = G.round>=8 || sitesUsed(p)>=9;
+  const cap={};
+  for(const t of GTYPES) cap[t] = (t==='corn') ? 99 : p.buildings.filter(b=>BUILDINGS[b.id].prod===t).reduce((s,b)=>s+BUILDINGS[b.id].slots,0);
+  const score=[];
+  for(const t of GTYPES){
+    const farms=p.land.filter(l=>l.type===t);
+    const pairs=Math.min(farms.length, cap[t]);
+    farms.forEach((f,k)=>{ if(f.w===0) score.push({v:(k<pairs)?3+GOODS[t].price*0.6:0.2, apply:()=>{f.w=1;}}); });
+  }
+  for(const b of p.buildings){
+    const B=BUILDINGS[b.id];
+    if(B.kind==='prod'){
+      const farms=p.land.filter(l=>l.type===B.prod).length;
+      for(let sl=b.w; sl<B.slots; sl++) score.push({v:(sl<farms)?3+GOODS[B.prod].price*0.6+0.1:0.2, apply:()=>{b.w++;}});
+    } else if(b.w===0){
+      const val={b_hut:1.6,b_hac:1.4,b_hosp:1.5,b_smkt:1.8,b_lmkt:2.0,b_swh:1.2,b_lwh:1.3,b_fact:2.6,b_univ:1.7,b_harb:2.8,b_wharf:2.4,b_off:0.9,
+        b_hall:late?3.5:1.0,b_cust:late?3.5:1.0,b_fort:late?3.5:1.0,b_fire:late?3.5:1.0,b_resi:late?3.5:1.0}[b.id]||1;
+      score.push({v:val, apply:()=>{b.w++;}});
+    }
+  }
+  p.land.filter(l=>l.type==='quarry'&&l.w===0).forEach((q,k)=>score.push({v:2.2-k*0.15, apply:()=>{q.w=1;}}));
+  score.sort((a,b)=>b.v-a.v);
+  for(const sc of score){ if(p.stored<=0) break; sc.apply(); p.stored--; }
+}
+
 function actMayorDone(){
   const p=P(G.pending.player);
   G.pending=null; G.phase.qi++; mayorNextPlace();
@@ -754,6 +848,7 @@ function actBuild(id){
   p.coins-=cost; G.supply.stock[id]--;
   const b={id,w:0}; p.buildings.push(b);
   log(pname(p)+' — <b>'+BUILDINGS[id].nm+'</b> 건설 ('+cost+'주화)');
+  toast(pname(p)+' — <b>'+BUILDINGS[id].nm+'</b> 건설', '[data-pi="'+pd.player+'"]', false, PCOLOR[p.i]);
   if(occB(p,'b_univ')){
     if(takeWorkerSupplyFirst()){ b.w=1; log(pname(p)+' — 학교 기능으로 일꾼 1개를 새 건물에 배치'); }
   }
@@ -792,6 +887,7 @@ function craftsmanRun(base){
     const kinds=Object.keys(got);
     if(kinds.length){
       log(pname(p)+' — 생산: '+kinds.map(t=>PLANT_NM[t]+' '+got[t]).join(', '));
+      toast(pname(p)+' — 생산: '+kinds.map(t=>PLANT_NM[t]+' '+got[t]).join(', '), '#card-supply', false, PCOLOR[p.i]);
       if(occB(p,'b_fact')&&kinds.length>=2){
         const bonus=[0,0,1,2,3,5][kinds.length];
         p.coins+=bonus; log(pname(p)+' — 공업소 보너스 +'+bonus+'주화');
@@ -848,6 +944,7 @@ function actTrade(t){
   const c=saleCoins(p,t,isC);
   p.goods[t]--; G.supply.market.push(t); p.coins+=c;
   log(pname(p)+' — <b>'+PLANT_NM[t]+'</b> 판매 (+'+c+'주화)');
+  toast(pname(p)+' — <b>'+PLANT_NM[t]+'</b> 판매 +'+c+'주화', '#card-market', false, PCOLOR[p.i]);
   G.pending=null; G.phase.qi++; traderNext();
 }
 
@@ -910,12 +1007,14 @@ function actCaptain(action,arg){
     const vp=captainShipVP(p,pi,amt);
     giveVP(p,vp);
     log(pname(p)+' — 조선소(가상의 수송선)로 <b>'+PLANT_NM[t]+' '+amt+'개</b> 선적 (+'+vp+'점)');
+    toast(pname(p)+' — <b>'+PLANT_NM[t]+' '+amt+'개</b> 선적 +'+vp+'점', '#card-ships', false, PCOLOR[p.i]);
   } else {
     const o=pd.opts[arg]; const s=G.supply.ships[o.ship];
     s.type=o.type; s.count+=o.load; p.goods[o.type]-=o.load;
     const vp=captainShipVP(p,pi,o.load);
     giveVP(p,vp);
     log(pname(p)+' — '+s.size+'칸 수송선에 <b>'+PLANT_NM[o.type]+' '+o.load+'개</b> 선적 (+'+vp+'점)');
+    toast(pname(p)+' — <b>'+PLANT_NM[o.type]+' '+o.load+'개</b> 선적 +'+vp+'점', '#card-ships', false, PCOLOR[p.i]);
   }
   G.pending=null; F.passes=0; F.cur=(F.cur+1)%G.n; captainNext();
 }
@@ -1120,7 +1219,7 @@ function aiDecide(){
     else actSettler('skip');
     return;
   }
-  if(pd.type==='mayorPlace'){ mayorAutoPlace(p); log(pname(p)+' — 일꾼 배치 완료 (보관 '+p.stored+'개)'); actMayorDone(); return; }
+  if(pd.type==='mayorPlace'){ mayorAutoPlace(p); log(pname(p)+' — 일꾼 배치 완료 (보관 '+p.stored+'개)'); toast(pname(p)+' — 일꾼 배치 완료', '#card-labor', false, PCOLOR[p.i]); actMayorDone(); return; }
   if(pd.type==='builder'){
     const isC=(pd.player===G.phase.chooser);
     let best=null,bv=0.85;
@@ -1261,7 +1360,14 @@ function render(){
   if(pendKey!==uiLastPend){
     uiLastPend=pendKey;
     uiShopOpen=null;
-    if(curPi!==null&&pd.type!=='gameOver'&&!P(curPi).ai) uiBoardSel=null;
+    if(curPi!==null&&pd.type!=='gameOver'&&!P(curPi).ai){
+      uiBoardSel=null;
+      // 사람 차례 시작: 무엇을 해야 하는지 중앙 알림 (떴다 사라짐)
+      const TURNMSG={pickRole:'역할 타일을 선택하세요',settler:'가져갈 농장을 고르세요',mayorPlace:'일꾼을 배치하세요',
+        builder:'건설할 건물을 고르세요',craftBonus:'추가로 받을 상품을 고르세요',trader:'판매할 상품을 고르세요',
+        captain:'상품을 선적하세요',storage:'저장할 상품을 고르세요'};
+      if(TURNMSG[pd.type]) toast('<b style="color:'+PCOLOR[curPi]+'">'+esc(P(curPi).name)+'</b> 차례 — '+TURNMSG[pd.type], null, true, PCOLOR[curPi]);
+    }
   }
 
   /* 역할 타일 */
@@ -1275,7 +1381,7 @@ function render(){
       +imgTag('역할',R.nm,'img')
       +'<div class="rolefb">'+R.rn+' '+R.nm+'<br><span>'+R.ph+'</span></div>'
       +(r.coins>0?'<div class="coin">'+r.coins+'</div>':'')
-      +(r.takenBy!==null?'<div class="took">'+esc(P(r.takenBy).name)+'</div>':'')
+      +(r.takenBy!==null?'<div class="took" style="background:'+PCOLOR[r.takenBy]+'">'+esc(P(r.takenBy).name)+'</div>':'')
       +'</div>';
   }).join('');
 
@@ -1368,17 +1474,17 @@ function render(){
   const boardParts=G.players.map(p=>{
     const isCur=(curPi===p.i);
     const isMayorMe=mayorActive&&isCur;
-    const tags=(G.governor===p.i?'<span class="tag gov">주지사</span>':'')+(p.ai?'<span class="tag">AI</span>':'');
+    const tags=(G.governor===p.i?'<span class="gov-ic" title="주지사 — 이번 라운드 시작 플레이어"><svg viewBox="0 0 24 16"><path d="M2 14h20L20 4l-5 4.2L12 1 9 8.2 4 4z" fill="#e8c95c" stroke="#8a6a1f" stroke-width="1.2" stroke-linejoin="round"/></svg></span>':'')+(p.ai?'<span class="tag">AI</span>':'');
     if(p.i!==shown){
       // 요약 카드: 농장·건물은 이름 텍스트로, 육각 토큰은 상품(작물)에만 쓴다
       const farm={}; for(const l of p.land) farm[l.type]=(farm[l.type]||0)+1;
-      const farmList=Object.keys(farm).map(t=>PLANT_NM[t]+' ×'+farm[t]).join(' · ')||'<span class="dim">—</span>';
-      const bldList=p.buildings.map(b=>'<span class="'+(b.w>0?'':'un')+'"'+(b.w>0?'':' title="일꾼 미배치"')+'>'+BUILDINGS[b.id].nm+'</span>').join(' · ')||'<span class="dim">—</span>';
-      const goodsRow=GTYPES.filter(t=>p.goods[t]>0).map(t=>goodChip(t)+'<span>×'+p.goods[t]+'</span>').join(' ')||'<span class="dim">—</span>';
-      return '<div class="pboard collapsed'+(isCur?' cur':'')+'" onclick="uiSelectBoard('+p.i+')" title="클릭하면 펼칩니다">'
-        +'<div class="chead">'+esc(p.name)+tags+'</div>'
+      const farmList=Object.keys(farm).map(t=>'<div>'+PLANT_NM[t]+' ×'+farm[t]+'</div>').join('')||'<span class="dim">—</span>';
+      const bldList=p.buildings.map(b=>'<div class="'+(b.w>0?'':'un')+'"'+(b.w>0?'':' title="일꾼 미배치"')+'>'+BUILDINGS[b.id].nm+'</div>').join('')||'<div class="dim">—</div>';
+      const goodsRow=GTYPES.filter(t=>p.goods[t]>0).map(t=>'<span class="cg">'+goodChip(t)+'×'+p.goods[t]+'</span>').join('')||'<span class="dim">—</span>';
+      return '<div class="pboard collapsed'+(isCur?' cur':'')+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+'" onclick="uiSelectBoard('+p.i+')" title="클릭하면 펼칩니다">'
+        +'<div class="chead"><span class="pdot" style="background:'+PCOLOR[p.i]+'"></span>'+esc(p.name)+tags+'</div>'
         +'<div class="cstat">💰<b>'+p.coins+'</b> ⬡<b>'+p.vp+'</b> · 일꾼 <b>'+totalWorkersOf(p)+'</b></div>'
-        +'<div class="csec">농장 '+p.land.length+'</div><div class="clist">'+farmList+'</div>'
+        +'<div class="csec">농장 '+p.land.length+'</div><div class="crow">'+farmList+'</div>'
         +'<div class="csec">건물 '+p.buildings.length+'</div><div class="clist">'+bldList+'</div>'
         +'<div class="csec">상품</div><div class="crow">'+goodsRow+'</div>'
         +'<div class="expand">펼치기 ▾</div>'
@@ -1426,17 +1532,26 @@ function render(){
     }
     for(let i=used;i<12;i++) blds+='<div class="cell"></div>';
     // 우측 자원 패널
-    const goodsRows=GTYPES.filter(t=>p.goods[t]>0)
-      .map(t=>'<div class="pres-g">'+goodChip(t)+' '+PLANT_NM[t]+' <b>×'+p.goods[t]+'</b></div>').join('')
-      ||'<div class="pres-g dim">없음</div>';
+    // 자원(주화·승점·일꾼)은 타일 3칸, 상품은 2×2 타일 그리드로 구분
+    // 자원: 3줄 세로(아이콘·이름 | 숫자) · 상품: 가로 2개씩 2줄
+    const goodsCells=GTYPES.filter(t=>p.goods[t]>0)
+      .map(t=>'<div class="pgood">'+goodChip(t)+'<span>'+PLANT_NM[t]+'</span><b>×'+p.goods[t]+'</b></div>').join('')
+      ||'<div class="pres-empty">없음</div>';
     const pres='<div class="pres">'
-      +'<div class="pres-g"><span class="tok-coin">$</span>주화 <b>'+p.coins+'</b></div>'
-      +'<div class="pres-g"><span class="tok-vp">VP</span>승점 <b>'+p.vp+'</b></div>'
-      +'<div class="pres-g"><span class="wtok"></span>일꾼 <b>'+p.stored+'</b></div>'
-      +'<div class="sec-title" style="margin:5px 0 2px">상품</div>'+goodsRows
+      +'<div class="pgroup">'
+        +'<div class="pres-stats">'
+          +'<div class="prow"><span class="tok-coin">$</span>주화<b>'+p.coins+'</b></div>'
+          +'<div class="prow"><span class="tok-vp">VP</span>승점<b>'+p.vp+'</b></div>'
+          +'<div class="prow"><span class="wtok"></span>일꾼<b>'+p.stored+'</b></div>'
+        +'</div>'
+      +'</div>'
+      +'<div class="pgroup pg-goods">'
+        +'<div class="pg-title">상품</div>'
+        +'<div class="pres-goods">'+goodsCells+'</div>'
+      +'</div>'
       +'</div>';
-    return '<div class="pboard'+(isCur?' cur':'')+'">'
-      +'<div class="phead"><span class="nm">'+esc(p.name)+'</span>'+tags+'</div>'
+    return '<div class="pboard'+(isCur?' cur':'')+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+'">'
+      +'<div class="phead"><span class="pdot" style="background:'+PCOLOR[p.i]+'"></span><span class="nm">'+esc(p.name)+'</span>'+tags+'</div>'
       +'<div class="landrow">'
         +'<div><div class="sec-title" style="margin-bottom:3px">토지 (' +p.land.length+'/12)</div><div class="grid12">'+land+'</div></div>'
         +'<div class="preswrap"><div class="sec-title" style="margin-bottom:3px">자원</div>'+pres+'</div>'
@@ -1495,13 +1610,13 @@ function render(){
       +'<div class="sec"><div class="sec-title">플레이어<span class="kbd-hint">←/→ 키 또는 클릭으로 보드 전환</span></div><div class="players">'+playersHtml+'</div></div>'
     +'</div>'
     +'<div class="side-col">'
-      +'<div class="card"><div class="sec-title">공개된 농장</div><div class="plants">'+plantsHtml+'</div></div>'
-      +'<div class="card"><div class="sec-title">수송선</div><div class="ships">'+shipsHtml+'</div></div>'
+      +'<div class="card" id="card-plants"><div class="sec-title">공개된 농장</div><div class="plants">'+plantsHtml+'</div></div>'
+      +'<div class="card" id="card-ships"><div class="sec-title">수송선</div><div class="ships">'+shipsHtml+'</div></div>'
       +'<div class="cardrow">'
-        +'<div class="card"><div class="sec-title">상점</div><div class="market-slots">'+mkt+'</div><div class="hintline">가득 차면 비워짐 · 중복 종류 판매 불가</div></div>'
-        +'<div class="card"><div class="sec-title">인력 시장</div>'+laborHtml+'</div>'
+        +'<div class="card" id="card-market"><div class="sec-title">상점</div><div class="market-slots">'+mkt+'</div><div class="hintline">가득 차면 비워짐 · 중복 종류 판매 불가</div></div>'
+        +'<div class="card" id="card-labor"><div class="sec-title">인력 시장</div>'+laborHtml+'</div>'
       +'</div>'
-      +'<div class="card"><div class="sec-title">공급처</div>'+supHtml+'</div>'
+      +'<div class="card" id="card-supply"><div class="sec-title">공급처</div>'+supHtml+'</div>'
       +logHtml
     +'</div>'
   +'</div>'
@@ -1591,14 +1706,14 @@ function uiToggleBld(pi,id){
   else if(b.w>0){ p.stored+=b.w; b.w=0; }
   render();
 }
-function uiMayorAuto(pi){ mayorAutoPlace(P(pi)); render(); }
+function uiMayorAuto(pi){ mayorAutoFill(P(pi)); render(); }
 function uiMayorDone(pi){
   const p=P(pi);
   if(p.stored>0 && emptyCirclesOf(p)>0){
     alert('빈 원형 칸이 있으면 일꾼을 반드시 배치해야 합니다.');
     return;
   }
-  log(pname(p)+' — 일꾼 배치 완료 (보관 '+p.stored+'개)');
+  log(pname(p)+' — 일꾼 배치 완료 (보관 '+p.stored+'개)'); toast(pname(p)+' — 일꾼 배치 완료', '#card-labor', false, PCOLOR[p.i]);
   actMayorDone();
 }
 function uiStoreType(t){
