@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>푸에르토리코 1897 — 게임 안내</title>
+<style>
+  /* ═══ 기본 ═══
+     팔레트는 기존 소개 페이지(번들)의 것을 그대로 계승 — 양피지 바탕 + 진갈색 잉크 + 벽돌색 강조.
+     폰트는 게임 본체와 같은 전략: 시스템에 있으면 명조/세리프, 없으면 고딕 폴백. 오프라인 우선. */
+  :root{
+    --bg:#f3ede1;         /* 양피지 바탕 */
+    --panel:#fbf7ee;      /* 카드 */
+    --panel2:#f6f1e6;     /* 카드(짙은) */
+    --band:#ece4d4;       /* 헤더/띠 */
+    --line:#d9cfbc;       /* 구분선 */
+    --line2:#e5dbc8;      /* 구분선(옅은) */
+    --ink:#221d16;        /* 잉크 */
+    --body:#4b4237;       /* 본문 */
+    --dim:#7a6f5e;        /* 보조 */
+    --dim2:#8c7f6c;       /* 보조(옅은) */
+    --accent:#a8442a;     /* 강조: 벽돌 */
+    --accent-deep:#7d2f1c;
+    --coin:#c9b68a;       /* 주화 */
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ background:var(--bg); color:var(--ink); font-family:'Noto Sans KR','Malgun Gothic',sans-serif; }
+  h1,h2,h3,.serif{ font-family:'Gowun Batang','Batang',serif; }
+  .latin{ font-family:'Cormorant Garamond',Georgia,serif; }
+  a{ color:var(--accent); text-decoration:none; }
+  a:hover{ color:var(--accent-deep); }
+  button{ font-family:inherit; cursor:pointer; }
+  strong{ font-weight:700; }
+
+  /* ═══ 공통 레이아웃 ═══ */
+  .wrap{ max-width:1180px; margin:0 auto; }
+  .pad{ padding-left:56px; padding-right:56px; }
+  @media (max-width:800px){ .pad{ padding-left:20px; padding-right:20px; } }
+  .kicker{ font-size:12px; letter-spacing:.24em; color:var(--accent); text-transform:uppercase; }
+  .eyebrow{ font-size:12px; letter-spacing:.34em; color:var(--dim2); text-transform:uppercase; }
+  .hero{ padding-top:60px; padding-bottom:46px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,#f7f2e8,var(--bg)); }
+  .hero h1{ margin:16px 0; font-size:58px; line-height:1.12; font-weight:700; letter-spacing:-.02em; }
+  .hero p{ max-width:720px; font-size:16px; line-height:1.9; color:var(--body); }
+  .card{ border:1px solid var(--line); background:var(--panel); }
+  .callout{ border-left:3px solid var(--accent); background:#f7efe2; padding:22px 26px; font-size:14.5px; line-height:1.9; color:var(--body); }
+  .tab-page{ display:none; animation:prFade .35s ease both; }
+  .tab-page.on{ display:block; }
+
+  /* ═══ 상단 바 ═══ */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding-top:18px; padding-bottom:18px; border-bottom:1px solid var(--line);
+    background:rgba(236,228,212,.96); position:sticky; top:0; z-index:20; }
+  .logo{ border:none; background:transparent; display:flex; align-items:baseline; gap:12px; padding:0; }
+  .logo .en{ font-family:'Cormorant Garamond',Georgia,serif; font-size:24px; font-weight:700; letter-spacing:.04em; color:var(--ink); }
+  .logo .yr{ font-family:'Cormorant Garamond',Georgia,serif; font-size:18px; color:var(--accent); }
+  nav{ display:flex; gap:4px; flex-wrap:wrap; }
+  nav button{ border:none; padding:9px 16px; font-size:13px; font-weight:500; color:#5d5346;
+    background:transparent; border-radius:2px; transition:background .15s; }
+  nav button:hover{ background:#e2d7c2; }
+  nav button.on{ font-weight:700; color:var(--bg); background:var(--ink); }
+  nav button.on:hover{ background:var(--ink); }
+
+  /* ═══ 소개 탭 ═══ */
+  .intro-hero{ padding-top:84px; padding-bottom:64px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,#f7f2e8,var(--bg)); }
+  .intro-hero h1{ font-size:92px; line-height:1.02; font-weight:700; letter-spacing:-.02em; margin:26px 0 0; }
+  @media (max-width:800px){ .intro-hero h1{ font-size:56px; } .hero h1{ font-size:40px; } }
+  .intro-hero h1 .yr{ font-family:'Cormorant Garamond',Georgia,serif; font-style:italic; font-weight:600; color:var(--accent); }
+  .intro-hero p{ max-width:700px; margin-top:32px; font-size:17px; line-height:1.9; color:var(--body); }
+  .cta-row{ display:flex; gap:12px; margin-top:38px; flex-wrap:wrap; }
+  .btn-primary{ border:none; background:var(--accent); color:#f7f2e8; padding:14px 26px; font-size:14px; font-weight:700; border-radius:2px; transition:background .15s; }
+  .btn-primary:hover{ background:var(--accent-deep); }
+  .btn-ghost{ border:1px solid #c9bda6; background:transparent; color:var(--ink); padding:14px 26px; font-size:14px; border-radius:2px; transition:background .15s; }
+  .btn-ghost:hover{ background:var(--band); }
+  .stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+  @media (max-width:800px){ .stat-grid{ grid-template-columns:1fr 1fr; } }
+  .stat-grid>div{ background:var(--panel); padding:24px 26px; }
+  .stat-grid .n{ font-family:'Cormorant Garamond',Georgia,serif; font-size:42px; line-height:1; }
+  .stat-grid .d{ font-size:12.5px; color:var(--dim); margin-top:6px; }
+  .sec-row{ display:grid; grid-template-columns:200px 1fr; gap:40px; padding:52px 0; border-bottom:1px solid var(--line); }
+  .sec-row:last-child{ border-bottom:none; }
+  @media (max-width:800px){ .sec-row{ grid-template-columns:1fr; gap:14px; } }
+  .sec-row h2{ font-size:32px; font-weight:700; line-height:1.35; margin-bottom:22px; }
+  .trio{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+  @media (max-width:800px){ .trio{ grid-template-columns:1fr; } }
+  .trio>div{ background:var(--panel); padding:26px 24px; }
+  .trio .num{ font-family:'Cormorant Garamond',Georgia,serif; font-size:15px; color:var(--accent); letter-spacing:.12em; margin-bottom:12px; }
+  .trio h3{ font-size:20px; font-weight:700; margin-bottom:10px; }
+  .trio p{ font-size:13.5px; line-height:1.85; color:var(--body); }
+  .duo{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:800px){ .duo{ grid-template-columns:1fr; } }
+
+  /* ═══ 라운드 흐름 스테퍼 ═══ */
+  .flow-tabs{ display:flex; gap:8px; margin-bottom:26px; flex-wrap:wrap; }
+  .flow-tabs button{ flex:1; min-width:120px; text-align:left; border:1px solid var(--line); background:transparent;
+    color:var(--dim2); padding:15px 17px; border-radius:2px; transition:all .25s; }
+  .flow-tabs button:hover{ border-color:var(--accent); color:var(--ink); }
+  .flow-tabs button.on{ border-color:var(--ink); background:var(--ink); color:var(--bg); }
+  .flow-tabs .fn{ font-family:'Cormorant Garamond',Georgia,serif; font-size:22px; line-height:1; }
+  .flow-tabs .ft{ font-size:12.5px; font-weight:500; margin-top:7px; }
+  .flow-bar{ height:2px; background:var(--line2); margin-bottom:26px; }
+  .flow-bar>div{ height:2px; background:var(--accent); transition:width .45s cubic-bezier(.4,0,.2,1); }
+  .flow-body{ display:grid; grid-template-columns:1fr 320px; gap:40px; min-height:170px; }
+  @media (max-width:800px){ .flow-body{ grid-template-columns:1fr; } }
+  .flow-body h3{ font-size:28px; font-weight:700; margin-bottom:14px; }
+  .flow-body .desc{ font-size:15.5px; line-height:1.95; color:var(--body); margin-bottom:18px; }
+  .flow-body .note{ font-size:13.5px; line-height:1.85; color:var(--dim); border-left:2px solid var(--line); padding-left:15px; }
+  .seats{ border:1px solid var(--line2); background:var(--panel2); padding:20px; display:flex; flex-direction:column; gap:10px; }
+  .seats .t{ font-size:11.5px; letter-spacing:.2em; color:var(--accent); text-transform:uppercase; }
+  .seat{ display:flex; align-items:center; gap:10px; padding:9px 11px; border-radius:2px; color:var(--dim2); transition:all .3s; }
+  .seat .nm{ font-size:13px; }
+  .seat .rl{ font-size:11.5px; margin-left:auto; }
+  .seat.on{ background:var(--ink); color:var(--bg); }
+  .seat.on .nm{ font-weight:700; }
+  .seat.on .rl{ opacity:.75; }
+  .flow-ctl{ display:flex; gap:10px; margin-top:28px; padding-top:22px; border-top:1px solid var(--line2); }
+  .flow-ctl button{ border:1px solid var(--line); background:transparent; padding:10px 20px; font-size:13px; border-radius:2px; }
+  .flow-ctl button:hover{ background:var(--band); }
+  .flow-ctl .play{ border-color:var(--accent); background:var(--accent); color:var(--bg); font-weight:700; margin-left:auto; }
+  .flow-ctl .play:hover{ background:var(--accent-deep); }
+
+  /* ═══ 역할 아코디언 ═══ */
+  .roles{ display:flex; flex-direction:column; gap:10px; }
+  .role-row{ border:1px solid var(--line); background:var(--panel); }
+  .role-head{ width:100%; border:none; background:transparent; display:grid;
+    grid-template-columns:56px 160px 1fr 1fr 28px; align-items:center; gap:20px; padding:17px 22px; text-align:left; }
+  .role-head:hover{ background:var(--panel2); }
+  @media (max-width:800px){ .role-head{ grid-template-columns:36px 1fr 28px; } .role-head .act,.role-head .bon{ display:none; } }
+  .role-head .num{ font-family:'Cormorant Garamond',Georgia,serif; font-size:15px; color:var(--accent); letter-spacing:.1em; }
+  .role-head .nm{ font-family:'Gowun Batang','Batang',serif; font-size:22px; font-weight:700; }
+  .role-head .ph{ display:block; font-size:11.5px; color:var(--dim2); margin-top:3px; font-family:'Noto Sans KR','Malgun Gothic',sans-serif; }
+  .role-head .act{ font-size:13.5px; color:var(--body); line-height:1.65; }
+  .role-head .bon{ font-size:13px; color:var(--accent); line-height:1.65; }
+  .role-head .mark{ font-size:16px; color:var(--accent); text-align:right; }
+  .role-body{ display:none; padding:4px 22px 24px 258px; animation:prFade .3s ease both; }
+  @media (max-width:800px){ .role-body{ padding-left:22px; } }
+  .role-row.open .role-body{ display:block; }
+  .role-body .inner{ border-top:1px solid var(--line2); padding-top:18px; }
+  .role-notes{ display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+  .role-notes>div{ display:grid; grid-template-columns:14px 1fr; gap:10px; font-size:13.5px; line-height:1.85; color:var(--body); }
+  .role-notes>div>span:first-child{ color:var(--accent); }
+
+  /* 역할 다이어그램 (미니 애니메이션) */
+  .diagram{ display:flex; align-items:center; gap:34px; border:1px solid var(--line2); background:var(--panel2); padding:22px 26px; flex-wrap:wrap; }
+  .diagram .lbl{ font-size:10.5px; letter-spacing:.18em; color:var(--dim2); text-transform:uppercase; margin-bottom:10px; }
+  .diagram .arrow{ font-family:'Cormorant Garamond',Georgia,serif; font-size:22px; color:#c9bda6; }
+  .tile{ width:28px; height:28px; border-radius:2px; border:1px solid rgba(0,0,0,.16); display:inline-block; }
+  .tile.slot{ border:1px dashed #c9bda6; background:transparent; }
+  .coin{ width:20px; height:20px; border-radius:50%; background:var(--coin); border:1px solid rgba(0,0,0,.2); display:inline-block; }
+  .coin.hi{ background:#d9b34a; border-color:rgba(0,0,0,.25); }
+  .wk{ width:13px; height:13px; border-radius:50%; background:#6b4b2a; display:inline-block; }
+  .circ{ display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; border:1px solid #c9bda6; background:var(--panel); }
+  .goodtok{ width:20px; height:20px; border-radius:50%; border:1px solid rgba(0,0,0,.25); display:inline-block; }
+  .vptok{ width:22px; height:19px; background:var(--ink); clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); display:inline-block; }
+  .row6{ display:flex; gap:6px; } .row7{ display:flex; gap:7px; }
+  @keyframes prFade{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+  @keyframes prFromTop{ 0%{ opacity:0; transform:translateY(-38px) scale(.94); } 20%{ opacity:1; transform:translateY(0) scale(1); } 84%{ opacity:1; } 100%{ opacity:0; } }
+  @keyframes prFromLeft{ 0%{ opacity:0; transform:translateX(-58px); } 22%{ opacity:1; transform:translateX(0); } 84%{ opacity:1; } 100%{ opacity:0; } }
+  @keyframes prPopIn{ 0%{ opacity:0; transform:scale(.2); } 20%{ opacity:1; transform:scale(1.18); } 30%{ transform:scale(1); } 84%{ opacity:1; } 100%{ opacity:0; transform:scale(.9); } }
+  @keyframes prCoinUp{ 0%{ opacity:0; transform:translateY(8px) rotateY(0deg); } 26%{ opacity:1; transform:translateY(-9px) rotateY(180deg); } 62%{ transform:translateY(-9px) rotateY(360deg); } 86%{ opacity:1; } 100%{ opacity:0; } }
+  @keyframes prSlotWait{ 0%,100%{ border-color:#c9bda6; } 50%{ border-color:var(--accent); } }
+  .a-top{ animation:prFromTop 3.4s ease-in-out infinite; }
+  .a-left{ animation:prFromLeft 3.4s ease-in-out infinite; }
+  .a-pop{ animation:prPopIn 3.4s ease-in-out infinite; }
+  .a-coin{ animation:prCoinUp 3.4s ease-in-out infinite; }
+  .a-wait{ animation:prSlotWait 3.4s ease-in-out infinite; }
+  .d2{ animation-delay:.2s; } .d25{ animation-delay:.25s; } .d3{ animation-delay:.3s; } .d35{ animation-delay:.35s; }
+  .d4{ animation-delay:.4s; } .d5{ animation-delay:.5s; } .d6{ animation-delay:.6s; } .d65{ animation-delay:.65s; } .d8{ animation-delay:.8s; }
+
+  /* ═══ 상품 탭 ═══ */
+  .chain{ display:grid; grid-template-columns:1fr 44px 1fr 44px 1fr; align-items:center; margin-bottom:44px; }
+  @media (max-width:800px){ .chain{ grid-template-columns:1fr; } .chain .arrow{ transform:rotate(90deg); margin:4px 0; } }
+  .chain .step{ border:1px solid var(--line); background:var(--panel); padding:24px 26px; }
+  .chain .step.dark{ border-color:var(--ink); background:var(--ink); color:var(--bg); }
+  .chain .k{ font-size:11.5px; letter-spacing:.2em; color:var(--accent); margin-bottom:10px; }
+  .chain .dark .k{ color:#e0b070; }
+  .chain h3{ font-size:21px; font-weight:700; margin-bottom:8px; }
+  .chain p{ font-size:13.5px; line-height:1.8; color:var(--body); }
+  .chain .dark p{ color:#cbc3b4; }
+  .chain .arrow{ text-align:center; font-family:'Cormorant Garamond',Georgia,serif; font-size:26px; color:var(--accent); }
+  table.goods{ width:100%; border-collapse:collapse; border:1px solid var(--line); background:var(--panel); font-size:13.5px; }
+  table.goods th{ background:var(--band); border-bottom:1px solid var(--line); font-size:12px; font-weight:700; letter-spacing:.04em; padding:12px 18px; text-align:left; }
+  table.goods td{ padding:14px 18px; border-bottom:1px solid var(--band); color:var(--body); vertical-align:middle; }
+  table.goods .gname{ display:flex; align-items:center; gap:11px; font-weight:700; color:var(--ink); }
+  table.goods .price{ font-family:'Cormorant Garamond',Georgia,serif; font-size:21px; color:var(--accent); }
+  table.goods .note{ font-size:12.5px; color:var(--dim); line-height:1.65; }
+  .sellship{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  @media (max-width:800px){ .sellship{ grid-template-columns:1fr; } }
+  .sellship>div{ border:1px solid var(--line); background:var(--panel); padding:28px 30px; }
+  .sellship .k{ font-size:11.5px; letter-spacing:.2em; color:var(--accent); text-transform:uppercase; margin-bottom:12px; }
+  .sellship h3{ font-size:23px; font-weight:700; margin-bottom:14px; }
+  .sellship .li{ display:flex; flex-direction:column; gap:10px; font-size:13.5px; line-height:1.8; color:var(--body); }
+
+  /* ═══ 건물 탭 ═══ */
+  .quarry{ display:grid; grid-template-columns:1.15fr 1fr; gap:24px; margin-bottom:56px; }
+  @media (max-width:800px){ .quarry{ grid-template-columns:1fr; } }
+  .quarry .main{ border:1px solid var(--line); background:var(--panel); padding:28px 30px; }
+  .quarry .main h3{ font-size:23px; font-weight:700; margin-bottom:14px; }
+  .quarry .main p{ font-size:14.5px; line-height:1.9; color:var(--body); margin-bottom:16px; }
+  .quarry .main .li{ display:flex; flex-direction:column; gap:9px; font-size:13.5px; line-height:1.8; color:var(--body); border-top:1px solid var(--line2); padding-top:16px; }
+  .quarry .limits{ border:1px solid var(--line); background:var(--panel2); padding:28px 30px; }
+  .quarry .limits .k{ font-size:11.5px; letter-spacing:.2em; color:var(--accent); text-transform:uppercase; margin-bottom:16px; }
+  .quarry .limits .row{ display:grid; grid-template-columns:auto 1fr auto; gap:16px; align-items:center; padding:13px 0; border-bottom:1px solid var(--line2); }
+  .quarry .limits .row .r{ font-family:'Cormorant Garamond',Georgia,serif; font-size:15px; color:var(--accent); letter-spacing:.08em; }
+  .quarry .limits .row .d{ font-size:13px; color:var(--dim); }
+  .quarry .limits .row .m{ font-size:13.5px; font-weight:700; }
+  .quarry .limits .ex{ margin-top:16px; font-size:12.5px; color:var(--dim); line-height:1.75; }
+  .bgrid{ display:grid; gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:56px; }
+  .bgrid.c3{ grid-template-columns:repeat(3,1fr); }
+  .bgrid.c2{ grid-template-columns:1fr 1fr; }
+  .bgrid.c5{ grid-template-columns:repeat(5,1fr); margin-bottom:0; }
+  @media (max-width:800px){ .bgrid.c3,.bgrid.c2,.bgrid.c5{ grid-template-columns:1fr; } }
+  .bcell{ background:var(--panel); padding:20px 22px; }
+  .bcell.lux{ background:var(--panel2); padding:22px 20px; }
+  .bcell .head{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .bcell .chip{ width:12px; height:12px; border-radius:2px; border:1px solid rgba(0,0,0,.25); flex-shrink:0; }
+  .bcell .nm{ font-size:15px; font-weight:700; }
+  .bcell .cost{ margin-left:auto; font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; font-weight:600; color:var(--accent); }
+  .bcell .desc{ font-size:12.5px; color:var(--dim); line-height:1.7; }
+  .bcell.common{ padding:17px 22px; display:grid; grid-template-columns:100px 1fr 42px; gap:14px; align-items:baseline; }
+  .bcell.common .nm{ font-size:14.5px; white-space:nowrap; }
+  .bcell.common .ph{ font-size:11px; color:var(--accent); margin-top:4px; }
+  .bcell.common .desc{ font-size:13px; color:var(--body); }
+  .bcell.common .cost{ text-align:right; font-size:18px; }
+  .bcell.lux .head{ align-items:baseline; margin-bottom:10px; }
+  .bcell.lux .nm{ font-family:'Gowun Batang','Batang',serif; font-size:19px; }
+  .bcell.lux .desc{ color:var(--body); line-height:1.75; }
+
+  /* ═══ 종료 탭 ═══ */
+  .endgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:60px; }
+  @media (max-width:800px){ .endgrid{ grid-template-columns:1fr; } }
+  .endgrid>div{ border:1px solid var(--line); background:var(--panel); padding:26px 28px; }
+  .endgrid .n{ font-family:'Cormorant Garamond',Georgia,serif; font-size:36px; color:var(--accent); line-height:1; margin-bottom:14px; }
+  .endgrid .t{ font-size:15px; font-weight:700; margin-bottom:9px; }
+  .endgrid .d{ font-size:13px; color:var(--body); line-height:1.8; }
+  .scorebox{ border:1px solid var(--line); background:var(--panel); padding:8px 30px; }
+  .scorebox .row{ display:grid; grid-template-columns:1fr auto; gap:20px; align-items:center; padding:22px 0; border-bottom:1px solid var(--band); }
+  .scorebox .row h3{ font-size:20px; font-weight:700; margin-bottom:6px; }
+  .scorebox .row .d{ font-size:13px; color:var(--dim); line-height:1.75; }
+  .scorebox .row .tag{ font-family:'Cormorant Garamond',Georgia,serif; font-size:16px; color:var(--accent); letter-spacing:.08em; }
+  .scorebox .tie{ padding:22px 0; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  .tipgrid{ margin-top:60px; border-top:2px solid var(--ink); padding-top:30px; display:grid; grid-template-columns:1fr 1fr; gap:40px; }
+  @media (max-width:800px){ .tipgrid{ grid-template-columns:1fr; } }
+  .tipgrid h3{ font-size:23px; font-weight:700; margin-bottom:16px; }
+  .tipgrid .li{ display:flex; flex-direction:column; gap:12px; font-size:14px; line-height:1.85; color:var(--body); }
+
+  /* ═══ 플레이 탭 · 푸터 ═══ */
+  #playFrame{ display:block; width:100%; height:calc(100vh - 61px); border:none; background:var(--bg); }
+  .play-alt{ padding:10px 56px; font-size:12.5px; color:var(--dim); background:var(--band); border-bottom:1px solid var(--line); }
+  footer{ padding:24px 56px; border-top:1px solid var(--line); background:var(--band); font-size:12px; color:var(--dim2); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+</style>
+</head>
+<body>
+
+<header class="topbar pad">
+  <button class="logo" onclick="go('intro')" aria-label="처음으로">
+    <span class="en">PUERTO RICO</span><span class="yr">1897</span>
+  </button>
+  <nav id="nav"></nav>
+</header>
+
+<!-- ═══════════════ 게임 소개 ═══════════════ -->
+<main class="tab-page" id="tab-intro">
+  <div class="intro-hero pad">
+    <div class="wrap">
+      <div class="eyebrow">전략 보드게임 &nbsp;·&nbsp; 2~5인 &nbsp;·&nbsp; 90–150분</div>
+      <h1>푸에르토리코<br><span class="yr">1897</span></h1>
+      <p>1897년, 식민지 시대가 종말을 고했습니다. 근대화의 물결 속에서 푸에르토리코는 독자적인 지위를
+      확립하려 합니다. 일꾼을 고용해 이 섬의 귀중한 자원을 상품으로 바꾸고, 팔고, 실어 보내며 —
+      가장 부유한 농장 경영인의 자리에 오르십시오.</p>
+      <div class="cta-row">
+        <button class="btn-primary" onclick="go('how')">게임 하는 방법 보기 →</button>
+        <button class="btn-ghost" onclick="go('goods')">상품과 교역</button>
+        <button class="btn-ghost" onclick="go('play')">바로 플레이</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:64px">
+    <div class="wrap stat-grid">
+      <div><div class="n">7</div><div class="d">역할 · 매 라운드 하나씩</div></div>
+      <div><div class="n">5</div><div class="d">상품 · 옥수수부터 커피까지</div></div>
+      <div><div class="n">12</div><div class="d">토지 칸 &amp; 건설 부지</div></div>
+      <div><div class="n">0</div><div class="d">주사위 · 운의 개입 없음</div></div>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:64px; padding-bottom:84px">
+    <div class="wrap">
+      <div class="sec-row" style="padding-top:0">
+        <div class="kicker" style="padding-top:10px">01 / 목표</div>
+        <div>
+          <h2 style="font-size:36px">전원 지역을 발전시켜<br>승점을 가장 많이 얻는 사람이 이깁니다.</h2>
+          <p style="max-width:720px; font-size:15.5px; line-height:1.95; color:var(--body)">농장을 개척하고,
+          일꾼을 모으고, 건물을 세워 상품을 만듭니다. 만든 상품은 상점에 팔아 <strong>주화</strong>가 되고,
+          수송선에 실어 보내면 <strong>승점</strong>이 됩니다. 게임이 끝날 때 승점이 가장 많은 사람이 승리합니다.</p>
+        </div>
+      </div>
+
+      <div class="sec-row">
+        <div class="kicker" style="padding-top:10px">02 / 이 게임의 맛</div>
+        <div>
+          <h2>운은 거의 없습니다. 대신 남의 수를 읽습니다.</h2>
+          <div class="trio">
+            <div>
+              <div class="num">I</div>
+              <h3>내 역할을 남도 씁니다</h3>
+              <p>역할을 고른 사람만 특별 혜택을 받지만, 행동 자체는 전원이 함께 합니다.
+              내게 좋은 수가 남에게 더 좋을 수도 있습니다.</p>
+            </div>
+            <div>
+              <div class="num">II</div>
+              <h3>돈과 점수가 갈라집니다</h3>
+              <p>같은 상품이라도 팔면 주화, 실으면 승점. 어느 쪽으로 기울일지가
+              매 판 다른 전략을 만듭니다.</p>
+            </div>
+            <div>
+              <div class="num">III</div>
+              <h3>엔진을 조립합니다</h3>
+              <p>농장 · 일꾼 · 공장 · 배. 넷이 맞물려야 상품이 흐릅니다.
+              하나만 빠져도 엔진은 헛돕니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-row">
+        <div class="kicker" style="padding-top:10px">03 / 개인판</div>
+        <div>
+          <h2>모든 것이 놓이는 자리</h2>
+          <div class="duo">
+            <div class="card" style="padding:24px 26px">
+              <div class="kicker" style="letter-spacing:.2em; margin-bottom:11px">토지 칸 12</div>
+              <p style="font-size:14px; line-height:1.85; color:var(--body)">농장과 채석장이 놓입니다. 한번 놓은 타일은 치울 수 없습니다.</p>
+            </div>
+            <div class="card" style="padding:24px 26px">
+              <div class="kicker" style="letter-spacing:.2em; margin-bottom:11px">건설 부지 12</div>
+              <p style="font-size:14px; line-height:1.85; color:var(--body)">건물이 놓입니다. 고급 건물은 위아래로 이어진 2칸을 씁니다.</p>
+            </div>
+          </div>
+          <div class="callout" style="margin-top:20px">
+            <strong>점유(占有)</strong> — 이 게임의 거의 모든 규칙이 걸려 있는 한 단어.
+            농장·채석장·건물 위의 원형 칸에 일꾼이 최소 1개 올라가 있어야 그 타일이 일을 합니다.
+            예외는 승점 — 건물의 승점은 비어 있어도 계산됩니다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════ 게임 하는 방법 ═══════════════ -->
+<main class="tab-page" id="tab-how">
+  <div class="hero pad">
+    <div class="wrap">
+      <div class="eyebrow">How to play</div>
+      <h1>게임 하는 방법</h1>
+      <p>주지사부터 시계 방향으로 역할을 하나씩 고릅니다. 모두가 하나씩 고르면 한 라운드가 끝납니다.</p>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:56px; padding-bottom:84px">
+    <div class="wrap">
+      <div class="kicker" style="margin-bottom:20px">01 / 한 라운드의 흐름</div>
+      <div class="card" style="padding:32px 34px">
+        <div class="flow-tabs" id="flowTabs"></div>
+        <div class="flow-bar"><div id="flowBar"></div></div>
+        <div class="flow-body">
+          <div>
+            <h3 id="flowTitle"></h3>
+            <p class="desc" id="flowDesc"></p>
+            <div class="note" id="flowNote"></div>
+          </div>
+          <div class="seats">
+            <div class="t">테이블 · 4인 예시</div>
+            <div id="flowSeats"></div>
+          </div>
+        </div>
+        <div class="flow-ctl">
+          <button onclick="flowPrev()">이전</button>
+          <button onclick="flowNext()">다음</button>
+          <button class="play" id="flowPlay" onclick="flowToggle()">▶ 자동 재생</button>
+        </div>
+      </div>
+
+      <div class="kicker" style="margin:64px 0 16px">02 / 일곱 개의 역할</div>
+      <h2 style="font-size:34px; font-weight:700; margin-bottom:10px">고르는 사람만 혜택을, 행동은 모두가</h2>
+      <p style="max-width:680px; font-size:15px; line-height:1.85; color:var(--body); margin-bottom:28px">
+        타일을 눌러 상세 규칙을 펼쳐 보세요. 아무도 고르지 않은 역할에는 라운드마다 1주화가 쌓입니다.</p>
+      <div class="roles" id="roles"></div>
+
+      <div class="callout" style="margin-top:36px">
+        <strong>역할은 반드시 하나 골라야 합니다.</strong> 하지만 그 행동을 꼭 수행할 필요는 없습니다 —
+        딱 하나, <strong>선장</strong>만은 실을 수 있으면 반드시 실어야 합니다.
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════ 상품과 교역 ═══════════════ -->
+<main class="tab-page" id="tab-goods">
+  <div class="hero pad">
+    <div class="wrap">
+      <div class="eyebrow">Goods &amp; Trade</div>
+      <h1>상품과 교역</h1>
+      <p>옥수수를 뺀 네 상품은 <strong>점유된 농장</strong>과 <strong>점유된 생산 건물</strong>이 모두 있어야
+      만들어집니다. 생산량은 둘 중 <strong>적은 쪽</strong>에 맞춰집니다.</p>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:56px; padding-bottom:84px">
+    <div class="wrap">
+      <div class="kicker" style="margin-bottom:20px">01 / 생산 체인</div>
+      <div class="chain">
+        <div class="step">
+          <div class="k">1 · 개척</div>
+          <h3>농장을 얻는다</h3>
+          <p>토지 칸에 농장 타일을 놓습니다. 커피 농장은 8개뿐, 과일 농장은 12개.</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="step">
+          <div class="k">2 · 모집 + 건설</div>
+          <h3>일꾼과 공장을 붙인다</h3>
+          <p>농장과 공장 모두에 일꾼이 올라가야 합니다. 옥수수만 공장이 필요 없습니다.</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="step dark">
+          <div class="k">3 · 생산</div>
+          <h3>상품이 나온다</h3>
+          <p>점유된 농장 수와 공장의 일꾼 수 중 <strong style="color:var(--bg)">적은 쪽</strong>만큼 생산됩니다.</p>
+        </div>
+      </div>
+
+      <table class="goods">
+        <thead><tr><th>상품</th><th>필요한 농장</th><th>필요한 생산 건물</th><th>상점 판매가</th><th>비고</th></tr></thead>
+        <tbody id="goodsRows"></tbody>
+      </table>
+
+      <div class="kicker" style="margin:64px 0 20px">02 / 팔 것인가, 실을 것인가</div>
+      <div class="sellship">
+        <div>
+          <div class="k">상인 · 거래 단계</div>
+          <h3>상품을 팔아 주화로</h3>
+          <div class="li">
+            <div>상점 타일에는 최대 4개, <strong>종류별로 1개씩만</strong> 놓입니다.</div>
+            <div>상인은 판매가에 1주화를 더 받습니다. 소형 상가 +1, 대형 상가 +2.</div>
+            <div>거래 단계가 끝날 때 4칸이 꽉 찼다면 전부 치웁니다. 한 칸이라도 비면 그대로 남아 다음 판매를 막습니다.</div>
+          </div>
+        </div>
+        <div>
+          <div class="k">선장 · 선적 단계</div>
+          <h3>상품을 실어 승점으로</h3>
+          <div class="li">
+            <div>수송선 1척에는 <strong>한 종류</strong>만, 다른 배에 이미 실린 종류는 실을 수 없습니다.</div>
+            <div>실을 수 있다면 <strong>반드시</strong> 실어야 하고, 가장 많이 실리는 배를 골라야 합니다.</div>
+            <div>상품 1개당 1승점. 선장은 첫 선적에 1점을 더 받습니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:24px">
+        <strong>선적 단계가 끝나면 상품이 썩습니다.</strong> 창고가 없으면 손에 남길 수 있는 상품은 단 1개.
+        소형 창고는 아무 1종류를 개수 무관하게, 대형 창고는 2종류를 더 지켜 줍니다.
+        나머지는 아무 보상 없이 공급처로 돌아갑니다.
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════ 건물 ═══════════════ -->
+<main class="tab-page" id="tab-buildings">
+  <div class="hero pad">
+    <div class="wrap">
+      <div class="eyebrow">Buildings</div>
+      <h1>건물</h1>
+      <p>각 건물 옆의 <span class="latin" style="font-size:18px; font-weight:600; color:var(--accent)">$</span>
+      표시가 건설 비용(주화)입니다. 점유된 채석장 1개마다 1주화가 깎이되, 보관판의 위쪽 줄일수록
+      적용 한도가 낮습니다(위에서부터 최대 1·2·3·4개).</p>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:56px; padding-bottom:84px">
+    <div class="wrap">
+      <div class="kicker" style="margin-bottom:16px">01 / 채석장</div>
+      <div class="quarry">
+        <div class="main">
+          <h3>돌을 캐면 건물이 싸집니다</h3>
+          <p>채석장은 상품을 만들지 않는 유일한 토지 타일입니다. 대신 <strong>점유된 채석장 1개마다
+          건설 비용이 1주화씩</strong> 깎입니다. 개척자를 고른 사람이 특별 혜택으로 가져오거나,
+          점유된 건설막이 있으면 농장 대신 가져올 수 있습니다. 총 8개뿐이라 다 떨어지면 더 이상 나오지 않습니다.</p>
+          <div class="li">
+            <div>· 일꾼이 올라가 있어야 할인이 적용됩니다. 빈 채석장은 아무 일도 하지 않습니다.</div>
+            <div>· 건축가의 특별 혜택(−1주화)과 함께 쌓아 쓸 수 있습니다.</div>
+            <div>· 개척자를 고르고 점유된 건설막까지 있어도, 한 번에 채석장은 1개만 가져옵니다.</div>
+          </div>
+        </div>
+        <div class="limits">
+          <div class="k">할인 한도 · 보관판의 줄에 따라</div>
+          <div id="quarryRows"></div>
+          <p class="ex">예) 점유된 채석장 3개를 가진 사람은 건설막 1주화, 영업소 3주화, 항구 5주화, 시청 7주화에 짓습니다.</p>
+        </div>
+      </div>
+
+      <div class="kicker" style="margin-bottom:16px">02 / 생산 건물</div>
+      <div class="bgrid c3" id="prodGrid"></div>
+
+      <div class="kicker" style="margin-bottom:16px">03 / 일반 상업 건물 · 12종</div>
+      <div class="bgrid c2" id="commonGrid"></div>
+
+      <div class="kicker" style="margin-bottom:16px">04 / 고급 건물 · 5종 · 부지 2칸 · 기본 4승점</div>
+      <div class="bgrid c5" id="luxGrid"></div>
+      <p style="margin-top:15px; font-size:13px; color:var(--dim); line-height:1.75">
+        고급 건물의 4승점은 비어 있어도 받지만, 위의 추가 승점은 <strong>점유된 경우에만</strong> 계산합니다.</p>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════ 종료와 점수 ═══════════════ -->
+<main class="tab-page" id="tab-end">
+  <div class="hero pad">
+    <div class="wrap">
+      <div class="eyebrow">End &amp; Scoring</div>
+      <h1>종료와 점수</h1>
+      <p>아래 세 조건 중 하나만 충족되면, 그 라운드가 끝날 때 게임이 종료됩니다.</p>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:56px; padding-bottom:90px">
+    <div class="wrap">
+      <div class="endgrid" id="endGrid"></div>
+
+      <div class="kicker" style="margin-bottom:16px">최종 점수 합산</div>
+      <div class="scorebox">
+        <div id="scoreRows"></div>
+        <div class="tie">
+          <span class="serif" style="font-size:20px; font-weight:700">동점이라면</span>
+          <span style="font-size:13.5px; color:var(--body)">주화와 상품의 합이 많은 쪽이 승리합니다(상품 1개 = 1주화).</span>
+        </div>
+      </div>
+
+      <div class="tipgrid">
+        <div>
+          <h3>처음 하는 사람에게</h3>
+          <div class="li">
+            <div>· 옥수수는 팔아도 돈이 안 되지만, 공장 없이 바로 생산되어 배에 실립니다. 초반 승점의 지름길입니다.</div>
+            <div>· 역할을 고를 때는 "내가 얼마나 이득인가"보다 "남이 얼마나 이득인가"를 먼저 보세요.</div>
+            <div>· 건물의 승점은 점유와 무관합니다. 막판에 비싼 건물을 사두는 것도 전략입니다.</div>
+          </div>
+        </div>
+        <div>
+          <h3>확장 4종</h3>
+          <div class="li">
+            <div>· <strong>새로운 건물</strong> — 일반 24개, 고급 2개 추가(초록 이름).</div>
+            <div>· <strong>시민</strong> — 건물 15개와 빨간 시민 토큰 20개.</div>
+            <div>· <strong>밀수꾼</strong> — 여덟 번째 역할. 수송선 습격 · 상점 약탈 · 포획 · 역할 납치.</div>
+            <div>· <strong>축제</strong> — 축제 목표판을 추가합니다.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════ 플레이 ═══════════════ -->
+<main class="tab-page" id="tab-play">
+  <div class="play-alt pad">게임이 보이지 않으면 <a href="푸에르토리코1897_게임.html" target="_blank" rel="noopener">새 창에서 열기</a></div>
+  <iframe id="playFrame" title="푸에르토리코 1897 플레이"></iframe>
+</main>
+
+<footer class="pad">
+  <span>푸에르토리코 1897 · 한국어 규칙 안내</span>
+  <span>팬이 만든 비공식 페이지입니다.</span>
+</footer>
+
+<script>
+/* ═══════════════ 데이터 ═══════════════
+   반복되는 목록(역할·상품·건물…)만 데이터로 두고 스크립트가 그린다.
+   한 번 그리면 끝 — 상태를 갖는 것은 탭 전환과 라운드 흐름 스테퍼뿐. */
+
+const TABS = [
+  { id:'intro', label:'게임 소개' },
+  { id:'how', label:'게임 하는 방법' },
+  { id:'goods', label:'상품과 교역' },
+  { id:'buildings', label:'건물' },
+  { id:'end', label:'종료와 점수' },
+  { id:'play', label:'플레이' },
+];
+
+const ROLES = [
+  { num:'I', name:'개척자', phase:'개척 단계', action:'공개된 농장 타일 1개를 가져와 토지 칸에 놓습니다.', bonus:'농장 대신 채석장 1개를 가져올 수 있습니다.', notes:[
+    '토지 칸은 12곳. 다 차면 더 이상 타일을 받을 수 없습니다.',
+    '단계가 끝나면 남은 공개 타일을 버리고 (인원수+1)개를 새로 공개합니다.',
+    '점유된 건설막이 있으면 개척자가 아니어도 채석장을 가져올 수 있습니다.',
+    '점유된 병원이 있으면 방금 놓은 타일 위에 공급처의 일꾼 1개를 바로 올립니다.',
+    '점유된 대규모 농장이 있으면 뒷면 더미에서 농장 1개를 추가로 받습니다.' ] },
+  { num:'II', name:'모집관', phase:'모집 단계', action:'인력 시장이 빌 때까지 돌아가며 일꾼을 1개씩 가져갑니다.', bonus:'공급처에서 일꾼 1개를 먼저 가져갑니다.', notes:[
+    '모집관의 혜택 일꾼은 인력 시장이 아니라 공급처에서 나옵니다.',
+    '이 단계에는 자기 일꾼 전부를 자유롭게 재배치할 수 있습니다.',
+    '빈 원형 칸이 있는 한 일꾼은 반드시 배치해야 하고, 남은 일꾼만 개인판 초상화에 보관됩니다.',
+    '단계 끝에, 모든 사람의 건물에 남은 빈 칸 수만큼 인력 시장을 채웁니다(최소 인원수만큼).' ] },
+  { num:'III', name:'건축가', phase:'건설 단계', action:'비용을 내고 건물 1개를 건설해 건설 부지에 놓습니다.', bonus:'건설 비용을 1주화 깎습니다.', notes:[
+    '점유된 채석장 1개마다 1주화 할인. 단 보관판 위쪽 줄일수록 한도가 낮습니다(1·2·3·4개).',
+    '고급 건물은 위아래로 이어진 빈 2칸이 필요합니다.',
+    '같은 건물을 두 번 짓지는 못하고, 지은 건물을 치울 수도 없습니다.',
+    '점유된 학교가 있으면 방금 지은 건물에 공급처의 일꾼 1개를 바로 올립니다.' ] },
+  { num:'IV', name:'생산자', phase:'생산 단계', action:'점유된 농장과 생산 건물에 따라 상품을 가져옵니다.', bonus:'방금 생산한 종류 중 1개를 추가로 가져옵니다.', notes:[
+    '옥수수는 공장이 필요 없습니다. 점유된 옥수수 농장 1개당 1개.',
+    '나머지 넷은 점유된 농장 수와 공장의 일꾼 수 중 적은 쪽만큼 생산됩니다.',
+    '점유된 공업소가 있으면 생산한 종류 수에 따라 +0/1/2/3/5주화.',
+    '규칙서의 경고 — 가장 위험한 역할입니다. 남의 생산량도 함께 보세요.' ] },
+  { num:'V', name:'상인', phase:'거래 단계', action:'상점 타일에 자기 상품 1개를 팔고 주화를 받습니다.', bonus:'판매가에 1주화를 더 받습니다.', notes:[
+    '상점은 4칸, 같은 종류는 1개까지(점유된 영업소는 예외).',
+    '점유된 소형 상가 +1주화, 대형 상가 +2주화, 둘 다면 +3주화.',
+    '모두 기회를 가진 뒤 4칸이 꽉 찼다면 전부 치웁니다. 비어 있으면 그대로 남습니다.',
+    '옥수수는 0주화지만, 상점 칸을 막기 위해 팔 수도 있습니다.' ] },
+  { num:'VI', name:'선장', phase:'선적 단계', action:'더 실을 수 없을 때까지 돌아가며 수송선에 상품을 싣습니다.', bonus:'이번 단계 첫 선적에 1점 칩을 더 받습니다.', notes:[
+    '유일하게 생략할 수 없는 역할입니다. 실을 수 있으면 반드시 싣습니다.',
+    '배 1척에는 한 종류만, 다른 배에 이미 실린 종류는 실을 수 없습니다.',
+    '한 번에 한 종류씩, 가장 많이 실리는 배를 골라 최대한 실어야 합니다.',
+    '상품 1개당 1승점. 점유된 항구는 선적할 때마다 +1점.',
+    '점유된 조선소는 단계당 한 번, 한 종류 전부를 가상의 배로 보내 그 수만큼 승점을 받습니다.' ] },
+  { num:'VII', name:'탐험가', phase:'행동 없음', action:'아무도 아무 행동을 하지 않습니다.', bonus:'은행에서 1주화를 가져갑니다.', notes:[
+    '3인 게임에서는 2개, 4인은 1개를 빼고 사용합니다.',
+    '쌓인 주화를 회수하거나, 남에게 좋은 역할을 넘기지 않기 위한 선택지입니다.' ] },
+];
+
+/* 역할별 미니 다이어그램 — 규칙의 핵심 동작을 색 타일로 보여주는 장식.
+   데이터화하기엔 저마다 구조가 달라, 역할 순서대로 HTML 조각을 둔다. */
+const DIAGRAMS = [
+  /* I 개척자 */
+  '<div class="diagram"><div><div class="lbl">공개된 농장</div><div class="row6">'
+  +'<span class="tile" style="background:#d9a520"></span><span class="tile" style="background:#e8dcc2"></span>'
+  +'<span class="tile a-coin" style="background:#4e8c46"></span></div></div>'
+  +'<span class="arrow">→</span>'
+  +'<div><div class="lbl">내 토지 칸</div><div style="display:grid; grid-template-columns:repeat(4,28px); gap:6px">'
+  +'<span class="tile" style="background:#7b5230"></span><span class="tile" style="background:#d9a520"></span>'
+  +'<span class="tile slot a-wait"></span><span class="tile slot"></span>'
+  +'<span class="tile a-top" style="background:#4e8c46"></span><span class="tile slot"></span>'
+  +'<span class="tile slot"></span><span class="tile slot"></span></div></div></div>',
+  /* II 모집관 */
+  '<div class="diagram"><div><div class="lbl">인력 시장</div>'
+  +'<div class="row7" style="padding:10px 12px; border:1px solid var(--line); background:var(--panel); border-radius:2px">'
+  +'<span class="wk"></span><span class="wk"></span><span class="wk"></span><span class="wk" style="opacity:.25"></span></div></div>'
+  +'<span class="arrow">→</span>'
+  +'<div><div class="lbl">내 타일의 빈 원형 칸</div><div style="display:flex; gap:10px">'
+  +'<span class="circ"><span class="wk a-left"></span></span>'
+  +'<span class="circ"><span class="wk a-left d35"></span></span>'
+  +'<span class="circ a-wait"></span></div></div></div>',
+  /* III 건축가 */
+  '<div class="diagram"><div><div class="lbl">비용 지불</div><div class="row6" style="align-items:center">'
+  +'<span class="coin"></span><span class="coin"></span><span class="coin a-coin"></span></div></div>'
+  +'<span class="arrow">→</span>'
+  +'<div><div class="lbl">내 건설 부지</div><div style="display:grid; grid-template-columns:repeat(4,30px); gap:6px">'
+  +'<span style="width:30px;height:22px;border-radius:2px;background:#e2d7c2;border:1px solid #c9bda6"></span>'
+  +'<span style="width:30px;height:22px;border-radius:2px;background:#e2d7c2;border:1px solid #c9bda6"></span>'
+  +'<span style="width:30px;height:22px;border-radius:2px;border:1px dashed #c9bda6"></span>'
+  +'<span style="width:30px;height:22px;border-radius:2px;border:1px dashed #c9bda6"></span>'
+  +'<span class="a-top" style="width:30px;height:22px;border-radius:2px;background:var(--accent);border:1px solid rgba(0,0,0,.2)"></span>'
+  +'<span class="a-wait" style="width:30px;height:22px;border-radius:2px;border:1px dashed #c9bda6"></span>'
+  +'<span style="width:30px;height:22px;border-radius:2px;border:1px dashed #c9bda6"></span>'
+  +'<span style="width:30px;height:22px;border-radius:2px;border:1px dashed #c9bda6"></span></div></div></div>',
+  /* IV 생산자 */
+  '<div class="diagram" style="gap:26px"><div><div class="lbl">점유된 농장</div><div class="row6">'
+  +'<span class="tile" style="background:#e8dcc2;display:inline-flex;align-items:center;justify-content:center"><span class="wk" style="width:11px;height:11px"></span></span>'
+  +'<span class="tile" style="background:#e8dcc2;display:inline-flex;align-items:center;justify-content:center"><span class="wk" style="width:11px;height:11px"></span></span></div></div>'
+  +'<span class="arrow">＋</span>'
+  +'<div><div class="lbl">점유된 설탕 공장</div>'
+  +'<div class="row7" style="padding:8px 10px; border:1px solid #c9bda6; background:var(--panel); border-radius:2px">'
+  +'<span class="circ" style="width:22px;height:22px"><span class="wk" style="width:11px;height:11px"></span></span>'
+  +'<span class="circ" style="width:22px;height:22px"><span class="wk" style="width:11px;height:11px"></span></span></div></div>'
+  +'<span class="arrow">→</span>'
+  +'<div><div class="lbl">설탕 2개</div><div class="row7">'
+  +'<span class="goodtok a-pop" style="background:#e8dcc2"></span>'
+  +'<span class="goodtok a-pop d3" style="background:#e8dcc2"></span></div></div></div>',
+  /* V 상인 */
+  '<div class="diagram" style="gap:26px"><div><div class="lbl">내 상품 · 커피 1개</div>'
+  +'<span class="goodtok" style="width:24px;height:24px;background:#2f2620;display:block"></span></div>'
+  +'<span class="arrow">→</span>'
+  +'<div><div class="lbl">상점 타일 · 종류별 1개씩</div>'
+  +'<div class="row7" style="padding:9px 11px; border:1px solid #c9bda6; background:var(--panel); border-radius:2px">'
+  +'<span class="tile slot" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center"><span class="goodtok" style="width:15px;height:15px;background:#d9a520"></span></span>'
+  +'<span class="tile slot" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center"><span class="goodtok" style="width:15px;height:15px;background:#7b5230"></span></span>'
+  +'<span class="tile slot a-wait" style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center"><span class="goodtok a-pop" style="width:15px;height:15px;background:#2f2620"></span></span>'
+  +'<span class="tile slot" style="width:24px;height:24px"></span></div></div>'
+  +'<span class="arrow">→</span>'
+  +'<div><div class="lbl">은행에서 5주화 (판매가 4 ＋ 상인 혜택 1)</div><div class="row6">'
+  +'<span class="coin a-coin d2"></span><span class="coin a-coin d35"></span><span class="coin a-coin d5"></span>'
+  +'<span class="coin a-coin d65"></span><span class="coin hi a-coin d8"></span></div></div></div>',
+  /* VI 선장 */
+  '<div class="diagram"><div><div class="lbl">수송선 5칸에 내 설탕 2개를 싣는다</div>'
+  +'<div class="row6" style="padding:9px 12px; border:1px solid #c9bda6; background:var(--panel); border-radius:0 0 12px 12px">'
+  +'<span class="tile slot" style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center"><span class="goodtok" style="width:14px;height:14px;background:#e8dcc2"></span></span>'
+  +'<span class="tile slot" style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center"><span class="goodtok" style="width:14px;height:14px;background:#e8dcc2"></span></span>'
+  +'<span class="tile slot" style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center"><span class="goodtok a-left" style="width:14px;height:14px;background:#e8dcc2"></span></span>'
+  +'<span class="tile slot" style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center"><span class="goodtok a-left d25" style="width:14px;height:14px;background:#e8dcc2"></span></span>'
+  +'<span class="tile slot a-wait" style="width:22px;height:22px"></span></div></div>'
+  +'<span class="arrow">→</span>'
+  +'<div><div class="lbl">승점 3점 (선적 2 ＋ 선장 혜택 1)</div><div class="row7">'
+  +'<span class="vptok a-pop d2"></span><span class="vptok a-pop d4"></span>'
+  +'<span class="vptok a-pop d6" style="background:var(--accent)"></span></div></div></div>',
+  /* VII 탐험가 */
+  '<div class="diagram"><div><div class="lbl">탐험가 타일 · 쌓인 주화</div>'
+  +'<div style="position:relative; width:120px; height:44px; border:1px solid #c9bda6; background:var(--panel); border-radius:2px; display:flex; align-items:center; justify-content:center; gap:6px">'
+  +'<span class="coin"></span><span class="coin"></span></div></div>'
+  +'<span class="arrow">→</span>'
+  +'<div><div class="lbl">은행에서 ＋1, 합계 3주화</div><div class="row6">'
+  +'<span class="coin a-coin" style="width:22px;height:22px"></span>'
+  +'<span class="coin a-coin d2" style="width:22px;height:22px"></span>'
+  +'<span class="coin hi a-coin d4" style="width:22px;height:22px"></span></div></div></div>',
+];
+
+const FLOW = [
+  { n:'01', title:'주지사가 역할 선택', desc:'주지사 타일을 가진 사람이 역할 타일 하나를 골라 자기 앞에 놓습니다. 타일 위에 주화가 쌓여 있었다면 전부 가져갑니다.', note:'이 라운드 동안 다른 사람은 그 역할을 고를 수 없습니다.', seat:0, roles:['생산자 선택','대기','대기','대기'] },
+  { n:'02', title:'고른 사람이 먼저 수행', desc:'역할을 고른 사람이 그 행동을 수행하면서 특별 혜택까지 함께 받습니다.', note:'혜택은 오직 고른 사람만. 행동은 하지 않고 넘길 수도 있습니다(선장은 예외).', seat:0, roles:['행동 + 혜택','대기','대기','대기'] },
+  { n:'03', title:'시계 방향으로 전원 수행', desc:'왼쪽 사람부터 차례로 같은 행동을 수행합니다. 혜택은 없습니다.', note:'기준은 주지사가 아니라 그 역할을 고른 사람입니다.', seat:2, roles:['완료','완료','행동만','대기'] },
+  { n:'04', title:'왼쪽 사람이 다음 역할 선택', desc:'남은 역할 타일 중 하나를 골라 같은 과정을 반복합니다. 모두가 하나씩 고를 때까지 이어집니다.', note:'남은 타일이 줄어들수록 선택은 좁아집니다. 순서 자체가 자원입니다.', seat:1, roles:['완료','상인 선택','대기','대기'] },
+  { n:'05', title:'라운드 종료', desc:'아무도 고르지 않은 역할 타일 위에 은행에서 1주화씩 올립니다. 모든 타일을 제자리로, 주지사 타일은 왼쪽 사람에게 넘깁니다.', note:'주화가 쌓인 역할은 다음 라운드에 훨씬 매력적인 선택지가 됩니다.', seat:1, roles:['완료','다음 주지사','완료','완료'] },
+];
+const SEAT_NAMES = ['가영','나정','도준','민수'];
+
+const GOODS = [
+  { name:'옥수수', color:'#d9a520', farm:'옥수수 농장', factory:'필요 없음', price:'0', note:'점유된 농장 1개당 1개. 팔아도 돈은 없지만 즉시 승점이 됩니다.' },
+  { name:'과일', color:'#4e8c46', farm:'과일 농장', factory:'소형 · 대형 과일 공장', price:'1', note:'농장이 12개로 가장 흔합니다. 초반 생산의 중심.' },
+  { name:'설탕', color:'#e8dcc2', farm:'설탕 농장', factory:'소형 · 대형 설탕 공장', price:'2', note:'농장 11개. 대량 생산과 대량 선적에 강합니다.' },
+  { name:'담배', color:'#7b5230', farm:'담배 농장', factory:'담배 공장', price:'3', note:'공장이 대형 하나뿐. 일꾼 3개까지 올릴 수 있습니다.' },
+  { name:'커피', color:'#2f2620', farm:'커피 농장', factory:'커피 공장', price:'4', note:'농장 8개로 가장 귀합니다. 적게 만들어 비싸게 팝니다.' },
+];
+
+const QUARRY_LIMITS = [
+  { row:'1–2번째 줄', desc:'가장 싼 건물들', max:'1' },
+  { row:'3–4번째 줄', desc:'중간 가격대', max:'2' },
+  { row:'5–6번째 줄', desc:'비싼 건물들', max:'3' },
+  { row:'7번째 줄', desc:'고급 건물', max:'4' },
+];
+
+const PROD_BUILDINGS = [
+  { name:'소형 과일 공장', cost:'1', color:'#4e8c46', desc:'수확한 과일을 관리합니다. 일꾼 칸이 적은 소형 공장.' },
+  { name:'대형 과일 공장', cost:'3', color:'#4e8c46', desc:'일꾼을 더 올려 과일을 더 많이 생산합니다.' },
+  { name:'소형 설탕 공장', cost:'2', color:'#e8dcc2', desc:'사탕수수에서 설탕을 정제합니다.' },
+  { name:'대형 설탕 공장', cost:'4', color:'#e8dcc2', desc:'설탕 대량 생산용. 농장 수가 받쳐 줘야 합니다.' },
+  { name:'담배 공장', cost:'5', color:'#7b5230', desc:'담뱃잎을 건조해 담배를 만듭니다.' },
+  { name:'커피 공장', cost:'6', color:'#2f2620', desc:'생두를 원두로 로스팅합니다.' },
+];
+
+const COMMON_BUILDINGS = [
+  { name:'소형 상가', cost:'1', phase:'거래', desc:'상점에 상품을 팔 때 1주화를 더 받습니다.' },
+  { name:'대형 상가', cost:'5', phase:'거래', desc:'상점에 상품을 팔 때 2주화를 더 받습니다.' },
+  { name:'영업소', cost:'5', phase:'거래', desc:'상점에 이미 놓인 종류와 같은 상품도 팔 수 있습니다.' },
+  { name:'소형 창고', cost:'3', phase:'선적', desc:'선적 단계 끝에 아무 1종류를 개수 무관하게 더 보관합니다.' },
+  { name:'대형 창고', cost:'6', phase:'선적', desc:'아무 2종류를 개수 무관하게 더 보관합니다.' },
+  { name:'항구', cost:'8', phase:'선적', desc:'선적 행동을 할 때마다 1점 칩을 더 받습니다.' },
+  { name:'조선소', cost:'9', phase:'선적', desc:'단계당 한 번, 한 종류 전부를 반납하고 그 수만큼 승점을 받습니다.' },
+  { name:'대규모 농장', cost:'2', phase:'개척', desc:'뒷면 더미에서 농장 1개를 추가로 가져와 앞면으로 놓습니다.' },
+  { name:'건설막', cost:'2', phase:'개척', desc:'공개된 농장 대신 채석장 타일을 가져올 수 있습니다.' },
+  { name:'병원', cost:'4', phase:'개척', desc:'농장·채석장을 놓으면 그 타일 위에 공급처의 일꾼 1개를 올립니다.' },
+  { name:'학교', cost:'8', phase:'건설', desc:'건물을 지으면 그 건물 위에 공급처의 일꾼 1개를 올립니다.' },
+  { name:'공업소', cost:'7', phase:'생산', desc:'생산한 상품 종류 수에 따라 +0/1/2/3/5주화를 받습니다.' },
+];
+
+const LUX_BUILDINGS = [
+  { name:'소방서', cost:'10', desc:'소형 생산 건물 1개당 +1점, 대형 생산 건물 1개당 +2점.' },
+  { name:'주거지', cost:'10', desc:'타일이 놓인 토지 칸이 1~9 / 10 / 11 / 12곳이면 +4 / 5 / 6 / 7점.' },
+  { name:'요새', cost:'10', desc:'개인판의 모든 일꾼 3개마다 +1점.' },
+  { name:'세관', cost:'10', desc:'자기 승점 칩 4점마다 +1점(건물 승점은 제외).' },
+  { name:'시청', cost:'10', desc:'자기 상업 건물 1개마다 +1점(시청 자신도 포함).' },
+];
+
+const END_CONDITIONS = [
+  { n:'01', title:'일꾼이 모자랄 때', desc:'모집 단계 끝에 인력 시장을 필요한 만큼 채울 수 없는 경우.' },
+  { n:'02', title:'건설 부지가 다 찼을 때', desc:'건설 단계 동안 누군가 자기 건설 부지 12칸을 모두 채운 경우.' },
+  { n:'03', title:'승점 칩이 떨어졌을 때', desc:'어느 단계든 공급처에 승점 칩이 남아 있지 않은 경우. 이후 점수는 따로 적어 둡니다.' },
+];
+
+const SCORING = [
+  { title:'승점 칩', desc:'선적한 상품 1개당 1점, 선장 · 항구 · 조선소 보너스까지. 따로 적어 둔 점수도 포함합니다.', tag:'선적에서' },
+  { title:'건물의 승점', desc:'타일 오른쪽 위 검은 육각형의 숫자. 점유 여부와 무관하게 전부 더합니다.', tag:'개인판에서' },
+  { title:'점유된 고급 건물의 추가 승점', desc:'소방서 · 주거지 · 요새 · 세관 · 시청의 조건 점수. 일꾼이 올라가 있어야만 계산됩니다.', tag:'점유된 경우만' },
+];
+
+/* ═══════════════ 렌더 (로드 시 1회) ═══════════════ */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('nav').innerHTML = TABS.map(t=>
+  '<button data-tab="'+t.id+'" onclick="go(\''+t.id+'\')">'+esc(t.label)+'</button>').join('');
+
+document.getElementById('roles').innerHTML = ROLES.map((r,i)=>
+  '<div class="role-row" id="role-'+i+'">'
+  +'<button class="role-head" onclick="roleToggle('+i+')" aria-expanded="false">'
+    +'<span class="num">'+r.num+'</span>'
+    +'<span><span class="nm">'+esc(r.name)+'</span><span class="ph">'+esc(r.phase)+'</span></span>'
+    +'<span class="act">'+esc(r.action)+'</span>'
+    +'<span class="bon">＋ '+esc(r.bonus)+'</span>'
+    +'<span class="mark">+</span>'
+  +'</button>'
+  +'<div class="role-body"><div class="inner">'
+    +DIAGRAMS[i]
+    +'<div class="role-notes">'+r.notes.map(n=>'<div><span>·</span><span>'+esc(n)+'</span></div>').join('')+'</div>'
+  +'</div></div></div>').join('');
+
+document.getElementById('goodsRows').innerHTML = GOODS.map(g=>
+  '<tr><td><span class="gname"><span class="goodtok" style="width:16px;height:16px;background:'+g.color+'"></span>'+esc(g.name)+'</span></td>'
+  +'<td>'+esc(g.farm)+'</td><td>'+esc(g.factory)+'</td>'
+  +'<td class="price">'+esc(g.price)+'</td><td class="note">'+esc(g.note)+'</td></tr>').join('');
+
+document.getElementById('quarryRows').innerHTML = QUARRY_LIMITS.map(q=>
+  '<div class="row"><span class="r">'+esc(q.row)+'</span><span class="d">'+esc(q.desc)+'</span>'
+  +'<span class="m">최대 '+esc(q.max)+'개</span></div>').join('');
+
+document.getElementById('prodGrid').innerHTML = PROD_BUILDINGS.map(b=>
+  '<div class="bcell"><div class="head"><span class="chip" style="background:'+b.color+'"></span>'
+  +'<span class="nm">'+esc(b.name)+'</span><span class="cost">$'+esc(b.cost)+'</span></div>'
+  +'<div class="desc">'+esc(b.desc)+'</div></div>').join('');
+
+document.getElementById('commonGrid').innerHTML = COMMON_BUILDINGS.map(b=>
+  '<div class="bcell common"><div><div class="nm">'+esc(b.name)+'</div><div class="ph">'+esc(b.phase)+'</div></div>'
+  +'<div class="desc">'+esc(b.desc)+'</div><div class="cost">$'+esc(b.cost)+'</div></div>').join('');
+
+document.getElementById('luxGrid').innerHTML = LUX_BUILDINGS.map(b=>
+  '<div class="bcell lux"><div class="head"><span class="nm">'+esc(b.name)+'</span>'
+  +'<span class="cost">$'+esc(b.cost)+'</span></div><div class="desc">'+esc(b.desc)+'</div></div>').join('');
+
+document.getElementById('endGrid').innerHTML = END_CONDITIONS.map(e=>
+  '<div><div class="n">'+e.n+'</div><div class="t">'+esc(e.title)+'</div><div class="d">'+esc(e.desc)+'</div></div>').join('');
+
+document.getElementById('scoreRows').innerHTML = SCORING.map(s=>
+  '<div class="row"><div><h3>'+esc(s.title)+'</h3><div class="d">'+esc(s.desc)+'</div></div>'
+  +'<div class="tag">'+esc(s.tag)+'</div></div>').join('');
+
+document.getElementById('flowTabs').innerHTML = FLOW.map((f,i)=>
+  '<button data-step="'+i+'" onclick="flowGo('+i+')">'
+  +'<div class="fn">'+f.n+'</div><div class="ft">'+esc(f.title)+'</div></button>').join('');
+
+/* ═══════════════ 탭 전환 ═══════════════ */
+function go(id){
+  document.querySelectorAll('.tab-page').forEach(el=>el.classList.toggle('on', el.id==='tab-'+id));
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on', b.dataset.tab===id));
+  // 플레이 탭: 처음 열 때에만 게임을 iframe으로 로드 (미리 로드하면 봇 게임이 뒤에서 돌아간다)
+  if(id==='play'){
+    const f=document.getElementById('playFrame');
+    if(!f.src) f.src='푸에르토리코1897_게임.html';
+  }
+  window.scrollTo(0,0);
+}
+
+/* ═══════════════ 역할 아코디언 ═══════════════ */
+function roleToggle(i){
+  const row=document.getElementById('role-'+i);
+  const open=row.classList.toggle('open');
+  row.querySelector('.mark').textContent = open?'−':'+';
+  row.querySelector('.role-head').setAttribute('aria-expanded', open);
+}
+
+/* ═══════════════ 라운드 흐름 스테퍼 ═══════════════ */
+let flowStep=0, flowPlaying=false, flowTimer=null;
+function flowRender(){
+  const f=FLOW[flowStep];
+  document.querySelectorAll('#flowTabs button').forEach((b,i)=>b.classList.toggle('on', i===flowStep));
+  document.getElementById('flowBar').style.width=((flowStep+1)/FLOW.length*100).toFixed(1)+'%';
+  document.getElementById('flowTitle').textContent=f.title;
+  document.getElementById('flowDesc').textContent=f.desc;
+  document.getElementById('flowNote').textContent=f.note;
+  document.getElementById('flowSeats').innerHTML=SEAT_NAMES.map((nm,i)=>
+    '<div class="seat'+(f.seat===i?' on':'')+'"><span class="nm">'+esc(nm)+'</span>'
+    +'<span class="rl">'+esc(f.roles[i])+'</span></div>').join('');
+  document.getElementById('flowPlay').textContent = flowPlaying?'■ 정지':'▶ 자동 재생';
+}
+function flowGo(i){ flowStep=i; flowStop(); flowRender(); }
+function flowPrev(){ flowStep=(flowStep+FLOW.length-1)%FLOW.length; flowStop(); flowRender(); }
+function flowNext(){ flowStep=(flowStep+1)%FLOW.length; flowStop(); flowRender(); }
+function flowStop(){ flowPlaying=false; clearInterval(flowTimer); }
+function flowToggle(){
+  flowPlaying=!flowPlaying;
+  clearInterval(flowTimer);
+  if(flowPlaying) flowTimer=setInterval(()=>{ flowStep=(flowStep+1)%FLOW.length; flowRender(); },1800);
+  flowRender();
+}
+
+flowRender();
+go('intro');
+</script>
+</body>
+</html>

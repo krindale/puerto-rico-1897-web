@@ -1365,6 +1365,46 @@ function loadSave(){
 
 /* ═══════════════════════════ 렌더링 ═══════════════════════════ */
 const $app=document.getElementById('app');
+
+/* ── 부분 렌더 인프라 ──
+   render()는 여전히 매번 모든 섹션의 HTML 문자열을 새로 만들지만, DOM에는 "문자열이 지난번과
+   달라진 섹션"만 써넣는다. 안 바뀐 섹션은 건드리지 않으므로 진행 중인 CSS 애니메이션이 안 끊기고,
+   이미지가 다시 그려지지 않으며, 호버 상태가 유지된다. AI 턴처럼 렌더가 잦은 구간의 끊김이 이걸로 사라진다.
+   섹션을 새로 추가할 때는 스켈레톤에 컨테이너를 만들고 setPart(id, html)로 채울 것. */
+let rdCache={};        // 섹션 id → 마지막으로 써넣은 HTML 문자열
+let rdBoards=[];       // 플레이어 보드별 HTML 문자열 (인원수만큼)
+let rdSkeleton=false;  // $app 안에 게임 스켈레톤이 세워져 있는가
+function rdReset(){ rdCache={}; rdBoards=[]; rdSkeleton=false; }
+function setPart(id, html){
+  if(rdCache[id]===html) return false;
+  rdCache[id]=html;
+  const el=document.getElementById(id);
+  if(el) el.innerHTML=html;
+  return true;
+}
+function setCls(id, cls){
+  if(rdCache['cls:'+id]===cls) return;
+  rdCache['cls:'+id]=cls;
+  const el=document.getElementById(id);
+  if(el) el.className=cls;
+}
+/* 플레이어 보드: 바뀐 보드만 통째로 교체 (자리 수는 게임 중 불변) */
+function setBoards(parts){
+  const cont=document.getElementById('rd-players');
+  if(!cont) return;
+  if(cont.children.length!==parts.length){
+    cont.innerHTML=parts.join('');
+  } else {
+    for(let i=0;i<parts.length;i++){
+      if(rdBoards[i]!==parts[i]){
+        const tmp=document.createElement('div');
+        tmp.innerHTML=parts[i];
+        cont.replaceChild(tmp.firstElementChild, cont.children[i]);
+      }
+    }
+  }
+  rdBoards=parts;
+}
 /* 상품 토큰: 글자 없이 색으로만. 이름이 필요한 곳은 옆에 텍스트로 쓴다. */
 function goodChip(t){
   const g=GOODS[t];
@@ -1384,6 +1424,7 @@ function buildingTip(B){
 let setupSeats=[{name:'플레이어 1',ai:false},{name:'AI 가영',ai:true},{name:'AI 나정',ai:true},{name:'AI 도준',ai:true}];
 let setupN=4;
 function renderSetup(){
+  rdReset();   // 설정 화면은 통짜 렌더 — 게임 스켈레톤·캐시를 비운다
   const canResume=!!localStorage.getItem('pr1897_save');
   let seatRows='';
   for(let i=0;i<setupN;i++){
@@ -1663,7 +1704,6 @@ function render(){
       +'</div>';
   });
   // 자리 순서 그대로 — 펼친 보드가 자기 자리에서 열린다 (접힘·오픈·접힘·접힘 …)
-  const playersHtml=boardParts.join('');
 
   /* 액션 바 */
   let bar='';
@@ -1674,9 +1714,6 @@ function render(){
   } else if(curPi!==null && P(curPi).ai){
     bar='<div class="actionbar"><div class="inner"><span class="who">'+esc(P(curPi).name)+'</span><span class="msg">AI가 생각 중…</span></div></div>';
   }
-
-  /* 로그 */
-  const logHtml='<div class="log" id="logbox">'+G.log.slice(-120).map(l=>'<div>'+l+'</div>').join('')+'</div>';
 
   /* 종료 모달 */
   let modal='';
@@ -1704,30 +1741,55 @@ function render(){
       +'</div></div>';
   }
 
-  $app.innerHTML=
-  '<div class="hdr"><h1>푸에르토리코</h1><span class="sub">1897</span>'
-  +'<div class="meta"><span>라운드 <b>'+G.round+'</b></span><span>주지사 <b>'+esc(P(G.governor).name)+'</b></span>'
-  +(G.phase?'<span>단계 <b>'+ROLES[G.phase.id].ph+'</b></span>':'')
-  +'<button onclick="confirmNew()">새 게임</button></div></div>'
-  +'<div class="layout" style="margin-top:4px">'
-    +'<div class="main-col">'
-      +'<div><div class="sec-title">역할</div><div class="roles">'+rolesHtml+'</div></div>'
-      +'<div class="sec"><div class="sec-title">플레이어<span class="kbd-hint">←/→ 키 또는 클릭으로 보드 전환</span></div><div class="players">'+playersHtml+'</div></div>'
-    +'</div>'
-    +'<div class="side-col">'
-      +'<div class="card'+cardFxCls('#card-plants')+'" id="card-plants"><div class="sec-title">공개된 농장</div><div class="plants">'+plantsHtml+'</div></div>'
-      +'<div class="card'+cardFxCls('#card-ships')+'" id="card-ships"><div class="sec-title">수송선</div><div class="ships">'+shipsHtml+'</div></div>'
-      +'<div class="cardrow">'
-        +'<div class="card'+cardFxCls('#card-market')+'" id="card-market"><div class="sec-title">상점</div><div class="market-slots">'+mkt+'</div><div class="hintline">가득 차면 비워짐 · 중복 종류 판매 불가</div></div>'
-        +'<div class="card'+cardFxCls('#card-labor')+'" id="card-labor"><div class="sec-title">인력 시장</div>'+laborHtml+'</div>'
+  /* ── 조립: 스켈레톤은 한 번만 세우고, 이후에는 달라진 섹션만 갈아끼운다 ── */
+  if(!rdSkeleton){
+    rdSkeleton=true; rdCache={}; rdBoards=[];
+    $app.innerHTML=
+    '<div class="hdr" id="rd-hdr"></div>'
+    +'<div class="layout" style="margin-top:4px">'
+      +'<div class="main-col">'
+        +'<div><div class="sec-title">역할</div><div class="roles" id="rd-roles"></div></div>'
+        +'<div class="sec"><div class="sec-title">플레이어<span class="kbd-hint">←/→ 키 또는 클릭으로 보드 전환</span></div><div class="players" id="rd-players"></div></div>'
       +'</div>'
-      +'<div class="card'+cardFxCls('#card-supply')+'" id="card-supply"><div class="sec-title">공급처</div>'+supHtml+'</div>'
-      +logHtml
+      +'<div class="side-col">'
+        +'<div class="card" id="card-plants"><div class="sec-title">공개된 농장</div><div class="plants" id="rd-plants"></div></div>'
+        +'<div class="card" id="card-ships"><div class="sec-title">수송선</div><div class="ships" id="rd-ships"></div></div>'
+        +'<div class="cardrow">'
+          +'<div class="card" id="card-market"><div class="sec-title">상점</div><div class="market-slots" id="rd-market"></div><div class="hintline">가득 차면 비워짐 · 중복 종류 판매 불가</div></div>'
+          +'<div class="card" id="card-labor"><div class="sec-title">인력 시장</div><div id="rd-labor"></div></div>'
+        +'</div>'
+        +'<div class="card" id="card-supply"><div class="sec-title">공급처</div><div id="rd-supply"></div></div>'
+        +'<div class="log" id="logbox"></div>'
+      +'</div>'
     +'</div>'
-  +'</div>'
-  +bar+modal+shopPop;
+    +'<div id="rd-bar"></div><div id="rd-modal"></div><div id="rd-shop"></div>';
+  }
 
-  const lb=document.getElementById('logbox'); if(lb) lb.scrollTop=lb.scrollHeight;
+  setPart('rd-hdr',
+    '<h1>푸에르토리코</h1><span class="sub">1897</span>'
+    +'<div class="meta"><span>라운드 <b>'+G.round+'</b></span><span>주지사 <b>'+esc(P(G.governor).name)+'</b></span>'
+    +(G.phase?'<span>단계 <b>'+ROLES[G.phase.id].ph+'</b></span>':'')
+    +'<button onclick="confirmNew()">새 게임</button></div>');
+  setPart('rd-roles', rolesHtml);
+  setBoards(boardParts);
+  setPart('rd-plants', plantsHtml);
+  setPart('rd-ships', shipsHtml);
+  setPart('rd-market', mkt);
+  setPart('rd-labor', laborHtml);
+  setPart('rd-supply', supHtml);
+  /* 사이드 카드 번쩍임: 클래스만 갈아끼운다 (innerHTML은 건드리지 않음 → 애니메이션 안 끊김) */
+  setCls('card-plants','card'+cardFxCls('#card-plants'));
+  setCls('card-ships','card'+cardFxCls('#card-ships'));
+  setCls('card-market','card'+cardFxCls('#card-market'));
+  setCls('card-labor','card'+cardFxCls('#card-labor'));
+  setCls('card-supply','card'+cardFxCls('#card-supply'));
+  setPart('rd-bar', bar);
+  setPart('rd-modal', modal);
+  setPart('rd-shop', shopPop);
+  /* 로그: 내용이 바뀐 렌더에서만 바닥으로 스크롤 */
+  if(setPart('logbox', G.log.slice(-120).map(l=>'<div>'+l+'</div>').join(''))){
+    const lb=document.getElementById('logbox'); if(lb) lb.scrollTop=lb.scrollHeight;
+  }
 }
 
 function renderActionBar(pd){
