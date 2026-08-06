@@ -103,7 +103,7 @@
     box-shadow:0 8px 30px rgba(0,0,0,.45); border-radius:4px; pointer-events:none; background:#fff; }
   /* 역할 확대: 오버레이 대신 타일이 제자리에서 커진다 (카드게임식) */
   .role{ transition:transform .14s ease; transform-origin:top center; }
-  .role:hover{ transform:scale(1.22); z-index:60; box-shadow:0 8px 20px rgba(0,0,0,.3); }
+  .role.pickable:hover{ transform:scale(1.22); z-index:60; box-shadow:0 8px 20px rgba(0,0,0,.3); }  /* 내가 고를 수 있는 타일만 호버 확대 */
 
   /* board strip: ships / market / supply / display */
   .strip{ display:grid; grid-template-columns:auto auto 1fr auto; gap:14px; align-items:start; }
@@ -156,7 +156,7 @@
   .players{ display:flex; gap:8px; align-items:stretch; }  /* 접힌 패널도 펼친 보드와 같은 높이 */
   /* 펼친 보드는 내용 폭에 맞게 — 억지로 늘리면 내부에 빈 공간이 생긴다 */
   .pboard{ background:rgba(246,240,222,.8); border:1px solid var(--line); border-radius:3px; padding:8px 10px; flex:0 1 auto; min-width:0; }
-  .pboard.cur{ border-left-width:10px !important; }  /* 현재 차례: 검은 테두리 대신 본인 색 띠를 두껍게 */
+  .pboard.cur{ box-shadow:inset 6px 0 0 var(--pc); }  /* 현재 차례: 본인 색 띠가 두꺼워 보이지만 레이아웃은 그대로 */
   /* 요약 카드: 자리 순서대로 좌우 배치, 남는 폭을 나눠 가진다 */
   .pboard.collapsed{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:3px; padding:6px 9px; cursor:pointer; }
   .pboard.collapsed:hover{ background:#f3ecdb; }
@@ -206,9 +206,10 @@
     background:radial-gradient(circle at 35% 30%, #f4e096, #e8c95c 55%, #d4af4a);
     box-shadow:inset 0 0 0 2px rgba(184,154,48,.45);
     display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#7a5f16; }
-  .tok-vp{ flex-shrink:0; width:20px; height:22px; background:var(--gold);
+  .tok-vp{ flex-shrink:0; width:20px; height:22px;
+    background:radial-gradient(circle at 35% 30%, #e8e8e3, #bcbcb4 55%, #97978e);  /* 은회색 승점 칩 */
     clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
-    display:flex; align-items:center; justify-content:center; font-size:7.5px; font-weight:800; letter-spacing:.04em; color:#fff; }
+    display:flex; align-items:center; justify-content:center; font-size:7.5px; font-weight:800; letter-spacing:.04em; color:#4b4b45; }
   .pres .wtok{ width:20px; height:20px; flex-shrink:0; }
   @media (max-width:1000px){ .players{ flex-wrap:wrap; } .pboard.collapsed{ flex:1 1 45%; } }
   .phead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
@@ -272,6 +273,15 @@
   .actionbar button.hot{ background:var(--accent); border-color:var(--accent); font-weight:700; }
   .actionbar button.hot:hover{ background:var(--accent-deep); }
   .actionbar button:disabled{ opacity:.4; cursor:default; }
+
+  /* 배치 팝 이펙트: 새로 놓인 타일·일꾼이 커졌다 자리잡으며 금빛으로 빛난다 */
+  @keyframes fxpop{ 0%{ transform:scale(1.55); filter:brightness(1.5) drop-shadow(0 0 12px rgba(232,178,60,.95)); }
+    55%{ transform:scale(.96); filter:brightness(1.15) drop-shadow(0 0 6px rgba(232,178,60,.5)); }
+    100%{ transform:scale(1); filter:none; } }
+  .fx-pop{ animation:fxpop .95s ease; z-index:6; }
+  @keyframes cardflash{ 0%{ box-shadow:0 0 0 3px rgba(217,127,34,.85), 0 0 20px rgba(217,127,34,.6); }
+    100%{ box-shadow:none; } }
+  .cardflash{ animation:cardflash 1.3s ease; }
 
   /* 이벤트 토스트: 양피지 카드 + 플레이어 색 띠, 해당 패널 위에서 떠오르며 사라진다 */
   .toast{ position:fixed; transform:translateX(-50%); z-index:300; pointer-events:none;
@@ -415,19 +425,27 @@ let G = null;           // 게임 상태 (JSON 직렬화 가능)
 let uiSel = null;       // 임시 UI 선택 상태 (모집 배치 등)
 
 /* ── 이벤트 토스트 (뷰 전용 — 게임 상태와 무관, 헤드리스에선 무시) ── */
+/* 방금 배치된 것 강조: 액션한 플레이어 보드로 화면을 옮기고, 새 타일/일꾼에 팝 이펙트 */
+let fxMark=null;
+let cardFx=null;   // 사건이 일어난 사이드 카드 번쩍임
+function cardFxCls(id){ return (cardFx && cardFx.sel===id && Date.now()-cardFx.t<1400) ? ' cardflash' : ''; }
+function markFx(pi, key){ fxMark={key:key, t:Date.now()}; uiBoardSel=pi; }
+function fxCls(key){ return (fxMark && fxMark.key===key && Date.now()-fxMark.t<1900) ? ' fx-pop' : ''; }
+
 let toastLive={};
 function toast(html, sel, big, color){
   if(typeof document==='undefined'||!document.body||!document.createElement) return;
   try{
     const key='@center';  // 전부 중앙에 뜨므로 한 줄로 선다
+    if(sel) cardFx={sel:sel, t:Date.now()};   // 해당 패널 번쩍
     const t=document.createElement('div');
     t.className='toast'+(big?' big':'');
     if(color) t.style.setProperty('--tc', color);
     t.innerHTML=html;
-    // 모든 알림은 화면 가운데(상단부)에서 뜬다 — sel은 겹침 그룹 구분에만 사용
-    let x=Math.round(innerWidth/2), y=big?Math.round(innerHeight*0.26):Math.round(innerHeight*0.16);
+    // 모든 알림은 화면 세로 중앙에서 뜨고, 겹치면 위로 줄 선다
+    let x=Math.round(innerWidth/2), y=big?Math.round(innerHeight*0.3):Math.round(innerHeight*0.46);
     const n=(toastLive[key]||0); toastLive[key]=n+1;         // 같은 자리에 겹치면 위로 줄 선다
-    t.style.left=x+'px'; t.style.top=(y-n*36)+'px';
+    t.style.left=x+'px'; t.style.top=(y-n*58)+'px';  // 이미지 토스트 높이만큼 간격
     document.body.appendChild(t);
     setTimeout(()=>{ try{t.remove();}catch(_){} toastLive[key]=Math.max(0,(toastLive[key]||1)-1); }, big?2600:2400);
   }catch(e){}
@@ -659,6 +677,7 @@ function settlerCanQuarry(pi){
 }
 function settlerPlace(p, type, fromDeck){
   p.land.push({type, w:0});
+  if(p.ai) markFx(p.i, 'land-'+p.i+'-'+(p.land.length-1));   // 이펙트는 봇 행동에만
   toast(imgTag('농장',PLANT_NM[type],'ticon')+'<span>'+pname(p)+' — <b>'+PLANT_NM[type]+'</b> 개척</span>', '#card-plants', false, PCOLOR[p.i]);
   // 병원: 더미(대규모 농장)로 가져온 타일에는 적용 안 됨
   if(!fromDeck && occB(p,'b_hosp')){
@@ -769,6 +788,7 @@ function mayorAutoPlace(p){
   score.sort((a,b)=>b.v-a.v);
   for(const s of score){ if(pool<=0) break; s.apply(); pool--; }
   p.stored=pool;
+  if(p.ai) markFx(p.i, 'wk-'+p.i);   // 이펙트는 봇 배치에만
 }
 /* 사람용 자동 배치: 이미 놓인 일꾼은 건드리지 않고, 보관 일꾼만 좋은 빈 칸부터 채운다 */
 function mayorAutoFill(p){
@@ -856,6 +876,7 @@ function actBuild(id){
   const cost=buildCost(p,id,isC);
   p.coins-=cost; G.supply.stock[id]--;
   const b={id,w:0}; p.buildings.push(b);
+  if(p.ai) markFx(pd.player, 'bld-'+pd.player+'-'+id);   // 이펙트는 봇 행동에만
   log(pname(p)+' — <b>'+BUILDINGS[id].nm+'</b> 건설 ('+cost+'주화)');
   toast(imgTag('건물',BUILDINGS[id].nm,'ticon')+'<span>'+pname(p)+' — <b>'+BUILDINGS[id].nm+'</b> 건설 ('+cost+'주화)</span>', '[data-pi="'+pd.player+'"]', false, PCOLOR[p.i]);
   if(occB(p,'b_univ')){
@@ -1286,7 +1307,7 @@ function schedule(){
   const p=(pd.player!==undefined)?P(pd.player):null;
   if(p && p.ai){
     clearTimeout(aiTimer);
-    aiTimer=setTimeout(()=>{ try{ aiDecide(); }catch(e){ console.error(e); log('⚠️ AI 오류: '+e.message); render(); } }, 1200);
+    aiTimer=setTimeout(()=>{ try{ aiDecide(); }catch(e){ console.error(e); log('⚠️ AI 오류: '+e.message); render(); } }, 2500);
   }
 }
 
@@ -1490,7 +1511,7 @@ function render(){
       const farmList=Object.keys(farm).map(t=>'<div>'+PLANT_NM[t]+' ×'+farm[t]+'</div>').join('')||'<span class="dim">—</span>';
       const bldList=p.buildings.map(b=>'<div class="'+(b.w>0?'':'un')+'"'+(b.w>0?'':' title="일꾼 미배치"')+'>'+BUILDINGS[b.id].nm+'</div>').join('')||'<div class="dim">—</div>';
       const goodsRow=GTYPES.filter(t=>p.goods[t]>0).map(t=>'<span class="cg">'+goodChip(t)+'×'+p.goods[t]+'</span>').join('')||'<span class="dim">—</span>';
-      return '<div class="pboard collapsed'+(isCur?' cur':'')+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+'" onclick="uiSelectBoard('+p.i+')" title="클릭하면 펼칩니다">'
+      return '<div class="pboard collapsed'+(isCur?' cur':'')+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+';--pc:'+PCOLOR[p.i]+'" onclick="uiSelectBoard('+p.i+')" title="클릭하면 펼칩니다">'
         +'<div class="chead"><span class="pdot" style="background:'+PCOLOR[p.i]+'"></span>'+esc(p.name)+tags+'</div>'
         +'<div class="cstat"><span class="cpair"><span class="tok-coin sm">$</span><b>'+p.coins+'</b></span><span class="cpair"><span class="tok-vp sm">VP</span><b>'+p.vp+'</b></span><span class="cpair"><span class="wtok smw"></span><b>'+totalWorkersOf(p)+'</b></span></div>'
         +'<div class="csec">농장 '+p.land.length+'</div><div class="crow">'+farmList+'</div>'
@@ -1506,10 +1527,10 @@ function render(){
       if(l){
         const g=GOODS[l.type];
         const clickable=isMayorMe;
-        land+='<div class="cell land'+(clickable?' clickable':'')+'" '+(clickable?'onclick="uiToggleLand('+p.i+','+i+')"':'')+'>'
+        land+='<div class="cell land'+(clickable?' clickable':'')+fxCls('land-'+p.i+'-'+i)+'" '+(clickable?'onclick="uiToggleLand('+p.i+','+i+')"':'')+'>'
           +'<div class="art" style="background:'+(g?g.color+'26':'#ddd')+'">'
           +imgTag('농장',PLANT_NM[l.type])
-          +(l.w?'<span class="wk"><span class="wtok"></span></span>':'')+'</div>'
+          +(l.w?'<span class="wk"><span class="wtok'+fxCls('wk-'+p.i)+'"></span></span>':'')+'</div>'
           +'<div class="lbl">'+PLANT_NM[l.type]+'</div></div>';
       } else land+='<div class="cell land empty"></div>';
     }
@@ -1523,17 +1544,16 @@ function render(){
       // 고급 건물은 좌상단 비용 코인을 감싼 원이 일꾼 자리 (22%, 29%)
       let wk='';
       for(let s=0;s<b.w;s++){
+        // 인쇄된 원 위치 — 23종 전수 픽셀 실측 (비용 코인 중심 = 1번 원):
+        // 생산 공장 (21.4, 59) + 24.5%씩 · 일반 상업 (23, 64.3) · 고급 (23.9, 30.2)
         let x,y;
-        if(B.size===2){ x=23; y=30; }
-        else{
-          const x0=B.slots===1?22:B.slots===2?22:21;
-          const step=B.slots===2?24:25;
-          x=x0+s*step; y=60;
-        }
-        wk+='<span class="wtok" style="left:'+x+'%;top:'+y+'%"></span>';
+        if(B.size===2){ x=23.9; y=30.2; }
+        else if(B.kind==='prod'){ x=21.4+s*24.5; y=59; }
+        else { x=23; y=64.3; }
+        wk+='<span class="wtok'+fxCls('wk-'+p.i)+'" style="left:'+x+'%;top:'+y+'%"></span>';
       }
       const clickable=isMayorMe;
-      blds+='<div class="cell'+(B.size===2?' b2':'')+(clickable?' clickable':'')+'" '+(clickable?'onclick="uiToggleBld('+p.i+',\''+b.id+'\')"':'')
+      blds+='<div class="cell'+(B.size===2?' b2':'')+(clickable?' clickable':'')+fxCls('bld-'+p.i+'-'+b.id)+'" '+(clickable?'onclick="uiToggleBld('+p.i+',\''+b.id+'\')"':'')
         +' title="'+escAttr(buildingTip(B)+(b.w<B.slots?'\n일꾼 미배치 — 효과가 발동하지 않습니다.':''))+'">'
         +'<div class="bimg">'+imgTag('건물',B.nm)+wk+'</div>'
         +imgTag('건물',B.nm,'zoom')
@@ -1559,7 +1579,7 @@ function render(){
         +'<div class="pres-goods">'+goodsCells+'</div>'
       +'</div>'
       +'</div>';
-    return '<div class="pboard'+(isCur?' cur':'')+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+'">'
+    return '<div class="pboard'+(isCur?' cur':'')+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+';--pc:'+PCOLOR[p.i]+'">'
       +'<div class="phead"><span class="pdot" style="background:'+PCOLOR[p.i]+'"></span><span class="nm">'+esc(p.name)+'</span>'+tags+'</div>'
       +'<div class="landrow">'
         +'<div><div class="sec-title" style="margin-bottom:3px">토지 (' +p.land.length+'/12)</div><div class="grid12">'+land+'</div></div>'
@@ -1619,13 +1639,13 @@ function render(){
       +'<div class="sec"><div class="sec-title">플레이어<span class="kbd-hint">←/→ 키 또는 클릭으로 보드 전환</span></div><div class="players">'+playersHtml+'</div></div>'
     +'</div>'
     +'<div class="side-col">'
-      +'<div class="card" id="card-plants"><div class="sec-title">공개된 농장</div><div class="plants">'+plantsHtml+'</div></div>'
-      +'<div class="card" id="card-ships"><div class="sec-title">수송선</div><div class="ships">'+shipsHtml+'</div></div>'
+      +'<div class="card'+cardFxCls('#card-plants')+'" id="card-plants"><div class="sec-title">공개된 농장</div><div class="plants">'+plantsHtml+'</div></div>'
+      +'<div class="card'+cardFxCls('#card-ships')+'" id="card-ships"><div class="sec-title">수송선</div><div class="ships">'+shipsHtml+'</div></div>'
       +'<div class="cardrow">'
-        +'<div class="card" id="card-market"><div class="sec-title">상점</div><div class="market-slots">'+mkt+'</div><div class="hintline">가득 차면 비워짐 · 중복 종류 판매 불가</div></div>'
-        +'<div class="card" id="card-labor"><div class="sec-title">인력 시장</div>'+laborHtml+'</div>'
+        +'<div class="card'+cardFxCls('#card-market')+'" id="card-market"><div class="sec-title">상점</div><div class="market-slots">'+mkt+'</div><div class="hintline">가득 차면 비워짐 · 중복 종류 판매 불가</div></div>'
+        +'<div class="card'+cardFxCls('#card-labor')+'" id="card-labor"><div class="sec-title">인력 시장</div>'+laborHtml+'</div>'
       +'</div>'
-      +'<div class="card" id="card-supply"><div class="sec-title">공급처</div>'+supHtml+'</div>'
+      +'<div class="card'+cardFxCls('#card-supply')+'" id="card-supply"><div class="sec-title">공급처</div>'+supHtml+'</div>'
       +logHtml
     +'</div>'
   +'</div>'
