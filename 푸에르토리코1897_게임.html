@@ -76,10 +76,16 @@
   /* 호버 확대: 레이아웃을 건드리지 않는 복제 이미지 방식.
      원본 크기와 무관하게 고정 폭으로 확대 (작은 원본도 같은 크기로 보이게) */
   img.zoom{ display:none; }
-  .role:hover img.zoom, .shopb:hover img.zoom, .cell:not(.land):hover img.zoom{
+  /* 건설 중에는 구입 가능한 건물만 호버 확대, 구경 모드에서는 전체 확대 */
+  .shop-modal.buying .shopb.buyable:hover img.zoom,
+  .shop-modal:not(.buying) .shopb:hover img.zoom,
+  .cell:not(.land):hover img.zoom{
     display:block; position:fixed; inset:auto; left:50%; top:50%; transform:translate(-50%,-50%);
     width:380px; height:auto; z-index:90;
     box-shadow:0 8px 30px rgba(0,0,0,.45); border-radius:4px; pointer-events:none; background:#fff; }
+  /* 역할 확대: 오버레이 대신 타일이 제자리에서 커진다 (카드게임식) */
+  .role{ transition:transform .14s ease; transform-origin:top center; }
+  .role:hover{ transform:scale(1.22); z-index:60; box-shadow:0 8px 20px rgba(0,0,0,.3); }
 
   /* board strip: ships / market / supply / display */
   .strip{ display:grid; grid-template-columns:auto auto 1fr auto; gap:14px; align-items:start; }
@@ -93,18 +99,14 @@
   .ship .cap b{ color:var(--ink); font-size:11px; }
   /* 적재 칸은 위아래 2줄 (열 수는 배 크기에 따라 JS가 지정) — 칸 크기는 공급처 토큰과 동일 */
   .ship .slots{ display:grid; gap:2px; justify-content:center; }
-  /* 상품 토큰: 육각 기둥 실루엣, 단색 + 실선 테두리.
-     clip-path에는 border가 적용되지 않아 바깥 레이어(어두운 색)를 테두리로 쓴다.
+  /* 상품 토큰: 보드게임식 자원 큐브(아이소메트릭) — 단색 + 모서리 실선 3개로 입체 표현.
      글자는 넣지 않는다(색으로 구분, 이름은 옆에 텍스트로). */
   .goodchip{ position:relative; display:inline-block; width:20px; height:23px;
-    clip-path:polygon(25% 0,75% 0,100% 18%,100% 82%,75% 100%,25% 100%,0 82%,0 18%);
-    background:rgba(122,111,94,.5); }  /* 부드러운 웜톤 테두리 */
-  .goodchip::before{ content:''; position:absolute; inset:1.5px;
-    clip-path:polygon(25% 0,75% 0,100% 18%,100% 82%,75% 100%,25% 100%,0 82%,0 18%);
-    background:var(--gc,#999); }
-  /* 내부 모서리: 윗면 육각의 아랫변 + 앞쪽 세로 모서리 2개 — 이 선들이 있어야 기둥으로 보인다 */
-  .goodchip::after{ content:''; position:absolute; inset:0;
-    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 27'%3E%3Cpath d='M0 4.9L6 9.7L18 9.7L24 4.9M6 9.7V27M18 9.7V27' fill='none' stroke='rgba(0,0,0,0.35)' stroke-width='1.2'/%3E%3C/svg%3E") no-repeat;
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+    background:var(--gc,#999);
+    filter:drop-shadow(0 0 1px rgba(90,77,61,.8)); }
+  .goodchip::before{ content:''; position:absolute; inset:0;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 23'%3E%3Cpath d='M10 11.5L0 5.75M10 11.5L20 5.75M10 11.5V23' fill='none' stroke='rgba(0,0,0,0.35)' stroke-width='1.2'/%3E%3C/svg%3E") no-repeat;
     background-size:100% 100%; }
   /* 빈 적재 칸: 흐린 테두리의 원 */
   .slot{ position:relative; width:20px; height:20px; border-radius:50%; border:1px solid #ddd3c0; background:#fff;
@@ -151,14 +153,28 @@
   .dim{ color:var(--dim); }
   .pboard.collapsed .expand{ display:none; }
   .kbd-hint{ letter-spacing:0; text-transform:none; color:var(--dim); font-weight:400; margin-left:8px; }
-  /* 펼친 보드: 토지 옆 빈자리에 자원 패널이 붙는다 */
-  .landrow{ display:flex; gap:12px; align-items:flex-start; }
-  .pres{ width:92px; flex-shrink:0; background:#fff; border:1px solid var(--line); border-radius:3px; padding:8px 9px; display:flex; flex-direction:column; gap:5px; font-size:11px; }
-  .pres-row{ display:flex; justify-content:space-between; align-items:center; gap:6px; white-space:nowrap; }
-  .pres-row b{ font-size:13.5px; }
-  .pres-h{ font-size:9px; letter-spacing:.22em; color:var(--gold); font-weight:700; margin-top:3px; }
-  .pres-g{ display:flex; align-items:center; gap:6px; }
-  .pres-g b{ margin-left:auto; }
+  /* 펼친 보드: 토지 옆 빈자리를 자원 패널이 가득 채운다
+     (아래는 토지 타일 바닥, 오른쪽은 건설 부지 오른쪽 끝까지) */
+  .landrow{ display:flex; gap:12px; align-items:stretch; }
+  /* 자원 패널: 보드와 같은 언어 — 빈 칸 톤의 감싸는 레이어 + 타일 그래픽과 같은 토큰 아이콘.
+     토지 옆 영역을 가득 채우고, 내용이 넘치면 세로 기준으로 다음 열에 이어진다 */
+  .preswrap{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  /* 높이 = 토지 그리드(타일 2줄 + 간격)와 동일 — 아래 끝이 토지 타일 바닥과 맞는다 */
+  .pres{ height:calc(59px * 92 / 70 * 2 + 4px); min-width:0; display:flex; flex-direction:column; flex-wrap:wrap; align-content:flex-start;
+    gap:6px; column-gap:22px; font-size:12px;
+    background:#f7f2e8; border:1px solid var(--line); border-radius:3px; padding:9px 12px; }
+  .pres-g{ display:flex; align-items:center; gap:7px; white-space:nowrap; width:118px; }
+  .pres-g b{ margin-left:auto; font-size:13.5px; }
+  .pres-g.dim{ color:var(--dim); }
+  /* 타일에 인쇄된 것과 같은 금화(숫자 포함)·검은 육각 승점 */
+  .tok-coin{ flex-shrink:0; width:22px; height:22px; border-radius:50%; border:1px solid #b89a30;
+    background:radial-gradient(circle at 35% 30%, #f4e096, #e8c95c 55%, #d4af4a);
+    box-shadow:inset 0 0 0 2px rgba(184,154,48,.45);
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#7a5f16; }
+  .tok-vp{ flex-shrink:0; width:20px; height:22px; background:var(--gold);
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+    display:flex; align-items:center; justify-content:center; font-size:7.5px; font-weight:800; letter-spacing:.04em; color:#fff; }
+  .pres .wtok{ width:20px; height:20px; flex-shrink:0; }
   @media (max-width:1000px){ .players{ flex-wrap:wrap; } .pboard.collapsed{ flex:1 1 45%; } }
   .phead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
   .phead .nm{ font-weight:700; font-size:15px; }
@@ -240,7 +256,9 @@
   .shopb .inf.ok span{ color:var(--dim); font-weight:400; }
   .shopb .inf.no{ text-align:center; color:#8d5340; }
   .shopb .band{ position:absolute; left:0; top:0; bottom:0; width:4px; }
-  .shopb img.card{ display:block; width:100%; height:auto; }
+  /* 스캔마다 미세하게 다른 이미지 비율을 강제로 통일 — 고급 건물(마지막 구역)만 원본 비율 유지 */
+  .shopb img.card{ display:block; width:100%; height:105px; object-fit:cover; }
+  .zone:last-of-type .shopb img.card{ height:auto; object-fit:fill; }
   .shopb img.card ~ .imgless-only{ display:none; }  /* 이미지 로드 성공 시 이름 숨김(폴백 전용) */
   .zone{ display:flex; gap:8px; align-items:stretch; margin-top:5px; }
   .zone:first-of-type{ margin-top:0; }
@@ -1234,7 +1252,6 @@ function render(){
     const tip=R.rn+'. '+R.nm+' — '+R.ph+'\n'+R.desc+(r.coins>0?'\n올려둔 주화 '+r.coins+'개를 함께 가져갑니다.':'');
     return '<div class="'+cls+'" '+(pickable?'onclick="pickRole('+curPi+','+i+')"':'')+' title="'+escAttr(tip)+'">'
       +imgTag('역할',R.nm,'img')
-      +imgTag('역할',R.nm,'zoom')
       +'<div class="rolefb">'+R.rn+' '+R.nm+'<br><span>'+R.ph+'</span></div>'
       +(r.coins>0?'<div class="coin">'+r.coins+'</div>':'')
       +(r.takenBy!==null?'<div class="took">'+esc(P(r.takenBy).name)+'</div>':'')
@@ -1392,16 +1409,16 @@ function render(){
       .map(t=>'<div class="pres-g">'+goodChip(t)+' '+PLANT_NM[t]+' <b>×'+p.goods[t]+'</b></div>').join('')
       ||'<div class="pres-g dim">없음</div>';
     const pres='<div class="pres">'
-      +'<div class="pres-row">💰 주화 <b>'+p.coins+'</b></div>'
-      +'<div class="pres-row">⬡ 승점 <b>'+p.vp+'</b></div>'
-      +'<div class="pres-row">보관 일꾼 <b>'+p.stored+'</b></div>'
-      +'<div class="pres-h">상품</div>'+goodsRows
+      +'<div class="pres-g"><span class="tok-coin">$</span>주화 <b>'+p.coins+'</b></div>'
+      +'<div class="pres-g"><span class="tok-vp">VP</span>승점 <b>'+p.vp+'</b></div>'
+      +'<div class="pres-g"><span class="wtok"></span>일꾼 <b>'+p.stored+'</b></div>'
+      +'<div class="sec-title" style="margin:5px 0 2px">상품</div>'+goodsRows
       +'</div>';
     return '<div class="pboard'+(isCur?' cur':'')+'">'
       +'<div class="phead"><span class="nm">'+esc(p.name)+'</span>'+tags+'</div>'
       +'<div class="landrow">'
         +'<div><div class="sec-title" style="margin-bottom:3px">토지 (' +p.land.length+'/12)</div><div class="grid12">'+land+'</div></div>'
-        +pres
+        +'<div class="preswrap"><div class="sec-title" style="margin-bottom:3px">자원</div>'+pres+'</div>'
       +'</div>'
       +'<div class="bsec"><div class="sec-title" style="margin-bottom:3px">건설 부지 ('+used+'/12)</div><div class="grid12 bgrid">'+blds+'</div></div>'
       +'</div>';
@@ -1440,7 +1457,7 @@ function render(){
   /* 건물 보관판 팝업 */
   let shopPop='';
   if(shopVisibleNow()){
-    shopPop='<div class="overlay shop-ov" onclick="if(event.target===this)uiToggleShop()"><div class="modal shop-modal">'
+    shopPop='<div class="overlay shop-ov" onclick="if(event.target===this)uiToggleShop()"><div class="modal shop-modal'+(builderActive?' buying':'')+'">'
       +'<div class="shop-modal-h"><h2>건물 보관소</h2><button class="btn-ghost" onclick="uiToggleShop()">닫기 ✕</button></div>'
       +shopHtml
       +'</div></div>';
