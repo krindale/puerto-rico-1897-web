@@ -6,18 +6,35 @@
 <title>푸에르토리코 1897 — 플레이</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
+  /* 팔레트: 웹규칙서(푸에르토리코1897_웹규칙서.pdf) 테마 기준 —
+     양피지 바탕 + 주황/앰버 배너(섹션 제목·강조) + 진갈색 프레임/잉크. 순검정·선홍 금지 */
   :root{
-    --bg:#f3ede1; --ink:#221d16; --line:#d9cfbc; --panel:#fbf7ee; --accent:#a8442a;
-    --dim:#7a6f5e; --gold:#9a7b2f;
+    --bg:#eadfc4;          /* 규칙서 양피지 */
+    --ink:#33291e;         /* 잉크: 프레임 진갈색 */
+    --line:#cfbd98;        /* 구분선 */
+    --panel:#f5eeda;       /* 밝은 양피지 카드 */
+    --accent:#d97f22;      /* 강조: 규칙서 배너 주황 (선택 가능 표시·주 버튼) */
+    --accent-deep:#b5651a; /* 강조 hover */
+    --dim:#867456;         /* 보조 텍스트 */
+    --gold:#b8770f;        /* 섹션 제목: 앰버 */
+    --act:#15837a;         /* 인터랙션: 카리브 청록 (선택 가능·확정 버튼) */
+    --act-deep:#0f665f;    /* 인터랙션 hover */
   }
-  body{ background:var(--bg); color:var(--ink); font-family:'Noto Sans KR','Malgun Gothic',sans-serif; font-size:14px; }
+  /* 양피지 질감(은은한 얼룩) + 규칙서식 갈색 장식 프레임 */
+  body{ color:var(--ink); font-family:'Noto Sans KR','Malgun Gothic',sans-serif; font-size:14px;
+    background:
+      linear-gradient(rgba(245,238,218,.7), rgba(245,238,218,.7)),
+      url('img/보드_배경.png') center/cover no-repeat fixed,
+      var(--bg); }
+  body::before{ content:''; position:fixed; inset:6px; border:2px solid #7a5c39; border-radius:10px; pointer-events:none; z-index:40; }
+  body::after{ content:''; position:fixed; inset:11px; border:1px solid rgba(122,92,57,.4); border-radius:7px; pointer-events:none; z-index:40; }
   h1,h2,h3{ font-family:'Gowun Batang','Cormorant Garamond',serif; }
   button{ font-family:inherit; cursor:pointer; }
   /* 스크롤 없이 한 화면에 들어가는 것이 목표 — 세로 여백을 아껴 쓴다 */
-  .wrap{ max-width:1460px; margin:0 auto; padding:10px 18px 36px; }
+  .wrap{ max-width:1460px; margin:0 auto; padding:6px 18px 36px; }
 
   /* ── header ── */
-  .hdr{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; padding:6px 2px 10px; border-bottom:2px solid var(--ink); }
+  .hdr{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; padding:4px 2px 6px; border-bottom:2px solid var(--ink); }
   .hdr h1{ font-size:22px; letter-spacing:.02em; }
   .hdr .sub{ color:var(--accent); font-family:'Cormorant Garamond',serif; font-size:17px; font-style:italic; }
   .hdr .meta{ margin-left:auto; display:flex; gap:14px; font-size:12.5px; color:var(--dim); align-items:baseline; }
@@ -41,12 +58,12 @@
   .setup .seat .tgl button{ border:none; padding:7px 14px; font-size:12.5px; background:transparent; }
   .setup .seat .tgl button.on{ background:var(--ink); color:var(--bg); font-weight:700; }
   .btn-primary{ border:none; background:var(--accent); color:#f7f2e8; padding:13px 26px; font-size:15px; font-weight:700; border-radius:2px; }
-  .btn-primary:hover{ background:#7d2f1c; }
+  .btn-primary:hover{ background:var(--accent-deep); }
   .btn-ghost{ border:1px solid var(--line); background:transparent; color:var(--ink); padding:12px 20px; font-size:14px; border-radius:2px; }
   .btn-ghost:hover{ background:#e2d7c2; }
 
   /* ── sections ── */
-  .sec{ margin-top:10px; }
+  .sec{ margin-top:6px; }
   .sec-title{ font-size:11px; letter-spacing:.28em; color:var(--gold); text-transform:uppercase; margin-bottom:8px; font-weight:700; }
 
   /* ── 2단 레이아웃: 본문 + 우측 고정 패널 — 두 열의 아래 끝이 맞도록 서로 늘린다 ── */
@@ -54,24 +71,26 @@
   .main-col{ display:flex; flex-direction:column; min-width:0; }
   .main-col .sec{ flex:1; display:flex; flex-direction:column; }
   .main-col .players{ flex:1; }
-  .side-col{ position:sticky; top:8px; display:flex; flex-direction:column; gap:8px; height:100%; max-height:calc(100vh - 110px); overflow-y:auto; }
+  .side-col{ position:sticky; top:8px; display:flex; flex-direction:column; gap:8px; height:100%; max-height:calc(100vh - 126px); overflow-y:auto; }  /* 하단 액션바와 살짝 띄움 */
   .side-col .card{ flex-shrink:0; }
   .side-col .log{ flex:1 1 auto; max-height:none; min-height:40px; }
   @media (max-width:1000px){ .layout{ grid-template-columns:1fr; } .side-col{ position:static; max-height:none; } }
 
   /* role tiles */
-  .roles{ display:flex; gap:8px; flex-wrap:wrap; }
-  /* 역할 타일: 5인(탐험가 2장 = 8장)일 때도 한 줄에 들어가는 최대 폭 */
+  .roles{ display:flex; gap:8px; flex-wrap:wrap; padding:4px 0 4px; }
+  /* 역할 타일: 5인(탐험가 2장 = 8장)일 때도 한 줄에 들어가는 최대 폭.
+     화면이 낮으면 자동 축소해 하단 액션바와 겹치지 않게 */
   .role{ position:relative; width:132px; border:1px solid var(--line); background:var(--panel); border-radius:3px; padding:0; overflow:hidden; text-align:left; }
+  @media (max-height:800px){ .role{ width:104px; } }
   .role .coin{ position:absolute; top:5px; right:5px; background:#e8c95c; border:1px solid #b89a30; color:#4a3b0a; font-size:11px; font-weight:700; min-width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:3; }
   .role.taken .img, .role.taken .rolefb{ opacity:.35; }
-  .role.pickable{ border-color:var(--accent); box-shadow:0 0 0 2px var(--accent); cursor:pointer; }
+  .role.pickable{ transform:scale(1.06); transform-origin:center; box-shadow:0 5px 14px rgba(70,52,28,.32); cursor:pointer; z-index:5; }
   .role.pickable:hover{ filter:brightness(1.06); }
   .role .img{ display:block; width:100%; aspect-ratio:241/379; height:auto; object-fit:cover; margin:0; }
   .role .img ~ .rolefb{ display:none; }  /* 이미지 있으면 텍스트 폴백 숨김 */
   .rolefb{ padding:10px; font-weight:700; font-size:14px; min-height:110px; }
   .rolefb span{ font-weight:400; font-size:11px; color:var(--dim); }
-  .role .took{ position:absolute; left:0; right:0; bottom:0; background:rgba(34,29,22,.85); color:#f3ede1; font-size:10.5px; font-weight:700; text-align:center; padding:3px 0; z-index:3; }
+  .role .took{ position:absolute; left:0; right:0; bottom:0; background:rgba(51,41,30,.85); color:#f3ede1; font-size:10.5px; font-weight:700; text-align:center; padding:3px 0; z-index:3; }
   .role.cur{ outline:3px solid var(--ink); }
   /* 호버 확대: 레이아웃을 건드리지 않는 복제 이미지 방식.
      원본 크기와 무관하게 고정 폭으로 확대 (작은 원본도 같은 크기로 보이게) */
@@ -90,7 +109,7 @@
   /* board strip: ships / market / supply / display */
   .strip{ display:grid; grid-template-columns:auto auto 1fr auto; gap:14px; align-items:start; }
   @media (max-width:1080px){ .strip{ grid-template-columns:1fr 1fr; } }
-  .card{ background:var(--panel); border:1px solid var(--line); padding:7px 9px; border-radius:3px; }
+  .card{ background:rgba(246,240,222,.78); border:1px solid var(--line); padding:7px 9px; border-radius:3px; }
   /* 배 카드 폭은 적재 칸 수에 맞게 — 칸이 카드 밖으로 삐져나가지 않게 */
   .ships{ display:flex; gap:6px; flex-wrap:nowrap; justify-content:space-between; }
   .ship{ flex:0 1 auto; min-width:0; border:1px solid var(--line); border-radius:3px; background:#fff; padding:7px 6px 8px; text-align:center; }
@@ -132,12 +151,12 @@
   .plant .art{ position:relative; width:100%; aspect-ratio:1; }
   .plant .art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .plant .lbl{ background:rgba(251,247,238,.95); font-size:11px; font-weight:700; padding:3px 0; border-top:1px solid var(--line); }
-  .plant.pickable{ border-color:var(--accent); box-shadow:0 0 0 2px var(--accent); cursor:pointer; }
+  .plant.pickable{ transform:scale(1.06); box-shadow:0 4px 12px rgba(70,52,28,.3); cursor:pointer; z-index:5; transition:transform .12s ease; }
 
   /* players — 좌우 배치: 펼친 보드 1개 + 요약 카드들이 한 줄. 스크롤 없이 한눈에 보이는 게 목표 */
   .players{ display:flex; gap:8px; align-items:stretch; }  /* 접힌 패널도 펼친 보드와 같은 높이 */
   /* 펼친 보드는 내용 폭에 맞게 — 억지로 늘리면 내부에 빈 공간이 생긴다 */
-  .pboard{ background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:8px 10px; flex:0 1 auto; min-width:0; }
+  .pboard{ background:rgba(246,240,222,.8); border:1px solid var(--line); border-radius:3px; padding:8px 10px; flex:0 1 auto; min-width:0; }
   .pboard.cur{ outline:2px solid var(--ink); }
   /* 요약 카드: 자리 순서대로 좌우 배치, 남는 폭을 나눠 가진다 */
   .pboard.collapsed{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:3px; padding:6px 9px; cursor:pointer; }
@@ -162,7 +181,7 @@
   /* 높이 = 토지 그리드(타일 2줄 + 간격)와 동일 — 아래 끝이 토지 타일 바닥과 맞는다 */
   .pres{ height:calc(59px * 92 / 70 * 2 + 4px); min-width:0; display:flex; flex-direction:column; flex-wrap:wrap; align-content:flex-start;
     gap:6px; column-gap:22px; font-size:12px;
-    background:#f7f2e8; border:1px solid var(--line); border-radius:3px; padding:9px 12px; }
+    background:rgba(255,255,255,.4); border:1px solid var(--line); border-radius:3px; padding:9px 12px; }
   .pres-g{ display:flex; align-items:center; gap:7px; white-space:nowrap; width:118px; }
   .pres-g b{ margin-left:auto; font-size:13.5px; }
   .pres-g.dim{ color:var(--dim); }
@@ -184,7 +203,7 @@
   .phead .stats b{ font-size:14px; }
   /* 토지: 6×2 그리드, 공개된 농장과 같은 비율 */
   .grid12{ display:grid; grid-template-columns:repeat(6,59px); gap:4px; margin:4px 0; }
-  .cell{ position:relative; border:1px dashed #e3dbc9; border-radius:2px; min-height:58px; background:#f7f2e8; overflow:hidden; }
+  .cell{ position:relative; border:1px solid transparent; border-radius:2px; min-height:58px; background:rgba(255,255,255,.38); overflow:hidden; }
   .cell img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#fff; }
   /* 토지 칸: 이미지(위) + 이름표(아래) 분리, 확대 없음. 공개된 농장과 같은 비율 */
   .cell.land{ display:flex; flex-direction:column; aspect-ratio:70/92; min-height:0; }
@@ -201,8 +220,8 @@
   .wtok{ width:11px; height:11px; border-radius:50%; background:#7b5230; border:1px solid #4a2f16; }
   .wtok.empty{ background:transparent; border:1px dashed #a08a6a; }
   .cell .vpmark{ position:absolute; top:1px; right:2px; font-size:9px; color:#fff; background:var(--ink); border-radius:2px; padding:0 3px; z-index:2; }
-  .cell.clickable{ cursor:pointer; border-color:var(--accent); border-style:solid; }
-  .cell.clickable:hover{ background:#f6e8dc; }
+  .cell.clickable{ cursor:pointer; transform:scale(1.04); box-shadow:0 3px 10px rgba(70,52,28,.28); z-index:5; transition:transform .1s ease; }
+  .cell.clickable:hover{ transform:scale(1.09); }
   .portrait{ font-size:12px; color:var(--dim); display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:4px; }
   .goodrow{ display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
 
@@ -225,15 +244,15 @@
   .fab-shop:hover{ background:#e2d7c2; }
 
   /* action bar */
-  .actionbar{ position:fixed; left:0; right:0; bottom:0; background:rgba(34,29,22,.97); color:#f3ede1; padding:12px 18px; z-index:85; box-shadow:0 -3px 14px rgba(0,0,0,.25); }
+  .actionbar{ position:fixed; left:0; right:0; bottom:0; background:rgba(51,41,30,.97); color:#f3ede1; padding:12px 18px; z-index:85; box-shadow:0 -3px 14px rgba(0,0,0,.25); }
   .actionbar .inner{ max-width:1280px; margin:0 auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .actionbar .who{ font-weight:700; color:#e8c95c; white-space:nowrap; }
   .actionbar .msg{ font-size:13.5px; }
   .actionbar .btns{ display:flex; gap:8px; flex-wrap:wrap; margin-left:auto; }
-  .actionbar button{ border:1px solid #6b6152; background:#3a332a; color:#f3ede1; padding:8px 14px; font-size:13px; border-radius:2px; }
-  .actionbar button:hover{ background:#4d4436; }
+  .actionbar button{ border:1px solid #7a6a55; background:#4a3c2c; color:#f3ede1; padding:8px 14px; font-size:13px; border-radius:2px; }
+  .actionbar button:hover{ background:#5c4c39; }
   .actionbar button.hot{ background:var(--accent); border-color:var(--accent); font-weight:700; }
-  .actionbar button.hot:hover{ background:#7d2f1c; }
+  .actionbar button.hot:hover{ background:var(--accent-deep); }
   .actionbar button:disabled{ opacity:.4; cursor:default; }
 
   /* log */
@@ -247,12 +266,12 @@
   .shopb .nm{ font-weight:700; font-size:12.5px; }
   .shopb .inf{ color:var(--dim); font-size:11px; margin-top:1px; }
   .shopb .cnt{ position:absolute; top:4px; right:5px; font-size:11px; font-weight:700; color:#4b4237; background:rgba(251,247,238,.92); padding:0 5px; border-radius:2px; z-index:2; }
-  .shopb.buyable{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); cursor:pointer; }
-  .shopb.buyable:hover{ background:#f6e8dc; }
+  .shopb.buyable{ transform:scale(1.04); box-shadow:0 4px 12px rgba(70,52,28,.28); background:#fff; cursor:pointer; z-index:5; transition:transform .12s ease; }
+  .shopb.buyable:hover{ transform:scale(1.08); }
   .shopb.none{ opacity:.35; }
   /* 건설 단계: 살 수 있으면 가격+잔액, 못 사면 이유를 보여준다 */
   .shopb.cant{ opacity:.5; }
-  .shopb .inf.ok{ text-align:center; color:var(--accent); font-weight:700; }
+  .shopb .inf.ok{ text-align:center; color:var(--gold); font-weight:700; }
   .shopb .inf.ok span{ color:var(--dim); font-weight:400; }
   .shopb .inf.no{ text-align:center; color:#8d5340; }
   .shopb .band{ position:absolute; left:0; top:0; bottom:0; width:4px; }
@@ -267,7 +286,7 @@
   .zone .shop{ flex:1; min-width:0; }
   .side-col .log{ margin-top:0; }
 
-  .overlay{ position:fixed; inset:0; background:rgba(34,29,22,.55); z-index:80; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .overlay{ position:fixed; inset:0; background:rgba(51,41,30,.5); z-index:80; display:flex; align-items:center; justify-content:center; padding:20px; }
   .modal{ background:var(--panel); border:1px solid var(--line); max-width:720px; width:100%; max-height:86vh; overflow-y:auto; padding:26px 30px; border-radius:3px; }
   /* 건물 보관소 팝업: 어둠막은 화면 전체, 패널은 (액션바 제외 영역의) 세로 가운데 */
   .overlay.shop-ov{ align-items:center; padding-top:16px; padding-bottom:88px; }
@@ -1468,7 +1487,7 @@ function render(){
   +'<div class="meta"><span>라운드 <b>'+G.round+'</b></span><span>주지사 <b>'+esc(P(G.governor).name)+'</b></span>'
   +(G.phase?'<span>단계 <b>'+ROLES[G.phase.id].ph+'</b></span>':'')
   +'<button onclick="confirmNew()">새 게임</button></div></div>'
-  +'<div class="layout" style="margin-top:8px">'
+  +'<div class="layout" style="margin-top:4px">'
     +'<div class="main-col">'
       +'<div><div class="sec-title">역할</div><div class="roles">'+rolesHtml+'</div></div>'
       +'<div class="sec"><div class="sec-title">플레이어<span class="kbd-hint">←/→ 키 또는 클릭으로 보드 전환</span></div><div class="players">'+playersHtml+'</div></div>'
