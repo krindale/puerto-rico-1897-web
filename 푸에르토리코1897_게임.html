@@ -23,6 +23,8 @@
   .hdr .meta b{ color:var(--ink); }
   .hdr button{ border:1px solid var(--line); background:transparent; padding:5px 10px; font-size:12px; border-radius:2px; }
   .hdr button:hover{ background:#e2d7c2; }
+  .hdr button:disabled{ opacity:.35; cursor:default; }
+  .hdr button:disabled:hover{ background:transparent; }
 
   /* ── setup ── */
   .setup{ max-width:640px; margin:40px auto; background:var(--panel); border:1px solid var(--line); padding:34px 38px; }
@@ -153,6 +155,11 @@
   .shopb.buyable{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); cursor:pointer; }
   .shopb.buyable:hover{ background:#f6e8dc; }
   .shopb.none{ opacity:.35; }
+  /* 건설 단계: 살 수 있으면 가격+잔액, 못 사면 이유를 보여준다 */
+  .shopb.cant{ opacity:.5; }
+  .shopb .inf.ok{ text-align:center; color:var(--accent); font-weight:700; }
+  .shopb .inf.ok span{ color:var(--dim); font-weight:400; }
+  .shopb .inf.no{ text-align:center; color:#8d5340; }
   .shopb .band{ position:absolute; left:0; top:0; bottom:0; width:4px; }
   .shopb img.card{ display:block; width:100%; height:auto; }
   .shopb img.card ~ .imgless-only{ display:none; }  /* 이미지 로드 성공 시 이름 숨김(폴백 전용) */
@@ -220,15 +227,16 @@ const BORDER = ['b_fruit_s','b_sugar_s','b_fruit_l','b_sugar_l','b_tobacco','b_c
   'b_smkt','b_hac','b_hut','b_swh','b_hosp','b_off','b_lmkt','b_lwh','b_fact','b_univ','b_harb','b_wharf',
   'b_hall','b_cust','b_fort','b_fire','b_resi'];
 
+/* desc = 역할 타일 툴팁. 규칙을 모르는 사람이 고르기 전에 읽을 수 있어야 한다. */
 const ROLES = {
-  settler:    { nm:'개척자', rn:'I',   ph:'개척 단계' },
-  mayor:      { nm:'모집관', rn:'II',  ph:'모집 단계' },
-  builder:    { nm:'건축가', rn:'III', ph:'건설 단계' },
-  craftsman:  { nm:'생산자', rn:'IV',  ph:'생산 단계' },
-  trader:     { nm:'상인',   rn:'V',   ph:'거래 단계' },
-  captain:    { nm:'선장',   rn:'VI',  ph:'선적 단계' },
-  prospector: { nm:'탐험가', rn:'VII', ph:'행동 없음' },
-  prospector2:{ nm:'탐험가', rn:'VII', ph:'행동 없음' },
+  settler:    { nm:'개척자', rn:'I',   ph:'개척 단계', desc:'모두 공개된 농장 1개를 가져옵니다.\n선택자만 채석장을 가져올 수 있습니다.' },
+  mayor:      { nm:'모집관', rn:'II',  ph:'모집 단계', desc:'인력 시장의 일꾼을 나눠 갖고 각자 배치합니다.\n선택자는 공급처에서 일꾼 1개를 더 받습니다.' },
+  builder:    { nm:'건축가', rn:'III', ph:'건설 단계', desc:'모두 건물 1개를 건설합니다.\n선택자는 1주화 할인받습니다.' },
+  craftsman:  { nm:'생산자', rn:'IV',  ph:'생산 단계', desc:'모두 농장·공장에 맞춰 상품을 생산합니다.\n선택자는 생산한 상품 1개를 추가로 받습니다.' },
+  trader:     { nm:'상인',   rn:'V',   ph:'거래 단계', desc:'모두 상품 1개를 상점에 판매합니다.\n선택자는 +1주화를 더 받습니다.' },
+  captain:    { nm:'선장',   rn:'VI',  ph:'선적 단계', desc:'모두 상품을 수송선에 싣고 실은 개수만큼 승점을 얻습니다.\n선택자는 +1점. 실을 수 있으면 선적은 의무입니다.' },
+  prospector: { nm:'탐험가', rn:'VII', ph:'행동 없음', desc:'선택자만 공급처에서 1주화를 받습니다.\n다른 플레이어의 행동은 없습니다.' },
+  prospector2:{ nm:'탐험가', rn:'VII', ph:'행동 없음', desc:'선택자만 공급처에서 1주화를 받습니다.\n다른 플레이어의 행동은 없습니다.' },
 };
 
 const PLANT_NM = { corn:'옥수수', fruit:'과일', sugar:'설탕', tobacco:'담배', coffee:'커피', quarry:'채석장' };
@@ -242,6 +250,31 @@ function imgTag(cat, nm, cls){
 /* ═══════════════════════════ 게임 상태 ═══════════════════════════ */
 let G = null;           // 게임 상태 (JSON 직렬화 가능)
 let uiSel = null;       // 임시 UI 선택 상태 (모집 배치 등)
+
+/* ── 되돌리기 ──
+   사람 차례가 시작될 때마다 G를 통째로 스냅샷해 둔다. G가 순수 JSON이라 가능한 방식.
+   스택 맨 위 = 현재 상태이므로, 되돌리기는 그걸 버리고 그 아래(직전 내 결정 시점)를 복원한다.
+   내 행동 이후에 일어난 AI 행동까지 함께 되돌아간다. 새로고침하면 기록은 사라진다. */
+const UNDO_MAX = 20;
+let undoStack = [];
+function undoCapture(){
+  const pd = G && G.pending;
+  if(!pd || pd.player===undefined || pd.type==='gameOver') return;
+  if(P(pd.player).ai) return;                       // AI 차례는 되돌리기 지점이 아니다
+  const snap = JSON.stringify(G);
+  if(undoStack.length && undoStack[undoStack.length-1]===snap) return;  // 같은 결정에서 중복 호출
+  undoStack.push(snap);
+  if(undoStack.length > UNDO_MAX) undoStack.shift();
+}
+function undoAvailable(){ return undoStack.length >= 2; }
+function uiUndo(){
+  if(!undoAvailable()) return;
+  clearTimeout(aiTimer);
+  undoStack.pop();                                  // 현재 상태 버리기
+  G = JSON.parse(undoStack[undoStack.length-1]);    // 직전 내 결정 시점으로
+  uiSel = (G.pending && G.pending.type==='storage') ? {types:[], single:null} : null;
+  render(); save();
+}
 
 function playerCountSetup(n){
   if (n===2) return { coins:3, vp:65, workers:40, market:2, ships:[4,6],
@@ -265,6 +298,7 @@ function playerCountSetup(n){
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 function newGame(seats){
+  undoStack = [];   // 이전 게임의 되돌리기 기록이 새 게임으로 새지 않게
   const n = seats.length, cfg = playerCountSetup(n);
   // 농장 더미
   const deckCount = { coffee:8, tobacco:9, corn:10, sugar:11, fruit:12 };
@@ -560,6 +594,16 @@ function canBuild(p,id,isChooser){
   if(hasB(p,id)) return false;
   if(sitesUsed(p)+(B.size||1)>12) return false;
   return p.coins>=buildCost(p,id,isChooser);
+}
+/* 못 짓는 이유를 사람에게 보여주기 위한 것. 판정 순서는 canBuild와 같아야 한다. */
+function buildBlockReason(p,id,isChooser){
+  const B=BUILDINGS[id];
+  if(G.supply.stock[id]<=0) return '품절';
+  if(hasB(p,id)) return '이미 보유';
+  if(sitesUsed(p)+(B.size||1)>12) return B.size===2?'부지 2칸 부족':'부지 없음';
+  const short=buildCost(p,id,isChooser)-p.coins;
+  if(short>0) return '주화 '+short+' 부족';
+  return '';
 }
 function builderNext(){
   const F=G.phase;
@@ -996,6 +1040,7 @@ function aiDecide(){
 /* ═══════════════════════════ 흐름 제어 ═══════════════════════════ */
 let aiTimer=null;
 function schedule(){
+  undoCapture();
   render(); save();
   const pd=G.pending;
   if(!pd || pd.type==='gameOver') return;
@@ -1026,6 +1071,14 @@ function goodChip(t,txt){
   return '<span class="goodchip" style="background:'+g.color+';color:'+g.text+'" title="'+g.nm+'">'+(txt!==undefined?txt:g.nm[0])+'</span>';
 }
 function esc(s){ return String(s).replace(/</g,'&lt;'); }
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+/* 툴팁 문구 — 건물 상점·플레이어 보드 양쪽에서 같은 설명을 쓴다 */
+function buildingTip(B){
+  const bits=[B.nm+' — '+B.cost+'주화 · 승점 '+B.vp+(B.size===2?' · 부지 2칸':'')];
+  if(B.kind==='prod') bits.push(PLANT_NM[B.prod]+' 생산 · 일꾼 '+B.slots+'칸');
+  if(B.fx) bits.push(B.fx);
+  return bits.join('\n');
+}
 
 /* 설정 화면 */
 let setupSeats=[{name:'플레이어 1',ai:false},{name:'AI 가영',ai:true},{name:'AI 나정',ai:true},{name:'AI 도준',ai:true}];
@@ -1062,8 +1115,8 @@ function startNewGame(){
   while(setupSeats.length<setupN) setupSeats.push({name:'AI '+['가영','나정','도준','민수','서연'][setupSeats.length%5], ai:true});
   newGame(setupSeats.slice(0,setupN).map(s=>({name:s.name||'플레이어', ai:s.ai})));
 }
-function resumeGame(){ if(loadSave()){ render(); schedule(); } }
-function confirmNew(){ if(confirm('현재 게임을 버리고 새 게임을 시작할까요?')){ localStorage.removeItem('pr1897_save'); G=null; renderSetup(); } }
+function resumeGame(){ if(loadSave()){ undoStack=[]; render(); schedule(); } }
+function confirmNew(){ if(confirm('현재 게임을 버리고 새 게임을 시작할까요?')){ localStorage.removeItem('pr1897_save'); G=null; undoStack=[]; renderSetup(); } }
 
 /* 본 게임 렌더 */
 function render(){
@@ -1077,7 +1130,8 @@ function render(){
     const R=ROLES[r.id];
     const pickable=(pd.type==='pickRole'&&!P(curPi).ai&&r.takenBy===null);
     const cls='role'+(r.takenBy!==null?' taken':'')+(pickable?' pickable':'')+(phaseRole===r.id&&r.takenBy!==null?' cur':'');
-    return '<div class="'+cls+'" '+(pickable?'onclick="pickRole('+curPi+','+i+')"':'')+'>'
+    const tip=R.rn+'. '+R.nm+' — '+R.ph+'\n'+R.desc+(r.coins>0?'\n올려둔 주화 '+r.coins+'개를 함께 가져갑니다.':'');
+    return '<div class="'+cls+'" '+(pickable?'onclick="pickRole('+curPi+','+i+')"':'')+' title="'+escAttr(tip)+'">'
       +imgTag('역할',R.nm,'img')
       +imgTag('역할',R.nm,'zoom')
       +'<div class="rolefb">'+R.rn+' '+R.nm+'<br><span>'+R.ph+'</span></div>'
@@ -1128,18 +1182,26 @@ function render(){
   const builderActive=(pd.type==='builder'&&!P(curPi).ai);
   const shopCell=id=>{
     const B=BUILDINGS[id]; const cnt=S.stock[id];
-    let cls='shopb'; let click=''; let costNow;
+    let cls='shopb'; let click=''; let info='';
     if(cnt<=0) cls+=' none';
-    if(builderActive && canBuild(P(curPi),id,curPi===G.phase.chooser)){
-      cls+=' buyable';
-      click='onclick="actBuild(\''+id+'\')"';
-      costNow=buildCost(P(curPi),id,curPi===G.phase.chooser);
+    if(builderActive){
+      const me=P(curPi), isC=(curPi===G.phase.chooser);
+      if(canBuild(me,id,isC)){
+        cls+=' buyable';
+        click='onclick="actBuild(\''+id+'\')"';
+        const c=buildCost(me,id,isC);
+        // 지금 얼마고, 사고 나면 얼마 남는지 미리 보여준다
+        info='<div class="inf ok">'+c+'주화 <span>→ 남음 '+(me.coins-c)+'</span></div>';
+      } else {
+        cls+=' cant';
+        info='<div class="inf no">'+buildBlockReason(me,id,isC)+'</div>';
+      }
     }
-    return '<div class="'+cls+'" '+click+'>'
+    return '<div class="'+cls+'" '+click+' title="'+escAttr(buildingTip(B))+'">'
       +imgTag('건물',B.nm,'card')
       +imgTag('건물',B.nm,'zoom')
       +'<div class="nm imgless-only">'+B.nm+'</div>'
-      +(costNow!==undefined&&costNow!==B.cost?'<div class="inf" style="text-align:center">구매가 <b style="color:var(--accent)">'+costNow+'주화</b></div>':'')
+      +info
       +'<div class="cnt">×'+cnt+'</div></div>';
   };
   const ZONE_LABELS={
@@ -1179,7 +1241,8 @@ function render(){
       let wk='';
       for(let s=0;s<B.slots;s++) wk+= s<b.w ? '<span class="wtok"></span>':'<span class="wtok empty"></span>';
       const clickable=isMayorMe;
-      blds+='<div class="cell'+(B.size===2?' b2':'')+(clickable?' clickable':'')+'" '+(clickable?'onclick="uiToggleBld('+p.i+',\''+b.id+'\')"':'')+'>'
+      blds+='<div class="cell'+(B.size===2?' b2':'')+(clickable?' clickable':'')+'" '+(clickable?'onclick="uiToggleBld('+p.i+',\''+b.id+'\')"':'')
+        +' title="'+escAttr(buildingTip(B)+(b.w<B.slots?'\n일꾼 미배치 — 효과가 발동하지 않습니다.':''))+'">'
         +imgTag('건물',B.nm)
         +imgTag('건물',B.nm,'zoom')
         +'<span class="wk">'+wk+'</span><span class="vpmark">'+B.vp+'</span>'
@@ -1229,6 +1292,7 @@ function render(){
   '<div class="hdr"><h1>푸에르토리코</h1><span class="sub">1897</span>'
   +'<div class="meta"><span>라운드 <b>'+G.round+'</b></span><span>주지사 <b>'+esc(P(G.governor).name)+'</b></span>'
   +(G.phase?'<span>단계 <b>'+ROLES[G.phase.id].ph+'</b></span>':'')
+  +'<button onclick="uiUndo()" '+(undoAvailable()?'':'disabled')+' title="직전 내 결정으로 되돌립니다 (그 뒤 AI 행동도 함께 취소)">↶ 되돌리기</button>'
   +'<button onclick="confirmNew()">새 게임</button></div></div>'
   +'<div class="layout" style="margin-top:14px">'
     +'<div class="main-col">'
