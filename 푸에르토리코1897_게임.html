@@ -159,7 +159,7 @@
   .players{ display:flex; gap:8px; align-items:stretch; overflow-x:hidden; }  /* 접힌 패널도 펼친 보드와 같은 높이. overflow-x: 전환 애니메이션 중 잠깐 폭 합이 넘쳐도 안 튀어나오게 */
   /* 펼친 보드는 내용 폭에 맞게 — 억지로 늘리면 내부에 빈 공간이 생긴다 */
   .pboard{ position:relative; background:rgba(246,240,222,.8); border:1px solid var(--line); border-radius:3px; padding:8px 10px; flex:0 1 auto; min-width:0; }
-  .pboard.cur{ box-shadow:inset 6px 0 0 var(--pc); }  /* 현재 차례: 본인 색 띠가 두꺼워 보이지만 레이아웃은 그대로 */
+  .pboard.cur{ box-shadow:inset 6px 0 0 var(--pc); }  /* 이번 역할을 고른 사람(선택 단계에는 고르는 중인 사람): 본인 색 띠가 두꺼워진다 */
   /* 실제 내용(.pcontent)은 항상 자기 내용 기준 고유 폭으로만 그려진다 — 바깥 .pboard(애니메이션 중인 폭)에
      맞춰 안쪽 flex(자원 패널 등)가 재계산되면서 갑자기 튀어나오듯 보이는 걸 막는다. 바깥은 그 위에서
      넓어지거나(overflow:hidden으로) 가리는 창 역할만 한다 — 내용 자체는 한 번만 배치되고 안 움직인다. */
@@ -172,6 +172,15 @@
   @keyframes boardShrink{ 0%{ flex-grow:6; flex-basis:0%; flex-shrink:1; } 100%{ flex-grow:1; flex-basis:0%; flex-shrink:1; } }
   .pboard.board-in{ animation:boardGrow .3s ease-out; overflow:hidden; }
   .pboard.board-out{ animation:boardShrink .3s ease-out; overflow:hidden; }
+  /* 슬라이드와 이펙트의 순서 보장 —
+     ① 보드가 열리는 동안(.board-in) 안의 타일·일꾼 팝은 슬라이드가 끝난 뒤에 시작한다.
+        (동시에 돌리면 보드 전체가 움직이는 데 눈이 뺏겨 작은 팝이 안 보인다)
+        fill-mode:backwards → 대기 중에는 0% 키프레임(확대+금빛)으로 떠서 시선을 미리 끈다.
+     ② .cardflash(보드 전체 금빛 테두리)가 .board-in/.board-out과 같은 요소에 겹치면 animation
+        속성이 서로를 덮어써 플래시가 통째로 무시된다 — 반드시 쉼표로 합쳐 둘 다 재생시킨다. */
+  .pboard.board-in .fx-pop{ animation-delay:.32s; animation-fill-mode:backwards; }
+  .pboard.board-in.cardflash{ animation:boardGrow .3s ease-out, cardflash 1.3s ease .32s backwards; overflow:hidden; }
+  .pboard.board-out.cardflash{ animation:boardShrink .3s ease-out, cardflash 1.3s ease .32s backwards; overflow:hidden; }
   /* 요약 카드: 자리 순서대로 좌우 배치, 남는 폭을 나눠 가진다. 최소 폭 확보 — 이 밑으로 눌리면 텍스트가 깨진다 */
   .pboard.collapsed{ flex:1 1 0; min-width:132px; display:flex; flex-direction:column; gap:3px; padding:6px 9px; cursor:pointer; }
   .pboard.collapsed:hover{ background:#f3ecdb; }
@@ -1609,8 +1618,11 @@ function render(){
     builder:'건설 중',craftBonus:'상품 선택 중',trader:'판매 중',captain:'선적 중',storage:'저장 중'};
   // 건물 보관소 버튼: 가장 우측(마지막 자리) 개인 보드의 우측 하단에 붙인다
   const fabShopHtml='<button class="fab-shop" onclick="uiToggleShop()" title="건물 보관소 열기/닫기 (Esc로 닫기)">🏘️<span>건물</span></button>';
+  // 두꺼운 색 띠(.cur)는 "이번 역할을 고른 사람"에게 — 역할 선택 중일 때는 고르는 중인 사람에게
+  const chooserPi=G.phase?G.phase.chooser:curPi;
   const boardParts=G.players.map(p=>{
     const isCur=(curPi===p.i);
+    const isChooser=(chooserPi===p.i);
     const isMayorMe=mayorActive&&isCur;
     const acting=(uiBoardSel===null&&isCur&&ACTIONMSG[pd.type]);
     const tags=(G.governor===p.i?'<span class="gov-ic" title="주지사 — 이번 라운드 시작 플레이어"><svg viewBox="0 0 24 16"><path d="M2 14h20L20 4l-5 4.2L12 1 9 8.2 4 4z" fill="#e8c95c" stroke="#8a6a1f" stroke-width="1.2" stroke-linejoin="round"/></svg></span>':'')+(p.ai?'<span class="tag">AI</span>':'')+(acting?'<span class="tag acting">'+ACTIONMSG[pd.type]+'</span>':'');
@@ -1620,7 +1632,7 @@ function render(){
       const farmList=Object.keys(farm).map(t=>'<div>'+PLANT_NM[t]+' ×'+farm[t]+'</div>').join('')||'<span class="dim">—</span>';
       const bldList=p.buildings.map(b=>'<div class="'+(b.w>0?'':'un')+'"'+(b.w>0?'':' title="일꾼 미배치"')+'>'+BUILDINGS[b.id].nm+'</div>').join('')||'<div class="dim">—</div>';
       const goodsRow=GTYPES.filter(t=>p.goods[t]>0).map(t=>'<span class="cg">'+goodChip(t)+'×'+p.goods[t]+'</span>').join('')||'<span class="dim">—</span>';
-      return '<div class="pboard collapsed'+(isCur?' cur':'')+(boardJustSwitched&&p.i===prevShown?' board-out':'')+cardFxCls('pboard-'+p.i)+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+';--pc:'+PCOLOR[p.i]+'" onclick="uiSelectBoard('+p.i+')" title="클릭하면 펼칩니다">'
+      return '<div class="pboard collapsed'+(isChooser?' cur':'')+(boardJustSwitched&&p.i===prevShown?' board-out':'')+cardFxCls('pboard-'+p.i)+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+';--pc:'+PCOLOR[p.i]+'" onclick="uiSelectBoard('+p.i+')" title="클릭하면 펼칩니다">'
         +'<div class="pcontent">'
         +'<div class="chead"><span class="pdot" style="background:'+PCOLOR[p.i]+'"></span>'+esc(p.name)+tags+'</div>'
         +'<div class="cstat"><span class="cpair"><span class="tok-coin sm">$</span><b>'+p.coins+'</b></span><span class="cpair"><span class="tok-vp sm">VP</span><b>'+p.vp+'</b></span><span class="cpair"><span class="wtok smw"></span><b>'+totalWorkersOf(p)+'</b></span></div>'
@@ -1691,7 +1703,7 @@ function render(){
         +'<div class="pres-goods">'+goodsCells+'</div>'
       +'</div>'
       +'</div>';
-    return '<div class="pboard'+(isCur?' cur':'')+(boardJustSwitched?' board-in':'')+cardFxCls('pboard-'+p.i)+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+';--pc:'+PCOLOR[p.i]+'">'
+    return '<div class="pboard'+(isChooser?' cur':'')+(boardJustSwitched?' board-in':'')+cardFxCls('pboard-'+p.i)+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+';--pc:'+PCOLOR[p.i]+'">'
       +'<div class="pcontent">'
       +'<div class="phead"><span class="pdot" style="background:'+PCOLOR[p.i]+'"></span><span class="nm">'+esc(p.name)+'</span>'+tags+'</div>'
       +'<div class="landrow">'
