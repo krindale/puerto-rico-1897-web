@@ -98,9 +98,9 @@
   /* 건설 중에는 구입 가능한 건물만 호버 확대, 구경 모드에서는 전체 확대 */
   .shop-modal.buying .shopb.buyable:hover img.zoom,
   .shop-modal:not(.buying) .shopb:hover img.zoom,
-  .cell:not(.land):hover img.zoom{
+  .cell:not(.land):not(.clickable):hover img.zoom{
     display:block; position:fixed; inset:auto; left:50%; top:50%; transform:translate(-50%,-50%);
-    width:380px; height:auto; z-index:90;
+    width:380px; height:auto; z-index:999;
     box-shadow:0 8px 30px rgba(0,0,0,.45); border-radius:4px; pointer-events:none; background:#fff; }
   /* 역할 확대: 오버레이 대신 타일이 제자리에서 커진다 (카드게임식) */
   .role{ transition:transform .14s ease; transform-origin:top center; }
@@ -220,8 +220,8 @@
   .wtok{ width:11px; height:11px; border-radius:50%; background:#7b5230; border:1px solid #4a2f16; }
   .wtok.empty{ background:transparent; border:1px dashed #a08a6a; }
   .cell .vpmark{ position:absolute; top:1px; right:2px; font-size:9px; color:#fff; background:var(--ink); border-radius:2px; padding:0 3px; z-index:2; }
-  .cell.clickable{ cursor:pointer; transform:scale(1.04); box-shadow:0 3px 10px rgba(70,52,28,.28); z-index:5; transition:transform .1s ease; }
-  .cell.clickable:hover{ transform:scale(1.09); }
+  .cell.clickable{ cursor:pointer; box-shadow:0 3px 10px rgba(70,52,28,.32); z-index:5; }
+  .cell.clickable:hover{ box-shadow:0 5px 14px rgba(70,52,28,.45); z-index:200; }
   .portrait{ font-size:12px; color:var(--dim); display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:4px; }
   .goodrow{ display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
 
@@ -266,8 +266,8 @@
   .shopb .nm{ font-weight:700; font-size:12.5px; }
   .shopb .inf{ color:var(--dim); font-size:11px; margin-top:1px; }
   .shopb .cnt{ position:absolute; top:4px; right:5px; font-size:11px; font-weight:700; color:#4b4237; background:rgba(251,247,238,.92); padding:0 5px; border-radius:2px; z-index:2; }
-  .shopb.buyable{ transform:scale(1.04); box-shadow:0 4px 12px rgba(70,52,28,.28); background:#fff; cursor:pointer; z-index:5; transition:transform .12s ease; }
-  .shopb.buyable:hover{ transform:scale(1.08); }
+  .shopb.buyable{ box-shadow:0 4px 12px rgba(70,52,28,.32); background:#fff; cursor:pointer; z-index:5; }
+  .shopb.buyable:hover{ box-shadow:0 6px 18px rgba(70,52,28,.42); z-index:200; }
   .shopb.none{ opacity:.35; }
   /* 건설 단계: 살 수 있으면 가격+잔액, 못 사면 이유를 보여준다 */
   .shopb.cant{ opacity:.5; }
@@ -449,13 +449,15 @@ function newGame(seats){
       else stock[id] = (id==='b_tobacco'||id==='b_coffee') ? 3 : (id.endsWith('_l')?3:4);
     } else stock[id] = (n===2)?1:2;
   }
+  // 첫 주지사는 무작위 — 시작 농장은 주지사부터 시계 방향 순서(규칙서)로 배분
+  const gov = Math.floor(Math.random()*n);
   G = {
-    n, round:1, governor:0, over:false, endReasons:[], scores:null,
+    n, round:1, governor:gov, over:false, endReasons:[], scores:null,
     players: seats.map((s,i)=>({
       i, name:s.name, ai:s.ai,
       coins:cfg.coins, vp:0,
       goods:{corn:0,fruit:0,sugar:0,tobacco:0,coffee:0},
-      land:[{type:cfg.startPlants[i], w:0}],
+      land:[{type:cfg.startPlants[(i-gov+n)%n], w:0}],
       buildings:[], stored:0,
     })),
     supply:{ workers:cfg.workers, vp:cfg.vp, goods:goodsSup, quarries:cfg.quarries,
