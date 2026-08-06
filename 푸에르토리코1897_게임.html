@@ -13,7 +13,8 @@
   body{ background:var(--bg); color:var(--ink); font-family:'Noto Sans KR','Malgun Gothic',sans-serif; font-size:14px; }
   h1,h2,h3{ font-family:'Gowun Batang','Cormorant Garamond',serif; }
   button{ font-family:inherit; cursor:pointer; }
-  .wrap{ max-width:1280px; margin:0 auto; padding:14px 18px 120px; }
+  /* 스크롤 없이 한 화면에 들어가는 것이 목표 — 세로 여백을 아껴 쓴다 */
+  .wrap{ max-width:1460px; margin:0 auto; padding:10px 18px 36px; }
 
   /* ── header ── */
   .hdr{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; padding:6px 2px 10px; border-bottom:2px solid var(--ink); }
@@ -45,18 +46,23 @@
   .btn-ghost:hover{ background:#e2d7c2; }
 
   /* ── sections ── */
-  .sec{ margin-top:16px; }
+  .sec{ margin-top:10px; }
   .sec-title{ font-size:11px; letter-spacing:.28em; color:var(--gold); text-transform:uppercase; margin-bottom:8px; font-weight:700; }
 
-  /* ── 2단 레이아웃: 본문 + 우측 고정 패널 ── */
-  .layout{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:16px; align-items:start; }
-  .side-col{ position:sticky; top:8px; display:flex; flex-direction:column; gap:10px; max-height:calc(100vh - 110px); overflow-y:auto; }
+  /* ── 2단 레이아웃: 본문 + 우측 고정 패널 — 두 열의 아래 끝이 맞도록 서로 늘린다 ── */
+  .layout{ display:grid; grid-template-columns:minmax(0,1fr) 270px; gap:16px; align-items:stretch; }
+  .main-col{ display:flex; flex-direction:column; min-width:0; }
+  .main-col .sec{ flex:1; display:flex; flex-direction:column; }
+  .main-col .players{ flex:1; }
+  .side-col{ position:sticky; top:8px; display:flex; flex-direction:column; gap:8px; height:100%; max-height:calc(100vh - 110px); overflow-y:auto; }
   .side-col .card{ flex-shrink:0; }
+  .side-col .log{ flex:1 1 auto; max-height:none; min-height:40px; }
   @media (max-width:1000px){ .layout{ grid-template-columns:1fr; } .side-col{ position:static; max-height:none; } }
 
   /* role tiles */
   .roles{ display:flex; gap:8px; flex-wrap:wrap; }
-  .role{ position:relative; width:96px; border:1px solid var(--line); background:var(--panel); border-radius:3px; padding:0; overflow:hidden; text-align:left; }
+  /* 역할 타일: 5인(탐험가 2장 = 8장)일 때도 한 줄에 들어가는 최대 폭 */
+  .role{ position:relative; width:132px; border:1px solid var(--line); background:var(--panel); border-radius:3px; padding:0; overflow:hidden; text-align:left; }
   .role .coin{ position:absolute; top:5px; right:5px; background:#e8c95c; border:1px solid #b89a30; color:#4a3b0a; font-size:11px; font-weight:700; min-width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:3; }
   .role.taken .img, .role.taken .rolefb{ opacity:.35; }
   .role.pickable{ border-color:var(--accent); box-shadow:0 0 0 2px var(--accent); cursor:pointer; }
@@ -67,70 +73,143 @@
   .rolefb span{ font-weight:400; font-size:11px; color:var(--dim); }
   .role .took{ position:absolute; left:0; right:0; bottom:0; background:rgba(34,29,22,.85); color:#f3ede1; font-size:10.5px; font-weight:700; text-align:center; padding:3px 0; z-index:3; }
   .role.cur{ outline:3px solid var(--ink); }
-  /* 호버 확대: 레이아웃을 건드리지 않는 복제 이미지 방식 */
+  /* 호버 확대: 레이아웃을 건드리지 않는 복제 이미지 방식.
+     원본 크기와 무관하게 고정 폭으로 확대 (작은 원본도 같은 크기로 보이게) */
   img.zoom{ display:none; }
   .role:hover img.zoom, .shopb:hover img.zoom, .cell:not(.land):hover img.zoom{
     display:block; position:fixed; inset:auto; left:50%; top:50%; transform:translate(-50%,-50%);
-    width:auto; height:auto; max-width:400px; max-height:74vh; z-index:90;
+    width:380px; height:auto; z-index:90;
     box-shadow:0 8px 30px rgba(0,0,0,.45); border-radius:4px; pointer-events:none; background:#fff; }
 
   /* board strip: ships / market / supply / display */
   .strip{ display:grid; grid-template-columns:auto auto 1fr auto; gap:14px; align-items:start; }
   @media (max-width:1080px){ .strip{ grid-template-columns:1fr 1fr; } }
-  .card{ background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:3px; }
-  .ships{ display:flex; gap:10px; }
-  .ship{ text-align:center; }
-  .ship .cap{ font-size:11px; color:var(--dim); margin-bottom:4px; }
-  .ship .slots{ display:grid; grid-template-columns:repeat(2,16px); gap:2px; justify-content:center; }
-  .ship.big .slots{ grid-template-columns:repeat(2,16px); }
-  .slot{ width:16px; height:16px; border:1px solid #b9ad96; border-radius:2px; background:#fff; }
-  .slot.g{ border:none; }
-  .market-slots{ display:flex; gap:4px; }
-  .market-slots .slot{ width:22px; height:22px; }
-  .goodchip{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:10px; font-weight:700; border:1px solid rgba(0,0,0,.25); }
+  .card{ background:var(--panel); border:1px solid var(--line); padding:7px 9px; border-radius:3px; }
+  /* 배 카드 폭은 적재 칸 수에 맞게 — 칸이 카드 밖으로 삐져나가지 않게 */
+  .ships{ display:flex; gap:6px; flex-wrap:nowrap; justify-content:space-between; }
+  .ship{ flex:0 1 auto; min-width:0; border:1px solid var(--line); border-radius:3px; background:#fff; padding:7px 6px 8px; text-align:center; }
+  .ship.full{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .ship .cap{ font-size:10px; color:var(--dim); margin-bottom:5px; }
+  .ship .cap b{ color:var(--ink); font-size:11px; }
+  /* 적재 칸은 위아래 2줄 (열 수는 배 크기에 따라 JS가 지정) — 칸 크기는 공급처 토큰과 동일 */
+  .ship .slots{ display:grid; gap:2px; justify-content:center; }
+  /* 상품 토큰: 육각 기둥 실루엣, 단색 + 실선 테두리.
+     clip-path에는 border가 적용되지 않아 바깥 레이어(어두운 색)를 테두리로 쓴다.
+     글자는 넣지 않는다(색으로 구분, 이름은 옆에 텍스트로). */
+  .goodchip{ position:relative; display:inline-block; width:20px; height:23px;
+    clip-path:polygon(25% 0,75% 0,100% 18%,100% 82%,75% 100%,25% 100%,0 82%,0 18%);
+    background:rgba(122,111,94,.5); }  /* 부드러운 웜톤 테두리 */
+  .goodchip::before{ content:''; position:absolute; inset:1.5px;
+    clip-path:polygon(25% 0,75% 0,100% 18%,100% 82%,75% 100%,25% 100%,0 82%,0 18%);
+    background:var(--gc,#999); }
+  /* 내부 모서리: 윗면 육각의 아랫변 + 앞쪽 세로 모서리 2개 — 이 선들이 있어야 기둥으로 보인다 */
+  .goodchip::after{ content:''; position:absolute; inset:0;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 27'%3E%3Cpath d='M0 4.9L6 9.7L18 9.7L24 4.9M6 9.7V27M18 9.7V27' fill='none' stroke='rgba(0,0,0,0.35)' stroke-width='1.2'/%3E%3C/svg%3E") no-repeat;
+    background-size:100% 100%; }
+  /* 빈 적재 칸: 흐린 테두리의 원 */
+  .slot{ position:relative; width:20px; height:20px; border-radius:50%; border:1px solid #ddd3c0; background:#fff;
+    align-self:center; justify-self:center; }
+  .slot.g{ width:20px; height:23px; border:none; border-radius:0; background:none; }
+  .slot.g .goodchip{ position:absolute; inset:0; width:100%; height:100%; }
+  /* 상자에 딱 담긴 작물 느낌 — 여백 최소 */
+  .market-slots{ display:grid; grid-template-columns:repeat(2,20px); gap:3px; justify-content:center;
+    border:1px solid var(--line); border-radius:2px; background:#fff; padding:4px; width:max-content; margin:0 auto; }
+  /* 상점 + 인력 시장을 한 줄에 */
+  .cardrow{ display:flex; gap:8px; }
+  .cardrow .card{ flex:1; min-width:0; }
+  .labor-row{ display:flex; gap:3px; flex-wrap:wrap; align-items:center; min-height:16px; }
+  .labor-row .wtok{ width:25px; height:25px; border:none; }  /* 개인 보드 일꾼 토큰과 동일 크기 · 테두리 없음 */
+  .hintline{ font-size:10.5px; color:var(--dim); margin-top:6px; line-height:1.5; }
   .supply-line{ display:flex; gap:12px; flex-wrap:wrap; font-size:12.5px; }
   .supply-line b{ font-size:14px; }
   .sup-item{ display:flex; align-items:center; gap:5px; }
 
   /* plantation display */
-  .plants{ display:flex; gap:8px; flex-wrap:wrap; }
-  .plant{ width:70px; border:1px solid var(--line); border-radius:3px; overflow:hidden; background:#fff; text-align:center; }
+  .plants{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+  .plant{ width:62px; border:1px solid var(--line); border-radius:3px; overflow:hidden; background:#fff; text-align:center; }
   .plant .art{ position:relative; width:100%; aspect-ratio:1; }
   .plant .art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .plant .lbl{ background:rgba(251,247,238,.95); font-size:11px; font-weight:700; padding:3px 0; border-top:1px solid var(--line); }
   .plant.pickable{ border-color:var(--accent); box-shadow:0 0 0 2px var(--accent); cursor:pointer; }
 
-  /* players */
-  .players{ display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:12px; }
-  .pboard{ background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:10px 12px; }
+  /* players — 좌우 배치: 펼친 보드 1개 + 요약 카드들이 한 줄. 스크롤 없이 한눈에 보이는 게 목표 */
+  .players{ display:flex; gap:8px; align-items:stretch; }  /* 접힌 패널도 펼친 보드와 같은 높이 */
+  /* 펼친 보드는 내용 폭에 맞게 — 억지로 늘리면 내부에 빈 공간이 생긴다 */
+  .pboard{ background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:8px 10px; flex:0 1 auto; min-width:0; }
   .pboard.cur{ outline:2px solid var(--ink); }
+  /* 요약 카드: 자리 순서대로 좌우 배치, 남는 폭을 나눠 가진다 */
+  .pboard.collapsed{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:3px; padding:6px 9px; cursor:pointer; }
+  .pboard.collapsed:hover{ background:#f3ecdb; }
+  .chead{ display:flex; gap:5px; align-items:center; font-weight:700; font-size:12.5px; flex-wrap:wrap; }
+  .cstat{ font-size:11px; color:var(--dim); }
+  .cstat b{ color:var(--ink); font-size:12px; }
+  .csec{ font-size:9px; letter-spacing:.2em; color:var(--gold); font-weight:700; }
+  .crow{ display:flex; gap:2px 5px; flex-wrap:wrap; align-items:center; font-size:10px; }
+  .crow .goodchip{ width:16px; height:18px; }
+  .clist{ font-size:10px; line-height:1.3; color:#4b4237; }
+  .clist .un{ color:var(--dim); }
+  .dim{ color:var(--dim); }
+  .pboard.collapsed .expand{ display:none; }
+  .kbd-hint{ letter-spacing:0; text-transform:none; color:var(--dim); font-weight:400; margin-left:8px; }
+  /* 펼친 보드: 토지 옆 빈자리에 자원 패널이 붙는다 */
+  .landrow{ display:flex; gap:12px; align-items:flex-start; }
+  .pres{ width:92px; flex-shrink:0; background:#fff; border:1px solid var(--line); border-radius:3px; padding:8px 9px; display:flex; flex-direction:column; gap:5px; font-size:11px; }
+  .pres-row{ display:flex; justify-content:space-between; align-items:center; gap:6px; white-space:nowrap; }
+  .pres-row b{ font-size:13.5px; }
+  .pres-h{ font-size:9px; letter-spacing:.22em; color:var(--gold); font-weight:700; margin-top:3px; }
+  .pres-g{ display:flex; align-items:center; gap:6px; }
+  .pres-g b{ margin-left:auto; }
+  @media (max-width:1000px){ .players{ flex-wrap:wrap; } .pboard.collapsed{ flex:1 1 45%; } }
   .phead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
   .phead .nm{ font-weight:700; font-size:15px; }
   .phead .tag{ font-size:10.5px; padding:2px 7px; border-radius:2px; background:#e2d7c2; color:#5d5346; }
   .phead .tag.gov{ background:var(--ink); color:var(--bg); }
   .phead .stats{ margin-left:auto; display:flex; gap:10px; font-size:12.5px; }
   .phead .stats b{ font-size:14px; }
-  .grid12{ display:grid; grid-template-columns:repeat(6,1fr); gap:4px; margin:6px 0; }
-  .cell{ position:relative; border:1px dashed #c9bda6; border-radius:2px; min-height:58px; background:#f7f2e8; overflow:hidden; }
+  /* 토지: 6×2 그리드, 공개된 농장과 같은 비율 */
+  .grid12{ display:grid; grid-template-columns:repeat(6,59px); gap:4px; margin:4px 0; }
+  .cell{ position:relative; border:1px dashed #e3dbc9; border-radius:2px; min-height:58px; background:#f7f2e8; overflow:hidden; }
   .cell img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#fff; }
-  /* 토지 칸: 이미지(위) + 이름표(아래) 분리, 확대 없음 */
-  .cell.land{ display:flex; flex-direction:column; }
+  /* 토지 칸: 이미지(위) + 이름표(아래) 분리, 확대 없음. 공개된 농장과 같은 비율 */
+  .cell.land{ display:flex; flex-direction:column; aspect-ratio:70/92; min-height:0; }
   .cell.land .art{ position:relative; flex:1; min-height:50px; }
   .cell.land .art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:none; }
   .cell.land .lbl{ position:static; border-top:1px solid #d9cfbc; background:rgba(251,247,238,.95); }
   .cell .lbl{ position:absolute; left:0; right:0; bottom:0; font-size:9.5px; font-weight:700; text-align:center; background:rgba(251,247,238,.85); padding:1px 0; line-height:1.25; }
-  .cell .wk{ position:absolute; top:2px; left:2px; display:flex; gap:2px; flex-wrap:wrap; max-width:calc(100% - 4px); z-index:2; }
+  /* 일꾼 토큰: 타일에 인쇄된 원 위에 올린다.
+     농장: 좌하단 원(27.5%, 70%) · 건물: 원이 왼쪽부터 20% + 25%씩 (y 60%) · 고급 건물: 원이 없어 좌측 중단 */
+  .cell.land .wk{ position:absolute; left:28%; top:71%; transform:translate(-50%,-50%); z-index:2; }
+  .cell.land .wk .wtok{ display:block; width:25px; height:25px; }
+  .bimg{ position:relative; }
+  .bimg .wtok{ position:absolute; transform:translate(-50%,-50%); width:25px; height:25px; z-index:2; }
   .wtok{ width:11px; height:11px; border-radius:50%; background:#7b5230; border:1px solid #4a2f16; }
   .wtok.empty{ background:transparent; border:1px dashed #a08a6a; }
-  .cell.b2{ grid-row:span 2; }
   .cell .vpmark{ position:absolute; top:1px; right:2px; font-size:9px; color:#fff; background:var(--ink); border-radius:2px; padding:0 3px; z-index:2; }
   .cell.clickable{ cursor:pointer; border-color:var(--accent); border-style:solid; }
   .cell.clickable:hover{ background:#f6e8dc; }
   .portrait{ font-size:12px; color:var(--dim); display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:4px; }
   .goodrow{ display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
 
+  /* 건설 부지: 12칸이 항상 6×2 그리드로 보인다 (빈 칸 포함).
+     타일은 건물 이미지 비율 그대로 핏하게 — 정사각형 강제 없음. 고급 건물은 세로형 원본이라 자연히 큼 */
+  .bgrid{ grid-template-columns:repeat(6,119px); grid-auto-rows:auto; gap:3px; }
+  /* 빈 칸도 건물 놓인 칸과 같은 높이(이미지 79 + 이름표 15) — 배치 전후 높이가 안 변하게 */
+  .bgrid .cell{ min-height:94px; display:flex; flex-direction:column; }
+  /* 고급 건물: 부지 2칸을 위아래로 차지 — 이미지는 그 안에서 세로 가운데 */
+  .cell.b2{ grid-row:span 2; }
+  .cell.b2 .bimg{ margin:auto 0; }
+  .bgrid .cell img:not(.zoom){ position:static; display:block; width:100%; height:auto; background:#fff; }
+  .bgrid .cell .lbl{ position:static; margin-top:auto; border-top:1px solid var(--line); background:rgba(251,247,238,.95); }
+
+  /* 건물 보관판 플로팅 버튼 */
+  .fab-shop{ position:fixed; right:18px; bottom:86px; z-index:60; width:58px; height:58px; border-radius:50%;
+    border:1px solid var(--line); background:var(--panel); box-shadow:0 3px 10px rgba(0,0,0,.28);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; font-size:18px; }
+  .fab-shop span{ font-size:9px; font-weight:700; }
+  .fab-shop:hover{ background:#e2d7c2; }
+
   /* action bar */
-  .actionbar{ position:fixed; left:0; right:0; bottom:0; background:rgba(34,29,22,.97); color:#f3ede1; padding:12px 18px; z-index:50; box-shadow:0 -3px 14px rgba(0,0,0,.25); }
+  .actionbar{ position:fixed; left:0; right:0; bottom:0; background:rgba(34,29,22,.97); color:#f3ede1; padding:12px 18px; z-index:85; box-shadow:0 -3px 14px rgba(0,0,0,.25); }
   .actionbar .inner{ max-width:1280px; margin:0 auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .actionbar .who{ font-weight:700; color:#e8c95c; white-space:nowrap; }
   .actionbar .msg{ font-size:13.5px; }
@@ -142,12 +221,12 @@
   .actionbar button:disabled{ opacity:.4; cursor:default; }
 
   /* log */
-  .log{ margin-top:16px; background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:10px 14px; max-height:180px; overflow-y:auto; font-size:12.5px; line-height:1.75; color:#4b4237; }
+  .log{ margin-top:16px; background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:8px 12px; max-height:110px; overflow-y:auto; font-size:12px; line-height:1.7; color:#4b4237; }
   .log .r{ color:var(--accent); font-weight:700; }
   .log div b{ color:var(--ink); }
 
-  /* buildings shop */
-  .shop{ display:grid; grid-template-columns:repeat(6,1fr); gap:5px; }
+  /* buildings shop — 팝업 카드는 보드 타일(110px)보다 20% 크게 */
+  .shop{ display:grid; grid-template-columns:repeat(6,158px); gap:6px; }
   .shopb{ position:relative; border:1px solid transparent; background:transparent; border-radius:3px; padding:0; font-size:12px; }
   .shopb .nm{ font-weight:700; font-size:12.5px; }
   .shopb .inf{ color:var(--dim); font-size:11px; margin-top:1px; }
@@ -172,6 +251,12 @@
 
   .overlay{ position:fixed; inset:0; background:rgba(34,29,22,.55); z-index:80; display:flex; align-items:center; justify-content:center; padding:20px; }
   .modal{ background:var(--panel); border:1px solid var(--line); max-width:720px; width:100%; max-height:86vh; overflow-y:auto; padding:26px 30px; border-radius:3px; }
+  /* 건물 보관소 팝업: 어둠막은 화면 전체, 패널은 (액션바 제외 영역의) 세로 가운데 */
+  .overlay.shop-ov{ align-items:center; padding-top:16px; padding-bottom:88px; }
+  .shop-modal{ max-width:1110px; padding:20px 24px; }
+  .shop-modal-h{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .shop-modal-h h2{ margin:0; font-size:22px; }
+  .shop-modal-h button{ padding:6px 12px; font-size:12.5px; }
   .modal h2{ font-size:24px; margin-bottom:10px; }
   .modal table{ width:100%; border-collapse:collapse; font-size:13.5px; margin:8px 0; }
   .modal td,.modal th{ border:1px solid var(--line); padding:6px 10px; text-align:left; }
@@ -251,30 +336,39 @@ function imgTag(cat, nm, cls){
 let G = null;           // 게임 상태 (JSON 직렬화 가능)
 let uiSel = null;       // 임시 UI 선택 상태 (모집 배치 등)
 
-/* ── 되돌리기 ──
-   사람 차례가 시작될 때마다 G를 통째로 스냅샷해 둔다. G가 순수 JSON이라 가능한 방식.
-   스택 맨 위 = 현재 상태이므로, 되돌리기는 그걸 버리고 그 아래(직전 내 결정 시점)를 복원한다.
-   내 행동 이후에 일어난 AI 행동까지 함께 되돌아간다. 새로고침하면 기록은 사라진다. */
-const UNDO_MAX = 20;
-let undoStack = [];
-function undoCapture(){
-  const pd = G && G.pending;
-  if(!pd || pd.player===undefined || pd.type==='gameOver') return;
-  if(P(pd.player).ai) return;                       // AI 차례는 되돌리기 지점이 아니다
-  const snap = JSON.stringify(G);
-  if(undoStack.length && undoStack[undoStack.length-1]===snap) return;  // 같은 결정에서 중복 호출
-  undoStack.push(snap);
-  if(undoStack.length > UNDO_MAX) undoStack.shift();
+/* ── 화면 상태 ──
+   G에 넣지 않는 순수 뷰 상태. 저장/되돌리기와 무관하며 새로고침하면 기본값으로 돌아간다. */
+let uiBoardSel = null;   // 펼쳐 볼 개인 보드. null = 현재 차례인 플레이어를 자동으로 따라감
+let uiShopOpen = null;   // 건물 보관판 팝업. null = 자동(내 건설 차례에 열림) / true = 열어둠 / false = 닫아둠
+let uiLastPend = '';     // pending 전환 감지용
+
+function humanPend(){ const pd=G&&G.pending; return (pd&&pd.player!==undefined&&pd.type!=='gameOver'&&!P(pd.player).ai)?pd:null; }
+function shownBoard(){
+  if(!G) return 0;
+  if(uiBoardSel!==null) return uiBoardSel;
+  const pd=G.pending;
+  return (pd&&pd.player!==undefined)?pd.player:G.governor;
 }
-function undoAvailable(){ return undoStack.length >= 2; }
-function uiUndo(){
-  if(!undoAvailable()) return;
-  clearTimeout(aiTimer);
-  undoStack.pop();                                  // 현재 상태 버리기
-  G = JSON.parse(undoStack[undoStack.length-1]);    // 직전 내 결정 시점으로
-  uiSel = (G.pending && G.pending.type==='storage') ? {types:[], single:null} : null;
-  render(); save();
+function shopVisibleNow(){
+  if(!G||G.over) return false;
+  if(uiShopOpen!==null) return uiShopOpen;
+  const pd=humanPend();
+  return !!pd && pd.type==='builder';
 }
+function uiSelectBoard(i){ uiBoardSel=i; render(); }
+function uiToggleShop(){ uiShopOpen=!shopVisibleNow(); render(); }
+
+document.addEventListener('keydown', function(e){
+  if(!G||G.over) return;
+  const tg=e.target&&e.target.tagName;
+  if(tg==='INPUT'||tg==='SELECT'||tg==='TEXTAREA') return;
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
+    uiBoardSel=(shownBoard()+(e.key==='ArrowRight'?1:G.n-1))%G.n;
+    e.preventDefault(); render();
+  } else if(e.key==='Escape'&&shopVisibleNow()){
+    uiShopOpen=false; render();
+  }
+});
 
 function playerCountSetup(n){
   if (n===2) return { coins:3, vp:65, workers:40, market:2, ships:[4,6],
@@ -298,7 +392,6 @@ function playerCountSetup(n){
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 function newGame(seats){
-  undoStack = [];   // 이전 게임의 되돌리기 기록이 새 게임으로 새지 않게
   const n = seats.length, cfg = playerCountSetup(n);
   // 농장 더미
   const deckCount = { coffee:8, tobacco:9, corn:10, sugar:11, fruit:12 };
@@ -1040,7 +1133,6 @@ function aiDecide(){
 /* ═══════════════════════════ 흐름 제어 ═══════════════════════════ */
 let aiTimer=null;
 function schedule(){
-  undoCapture();
   render(); save();
   const pd=G.pending;
   if(!pd || pd.type==='gameOver') return;
@@ -1066,9 +1158,10 @@ function loadSave(){
 
 /* ═══════════════════════════ 렌더링 ═══════════════════════════ */
 const $app=document.getElementById('app');
-function goodChip(t,txt){
+/* 상품 토큰: 글자 없이 색으로만. 이름이 필요한 곳은 옆에 텍스트로 쓴다. */
+function goodChip(t){
   const g=GOODS[t];
-  return '<span class="goodchip" style="background:'+g.color+';color:'+g.text+'" title="'+g.nm+'">'+(txt!==undefined?txt:g.nm[0])+'</span>';
+  return '<span class="goodchip" style="--gc:'+g.color+'" title="'+g.nm+'"></span>';
 }
 function esc(s){ return String(s).replace(/</g,'&lt;'); }
 function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
@@ -1115,14 +1208,22 @@ function startNewGame(){
   while(setupSeats.length<setupN) setupSeats.push({name:'AI '+['가영','나정','도준','민수','서연'][setupSeats.length%5], ai:true});
   newGame(setupSeats.slice(0,setupN).map(s=>({name:s.name||'플레이어', ai:s.ai})));
 }
-function resumeGame(){ if(loadSave()){ undoStack=[]; render(); schedule(); } }
-function confirmNew(){ if(confirm('현재 게임을 버리고 새 게임을 시작할까요?')){ localStorage.removeItem('pr1897_save'); G=null; undoStack=[]; renderSetup(); } }
+function resumeGame(){ if(loadSave()){ render(); schedule(); } }
+function confirmNew(){ if(confirm('현재 게임을 버리고 새 게임을 시작할까요?')){ localStorage.removeItem('pr1897_save'); G=null; renderSetup(); } }
 
 /* 본 게임 렌더 */
 function render(){
   if(!G){ renderSetup(); return; }
   const pd=G.pending||{};
   const curPi=(pd.player!==undefined)?pd.player:null;
+
+  /* 결정이 바뀌면 뷰 상태를 기본값으로 — 보관판 팝업은 자동 모드로, 사람 차례가 되면 그 보드를 따라간다 */
+  const pendKey=(pd.type||'')+':'+(curPi===null?'-':curPi);
+  if(pendKey!==uiLastPend){
+    uiLastPend=pendKey;
+    uiShopOpen=null;
+    if(curPi!==null&&pd.type!=='gameOver'&&!P(curPi).ai) uiBoardSel=null;
+  }
 
   /* 역할 타일 */
   const phaseRole=G.phase?G.phase.id:null;
@@ -1147,7 +1248,11 @@ function render(){
       if(i<s.count) slots+='<span class="slot g">'+goodChip(s.type,'')+'</span>';
       else slots+='<span class="slot"></span>';
     }
-    return '<div class="ship"><div class="cap">'+s.size+'칸'+(s.type?' · '+PLANT_NM[s.type]:'')+'</div><div class="slots">'+slots+'</div></div>';
+    const full=s.count>=s.size;
+    const cols=Math.ceil(s.size/2);   // 위아래 2줄
+    return '<div class="ship'+(full?' full':'')+'"><div class="cap">'+s.size+'칸 '
+      +(s.type?PLANT_NM[s.type]+' <b>'+s.count+'/'+s.size+'</b>':'· 빈 배')
+      +'</div><div class="slots" style="grid-template-columns:repeat('+cols+',20px)">'+slots+'</div></div>';
   }).join('');
 
   /* 상점 */
@@ -1155,18 +1260,23 @@ function render(){
   for(let i=0;i<4;i++){
     mkt+= (G.supply.market[i]!==undefined)
       ? goodChip(G.supply.market[i])
-      : '<span class="slot" style="width:22px;height:22px"></span>';
+      : '<span class="slot"></span>';
   }
 
-  /* 공급처 */
+  /* 인력 시장 */
   const S=G.supply;
+  const laborHtml='<div class="labor-row">'
+    +(S.labor>0?'<span class="wtok"></span> <b>×'+S.labor+'</b>':'<span style="color:var(--dim);font-size:12px">비어 있음</span>')
+    +'</div>'
+    +'<div class="hintline">다음 모집 때 나눠 갖는 일꾼</div>';
+
+  /* 공급처 */
   const supHtml='<div class="supply-line">'
     +'<span class="sup-item">일꾼 <b>'+S.workers+'</b></span>'
-    +'<span class="sup-item">인력 시장 <b>'+S.labor+'</b></span>'
     +'<span class="sup-item">승점 칩 <b>'+S.vp+'</b></span>'
     +'<span class="sup-item">채석장 <b>'+S.quarries+'</b></span>'
     +'<span class="sup-item">농장 더미 <b>'+S.deck.length+'</b></span>'
-    +GTYPES.map(t=>'<span class="sup-item">'+goodChip(t)+' <b>'+S.goods[t]+'</b></span>').join('')
+    +GTYPES.map(t=>'<span class="sup-item">'+goodChip(t)+' '+PLANT_NM[t]+' <b>'+S.goods[t]+'</b></span>').join('')
     +'</div>';
 
   /* 공개 농장 */
@@ -1214,11 +1324,28 @@ function render(){
     +'<div class="shop">'+BORDER.filter(id=>BUILDINGS[id].zone===z).map(shopCell).join('')+'</div></div>'
   ).join('');
 
-  /* 플레이어 보드 */
+  /* 플레이어 보드 — 펼친 보드 1개(좌) + 요약 카드 세로 스택(우) */
   const mayorActive=(pd.type==='mayorPlace'&&!P(curPi).ai);
-  const playersHtml=G.players.map(p=>{
+  const shown=shownBoard();
+  const boardParts=G.players.map(p=>{
     const isCur=(curPi===p.i);
     const isMayorMe=mayorActive&&isCur;
+    const tags=(G.governor===p.i?'<span class="tag gov">주지사</span>':'')+(p.ai?'<span class="tag">AI</span>':'');
+    if(p.i!==shown){
+      // 요약 카드: 농장·건물은 이름 텍스트로, 육각 토큰은 상품(작물)에만 쓴다
+      const farm={}; for(const l of p.land) farm[l.type]=(farm[l.type]||0)+1;
+      const farmList=Object.keys(farm).map(t=>PLANT_NM[t]+' ×'+farm[t]).join(' · ')||'<span class="dim">—</span>';
+      const bldList=p.buildings.map(b=>'<span class="'+(b.w>0?'':'un')+'"'+(b.w>0?'':' title="일꾼 미배치"')+'>'+BUILDINGS[b.id].nm+'</span>').join(' · ')||'<span class="dim">—</span>';
+      const goodsRow=GTYPES.filter(t=>p.goods[t]>0).map(t=>goodChip(t)+'<span>×'+p.goods[t]+'</span>').join(' ')||'<span class="dim">—</span>';
+      return '<div class="pboard collapsed'+(isCur?' cur':'')+'" onclick="uiSelectBoard('+p.i+')" title="클릭하면 펼칩니다">'
+        +'<div class="chead">'+esc(p.name)+tags+'</div>'
+        +'<div class="cstat">💰<b>'+p.coins+'</b> ⬡<b>'+p.vp+'</b> · 일꾼 <b>'+totalWorkersOf(p)+'</b></div>'
+        +'<div class="csec">농장 '+p.land.length+'</div><div class="clist">'+farmList+'</div>'
+        +'<div class="csec">건물 '+p.buildings.length+'</div><div class="clist">'+bldList+'</div>'
+        +'<div class="csec">상품</div><div class="crow">'+goodsRow+'</div>'
+        +'<div class="expand">펼치기 ▾</div>'
+        +'</div>';
+    }
     // 토지
     let land='';
     for(let i=0;i<12;i++){
@@ -1229,36 +1356,58 @@ function render(){
         land+='<div class="cell land'+(clickable?' clickable':'')+'" '+(clickable?'onclick="uiToggleLand('+p.i+','+i+')"':'')+'>'
           +'<div class="art" style="background:'+(g?g.color+'26':'#ddd')+'">'
           +imgTag('농장',PLANT_NM[l.type])
-          +'<span class="wk">'+(l.w?'<span class="wtok"></span>':'<span class="wtok empty"></span>')+'</span></div>'
+          +(l.w?'<span class="wk"><span class="wtok"></span></span>':'')+'</div>'
           +'<div class="lbl">'+PLANT_NM[l.type]+'</div></div>';
-      } else land+='<div class="cell"></div>';
+      } else land+='<div class="cell land empty"></div>';
     }
     // 건물
     let blds='';
     let used=0;
     for(const b of p.buildings){
       const B=BUILDINGS[b.id]; used+=(B.size||1);
+      // 배치된 일꾼만 그린다 — 빈 자리는 타일에 인쇄된 원이 이미 보여준다.
+      // 인쇄된 원 위치(실측): 1칸 건물 23% · 2칸 21%/45% · 3칸 20%/45%/70% (y 60%)
+      // 고급 건물은 좌상단 비용 코인을 감싼 원이 일꾼 자리 (22%, 29%)
       let wk='';
-      for(let s=0;s<B.slots;s++) wk+= s<b.w ? '<span class="wtok"></span>':'<span class="wtok empty"></span>';
+      for(let s=0;s<b.w;s++){
+        let x,y;
+        if(B.size===2){ x=23; y=30; }
+        else{
+          const x0=B.slots===1?22:B.slots===2?22:21;
+          const step=B.slots===2?24:25;
+          x=x0+s*step; y=60;
+        }
+        wk+='<span class="wtok" style="left:'+x+'%;top:'+y+'%"></span>';
+      }
       const clickable=isMayorMe;
       blds+='<div class="cell'+(B.size===2?' b2':'')+(clickable?' clickable':'')+'" '+(clickable?'onclick="uiToggleBld('+p.i+',\''+b.id+'\')"':'')
         +' title="'+escAttr(buildingTip(B)+(b.w<B.slots?'\n일꾼 미배치 — 효과가 발동하지 않습니다.':''))+'">'
-        +imgTag('건물',B.nm)
+        +'<div class="bimg">'+imgTag('건물',B.nm)+wk+'</div>'
         +imgTag('건물',B.nm,'zoom')
-        +'<span class="wk">'+wk+'</span><span class="vpmark">'+B.vp+'</span>'
         +'<div class="lbl">'+B.nm+'</div></div>';
     }
     for(let i=used;i<12;i++) blds+='<div class="cell"></div>';
-    const tags=(G.governor===p.i?'<span class="tag gov">주지사</span>':'')+(p.ai?'<span class="tag">AI</span>':'');
-    return '<div class="pboard'+(isCur?' cur':'')+'">'
-      +'<div class="phead"><span class="nm">'+esc(p.name)+'</span>'+tags
-      +'<span class="stats"><span>💰 <b>'+p.coins+'</b></span><span>⬡ <b>'+p.vp+'</b></span></span></div>'
-      +'<div class="sec-title" style="margin-bottom:3px">토지 (' +p.land.length+'/12)</div><div class="grid12">'+land+'</div>'
-      +'<div class="sec-title" style="margin-bottom:3px">건설 부지 ('+used+'/12)</div><div class="grid12">'+blds+'</div>'
-      +'<div class="portrait">보관 일꾼 <b>'+p.stored+'</b>'
-      +'<span class="goodrow">'+GTYPES.filter(t=>p.goods[t]>0).map(t=>goodChip(t)+'×'+p.goods[t]).join(' ')+'</span></div>'
+    // 우측 자원 패널
+    const goodsRows=GTYPES.filter(t=>p.goods[t]>0)
+      .map(t=>'<div class="pres-g">'+goodChip(t)+' '+PLANT_NM[t]+' <b>×'+p.goods[t]+'</b></div>').join('')
+      ||'<div class="pres-g dim">없음</div>';
+    const pres='<div class="pres">'
+      +'<div class="pres-row">💰 주화 <b>'+p.coins+'</b></div>'
+      +'<div class="pres-row">⬡ 승점 <b>'+p.vp+'</b></div>'
+      +'<div class="pres-row">보관 일꾼 <b>'+p.stored+'</b></div>'
+      +'<div class="pres-h">상품</div>'+goodsRows
       +'</div>';
-  }).join('');
+    return '<div class="pboard'+(isCur?' cur':'')+'">'
+      +'<div class="phead"><span class="nm">'+esc(p.name)+'</span>'+tags+'</div>'
+      +'<div class="landrow">'
+        +'<div><div class="sec-title" style="margin-bottom:3px">토지 (' +p.land.length+'/12)</div><div class="grid12">'+land+'</div></div>'
+        +pres
+      +'</div>'
+      +'<div class="bsec"><div class="sec-title" style="margin-bottom:3px">건설 부지 ('+used+'/12)</div><div class="grid12 bgrid">'+blds+'</div></div>'
+      +'</div>';
+  });
+  // 자리 순서 그대로 — 펼친 보드가 자기 자리에서 열린다 (접힘·오픈·접힘·접힘 …)
+  const playersHtml=boardParts.join('');
 
   /* 액션 바 */
   let bar='';
@@ -1288,27 +1437,38 @@ function render(){
     +'</div></div>';
   }
 
+  /* 건물 보관판 팝업 */
+  let shopPop='';
+  if(shopVisibleNow()){
+    shopPop='<div class="overlay shop-ov" onclick="if(event.target===this)uiToggleShop()"><div class="modal shop-modal">'
+      +'<div class="shop-modal-h"><h2>건물 보관소</h2><button class="btn-ghost" onclick="uiToggleShop()">닫기 ✕</button></div>'
+      +shopHtml
+      +'</div></div>';
+  }
+
   $app.innerHTML=
   '<div class="hdr"><h1>푸에르토리코</h1><span class="sub">1897</span>'
   +'<div class="meta"><span>라운드 <b>'+G.round+'</b></span><span>주지사 <b>'+esc(P(G.governor).name)+'</b></span>'
   +(G.phase?'<span>단계 <b>'+ROLES[G.phase.id].ph+'</b></span>':'')
-  +'<button onclick="uiUndo()" '+(undoAvailable()?'':'disabled')+' title="직전 내 결정으로 되돌립니다 (그 뒤 AI 행동도 함께 취소)">↶ 되돌리기</button>'
   +'<button onclick="confirmNew()">새 게임</button></div></div>'
-  +'<div class="layout" style="margin-top:14px">'
+  +'<div class="layout" style="margin-top:8px">'
     +'<div class="main-col">'
       +'<div><div class="sec-title">역할</div><div class="roles">'+rolesHtml+'</div></div>'
-      +'<div class="sec"><div class="sec-title">건물 (보관판)</div>'+shopHtml+'</div>'
-      +'<div class="sec"><div class="sec-title">플레이어</div><div class="players">'+playersHtml+'</div></div>'
+      +'<div class="sec"><div class="sec-title">플레이어<span class="kbd-hint">←/→ 키 또는 클릭으로 보드 전환</span></div><div class="players">'+playersHtml+'</div></div>'
     +'</div>'
     +'<div class="side-col">'
       +'<div class="card"><div class="sec-title">공개된 농장</div><div class="plants">'+plantsHtml+'</div></div>'
       +'<div class="card"><div class="sec-title">수송선</div><div class="ships">'+shipsHtml+'</div></div>'
-      +'<div class="card"><div class="sec-title">상점</div><div class="market-slots">'+mkt+'</div></div>'
+      +'<div class="cardrow">'
+        +'<div class="card"><div class="sec-title">상점</div><div class="market-slots">'+mkt+'</div><div class="hintline">가득 차면 비워짐 · 중복 종류 판매 불가</div></div>'
+        +'<div class="card"><div class="sec-title">인력 시장</div>'+laborHtml+'</div>'
+      +'</div>'
       +'<div class="card"><div class="sec-title">공급처</div>'+supHtml+'</div>'
       +logHtml
     +'</div>'
   +'</div>'
-  +bar+modal;
+  +'<button class="fab-shop" onclick="uiToggleShop()" title="건물 보관소 열기/닫기 (Esc로 닫기)">🏘️<span>건물</span></button>'
+  +bar+modal+shopPop;
 
   const lb=document.getElementById('logbox'); if(lb) lb.scrollTop=lb.scrollHeight;
 }
@@ -1334,7 +1494,8 @@ function renderActionBar(pd){
     btns+='<button class="hot" onclick="uiMayorDone('+p.i+')">배치 완료</button>';
   }
   else if(pd.type==='builder'){
-    msg='건설할 건물을 위 보관판에서 클릭하세요. (빨간 테두리 = 건설 가능'+(pd.player===G.phase.chooser?' · 혜택 -1주화':'')+')';
+    msg='건설할 건물을 클릭하세요. (빨간 테두리 = 건설 가능'+(pd.player===G.phase.chooser?' · 혜택 -1주화':'')+')';
+    btns+='<button onclick="uiToggleShop()">'+(shopVisibleNow()?'건물 닫기':'건물 보기')+'</button>';
     btns+='<button onclick="actBuild(\'skip\')">생략</button>';
   }
   else if(pd.type==='craftBonus'){
