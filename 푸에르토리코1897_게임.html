@@ -232,10 +232,10 @@
   .cell .lbl{ position:absolute; left:0; right:0; bottom:0; font-size:9.5px; font-weight:700; text-align:center; background:rgba(251,247,238,.85); padding:1px 0; line-height:1.25; }
   /* 일꾼 토큰: 타일에 인쇄된 원 위에 올린다.
      농장: 좌하단 원(27.5%, 70%) · 건물: 원이 왼쪽부터 20% + 25%씩 (y 60%) · 고급 건물: 원이 없어 좌측 중단 */
-  .cell.land .wk{ position:absolute; left:28%; top:71%; transform:translate(-50%,-50%); z-index:2; }
+  .cell.land .wk{ position:absolute; left:28%; top:71%; margin:-12.5px 0 0 -12.5px; z-index:2; }
   .cell.land .wk .wtok{ display:block; width:25px; height:25px; }
   .bimg{ position:relative; }
-  .bimg .wtok{ position:absolute; transform:translate(-50%,-50%); width:25px; height:25px; z-index:2; }
+  .bimg .wtok{ position:absolute; margin:-12.5px 0 0 -12.5px; width:25px; height:25px; z-index:2; }
   .wtok{ width:11px; height:11px; border-radius:50%; background:#7b5230; border:1px solid #4a2f16; }
   .wtok.empty{ background:transparent; border:1px dashed #a08a6a; }
   .cell .vpmark{ position:absolute; top:1px; right:2px; font-size:9px; color:#fff; background:var(--ink); border-radius:2px; padding:0 3px; z-index:2; }
@@ -275,9 +275,10 @@
   .actionbar button:disabled{ opacity:.4; cursor:default; }
 
   /* 배치 팝 이펙트: 새로 놓인 타일·일꾼이 커졌다 자리잡으며 금빛으로 빛난다 */
-  @keyframes fxpop{ 0%{ transform:scale(1.55); filter:brightness(1.5) drop-shadow(0 0 12px rgba(232,178,60,.95)); }
-    55%{ transform:scale(.96); filter:brightness(1.15) drop-shadow(0 0 6px rgba(232,178,60,.5)); }
-    100%{ transform:scale(1); filter:none; } }
+  /* scale 속성은 transform(translate 중심정렬)과 독립 합성 — 토큰이 제자리에서 커진다 */
+  @keyframes fxpop{ 0%{ scale:1.55; filter:brightness(1.5) drop-shadow(0 0 12px rgba(232,178,60,.95)); }
+    55%{ scale:.96; filter:brightness(1.15) drop-shadow(0 0 6px rgba(232,178,60,.5)); }
+    100%{ scale:1; filter:none; } }
   .fx-pop{ animation:fxpop .95s ease; z-index:6; }
   @keyframes cardflash{ 0%{ box-shadow:0 0 0 3px rgba(217,127,34,.85), 0 0 20px rgba(217,127,34,.6); }
     100%{ box-shadow:none; } }
