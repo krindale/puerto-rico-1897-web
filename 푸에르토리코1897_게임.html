@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>푸에르토리코 1897 — 플레이</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root{
+    --bg:#f3ede1; --ink:#221d16; --line:#d9cfbc; --panel:#fbf7ee; --accent:#a8442a;
+    --dim:#7a6f5e; --gold:#9a7b2f;
+  }
+  body{ background:var(--bg); color:var(--ink); font-family:'Noto Sans KR','Malgun Gothic',sans-serif; font-size:14px; }
+  h1,h2,h3{ font-family:'Gowun Batang','Cormorant Garamond',serif; }
+  button{ font-family:inherit; cursor:pointer; }
+  .wrap{ max-width:1280px; margin:0 auto; padding:14px 18px 120px; }
+
+  /* ── header ── */
+  .hdr{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; padding:6px 2px 10px; border-bottom:2px solid var(--ink); }
+  .hdr h1{ font-size:22px; letter-spacing:.02em; }
+  .hdr .sub{ color:var(--accent); font-family:'Cormorant Garamond',serif; font-size:17px; font-style:italic; }
+  .hdr .meta{ margin-left:auto; display:flex; gap:14px; font-size:12.5px; color:var(--dim); align-items:baseline; }
+  .hdr .meta b{ color:var(--ink); }
+  .hdr button{ border:1px solid var(--line); background:transparent; padding:5px 10px; font-size:12px; border-radius:2px; }
+  .hdr button:hover{ background:#e2d7c2; }
+
+  /* ── setup ── */
+  .setup{ max-width:640px; margin:40px auto; background:var(--panel); border:1px solid var(--line); padding:34px 38px; }
+  .setup h2{ font-size:28px; margin-bottom:6px; }
+  .setup .lead{ color:var(--dim); font-size:13px; margin-bottom:24px; }
+  .setup .row{ display:flex; align-items:center; gap:10px; margin:10px 0; }
+  .setup label{ width:90px; font-weight:700; font-size:13px; }
+  .setup select,.setup input[type=text]{ font-family:inherit; font-size:14px; padding:7px 10px; border:1px solid var(--line); background:#fff; border-radius:2px; }
+  .setup .seat{ display:flex; gap:8px; align-items:center; margin:8px 0; }
+  .setup .seat .num{ width:26px; height:26px; border-radius:50%; background:var(--ink); color:var(--bg); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; }
+  .setup .seat input[type=text]{ flex:1; }
+  .setup .seat .tgl{ display:flex; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .setup .seat .tgl button{ border:none; padding:7px 14px; font-size:12.5px; background:transparent; }
+  .setup .seat .tgl button.on{ background:var(--ink); color:var(--bg); font-weight:700; }
+  .btn-primary{ border:none; background:var(--accent); color:#f7f2e8; padding:13px 26px; font-size:15px; font-weight:700; border-radius:2px; }
+  .btn-primary:hover{ background:#7d2f1c; }
+  .btn-ghost{ border:1px solid var(--line); background:transparent; color:var(--ink); padding:12px 20px; font-size:14px; border-radius:2px; }
+  .btn-ghost:hover{ background:#e2d7c2; }
+
+  /* ── sections ── */
+  .sec{ margin-top:16px; }
+  .sec-title{ font-size:11px; letter-spacing:.28em; color:var(--gold); text-transform:uppercase; margin-bottom:8px; font-weight:700; }
+
+  /* ── 2단 레이아웃: 본문 + 우측 고정 패널 ── */
+  .layout{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:16px; align-items:start; }
+  .side-col{ position:sticky; top:8px; display:flex; flex-direction:column; gap:10px; max-height:calc(100vh - 110px); overflow-y:auto; }
+  .side-col .card{ flex-shrink:0; }
+  @media (max-width:1000px){ .layout{ grid-template-columns:1fr; } .side-col{ position:static; max-height:none; } }
+
+  /* role tiles */
+  .roles{ display:flex; gap:8px; flex-wrap:wrap; }
+  .role{ position:relative; width:96px; border:1px solid var(--line); background:var(--panel); border-radius:3px; padding:0; overflow:hidden; text-align:left; }
+  .role .coin{ position:absolute; top:5px; right:5px; background:#e8c95c; border:1px solid #b89a30; color:#4a3b0a; font-size:11px; font-weight:700; min-width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:3; }
+  .role.taken .img, .role.taken .rolefb{ opacity:.35; }
+  .role.pickable{ border-color:var(--accent); box-shadow:0 0 0 2px var(--accent); cursor:pointer; }
+  .role.pickable:hover{ filter:brightness(1.06); }
+  .role .img{ display:block; width:100%; aspect-ratio:241/379; height:auto; object-fit:cover; margin:0; }
+  .role .img ~ .rolefb{ display:none; }  /* 이미지 있으면 텍스트 폴백 숨김 */
+  .rolefb{ padding:10px; font-weight:700; font-size:14px; min-height:110px; }
+  .rolefb span{ font-weight:400; font-size:11px; color:var(--dim); }
+  .role .took{ position:absolute; left:0; right:0; bottom:0; background:rgba(34,29,22,.85); color:#f3ede1; font-size:10.5px; font-weight:700; text-align:center; padding:3px 0; z-index:3; }
+  .role.cur{ outline:3px solid var(--ink); }
+  /* 호버 확대: 레이아웃을 건드리지 않는 복제 이미지 방식 */
+  img.zoom{ display:none; }
+  .role:hover img.zoom, .shopb:hover img.zoom, .cell:not(.land):hover img.zoom{
+    display:block; position:fixed; inset:auto; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:auto; height:auto; max-width:400px; max-height:74vh; z-index:90;
+    box-shadow:0 8px 30px rgba(0,0,0,.45); border-radius:4px; pointer-events:none; background:#fff; }
+
+  /* board strip: ships / market / supply / display */
+  .strip{ display:grid; grid-template-columns:auto auto 1fr auto; gap:14px; align-items:start; }
+  @media (max-width:1080px){ .strip{ grid-template-columns:1fr 1fr; } }
+  .card{ background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:3px; }
+  .ships{ display:flex; gap:10px; }
+  .ship{ text-align:center; }
+  .ship .cap{ font-size:11px; color:var(--dim); margin-bottom:4px; }
+  .ship .slots{ display:grid; grid-template-columns:repeat(2,16px); gap:2px; justify-content:center; }
+  .ship.big .slots{ grid-template-columns:repeat(2,16px); }
+  .slot{ width:16px; height:16px; border:1px solid #b9ad96; border-radius:2px; background:#fff; }
+  .slot.g{ border:none; }
+  .market-slots{ display:flex; gap:4px; }
+  .market-slots .slot{ width:22px; height:22px; }
+  .goodchip{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:10px; font-weight:700; border:1px solid rgba(0,0,0,.25); }
+  .supply-line{ display:flex; gap:12px; flex-wrap:wrap; font-size:12.5px; }
+  .supply-line b{ font-size:14px; }
+  .sup-item{ display:flex; align-items:center; gap:5px; }
+
+  /* plantation display */
+  .plants{ display:flex; gap:8px; flex-wrap:wrap; }
+  .plant{ width:70px; border:1px solid var(--line); border-radius:3px; overflow:hidden; background:#fff; text-align:center; }
+  .plant .art{ position:relative; width:100%; aspect-ratio:1; }
+  .plant .art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .plant .lbl{ background:rgba(251,247,238,.95); font-size:11px; font-weight:700; padding:3px 0; border-top:1px solid var(--line); }
+  .plant.pickable{ border-color:var(--accent); box-shadow:0 0 0 2px var(--accent); cursor:pointer; }
+
+  /* players */
+  .players{ display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:12px; }
+  .pboard{ background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:10px 12px; }
+  .pboard.cur{ outline:2px solid var(--ink); }
+  .phead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+  .phead .nm{ font-weight:700; font-size:15px; }
+  .phead .tag{ font-size:10.5px; padding:2px 7px; border-radius:2px; background:#e2d7c2; color:#5d5346; }
+  .phead .tag.gov{ background:var(--ink); color:var(--bg); }
+  .phead .stats{ margin-left:auto; display:flex; gap:10px; font-size:12.5px; }
+  .phead .stats b{ font-size:14px; }
+  .grid12{ display:grid; grid-template-columns:repeat(6,1fr); gap:4px; margin:6px 0; }
+  .cell{ position:relative; border:1px dashed #c9bda6; border-radius:2px; min-height:58px; background:#f7f2e8; overflow:hidden; }
+  .cell img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#fff; }
+  /* 토지 칸: 이미지(위) + 이름표(아래) 분리, 확대 없음 */
+  .cell.land{ display:flex; flex-direction:column; }
+  .cell.land .art{ position:relative; flex:1; min-height:50px; }
+  .cell.land .art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:none; }
+  .cell.land .lbl{ position:static; border-top:1px solid #d9cfbc; background:rgba(251,247,238,.95); }
+  .cell .lbl{ position:absolute; left:0; right:0; bottom:0; font-size:9.5px; font-weight:700; text-align:center; background:rgba(251,247,238,.85); padding:1px 0; line-height:1.25; }
+  .cell .wk{ position:absolute; top:2px; left:2px; display:flex; gap:2px; flex-wrap:wrap; max-width:calc(100% - 4px); z-index:2; }
+  .wtok{ width:11px; height:11px; border-radius:50%; background:#7b5230; border:1px solid #4a2f16; }
+  .wtok.empty{ background:transparent; border:1px dashed #a08a6a; }
+  .cell.b2{ grid-row:span 2; }
+  .cell .vpmark{ position:absolute; top:1px; right:2px; font-size:9px; color:#fff; background:var(--ink); border-radius:2px; padding:0 3px; z-index:2; }
+  .cell.clickable{ cursor:pointer; border-color:var(--accent); border-style:solid; }
+  .cell.clickable:hover{ background:#f6e8dc; }
+  .portrait{ font-size:12px; color:var(--dim); display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+  .goodrow{ display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
+
+  /* action bar */
+  .actionbar{ position:fixed; left:0; right:0; bottom:0; background:rgba(34,29,22,.97); color:#f3ede1; padding:12px 18px; z-index:50; box-shadow:0 -3px 14px rgba(0,0,0,.25); }
+  .actionbar .inner{ max-width:1280px; margin:0 auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .actionbar .who{ font-weight:700; color:#e8c95c; white-space:nowrap; }
+  .actionbar .msg{ font-size:13.5px; }
+  .actionbar .btns{ display:flex; gap:8px; flex-wrap:wrap; margin-left:auto; }
+  .actionbar button{ border:1px solid #6b6152; background:#3a332a; color:#f3ede1; padding:8px 14px; font-size:13px; border-radius:2px; }
+  .actionbar button:hover{ background:#4d4436; }
+  .actionbar button.hot{ background:var(--accent); border-color:var(--accent); font-weight:700; }
+  .actionbar button.hot:hover{ background:#7d2f1c; }
+  .actionbar button:disabled{ opacity:.4; cursor:default; }
+
+  /* log */
+  .log{ margin-top:16px; background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:10px 14px; max-height:180px; overflow-y:auto; font-size:12.5px; line-height:1.75; color:#4b4237; }
+  .log .r{ color:var(--accent); font-weight:700; }
+  .log div b{ color:var(--ink); }
+
+  /* buildings shop */
+  .shop{ display:grid; grid-template-columns:repeat(6,1fr); gap:5px; }
+  .shopb{ position:relative; border:1px solid transparent; background:transparent; border-radius:3px; padding:0; font-size:12px; }
+  .shopb .nm{ font-weight:700; font-size:12.5px; }
+  .shopb .inf{ color:var(--dim); font-size:11px; margin-top:1px; }
+  .shopb .cnt{ position:absolute; top:4px; right:5px; font-size:11px; font-weight:700; color:#4b4237; background:rgba(251,247,238,.92); padding:0 5px; border-radius:2px; z-index:2; }
+  .shopb.buyable{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); cursor:pointer; }
+  .shopb.buyable:hover{ background:#f6e8dc; }
+  .shopb.none{ opacity:.35; }
+  .shopb .band{ position:absolute; left:0; top:0; bottom:0; width:4px; }
+  .shopb img.card{ display:block; width:100%; height:auto; }
+  .shopb img.card ~ .imgless-only{ display:none; }  /* 이미지 로드 성공 시 이름 숨김(폴백 전용) */
+  .zone{ display:flex; gap:8px; align-items:stretch; margin-top:5px; }
+  .zone:first-of-type{ margin-top:0; }
+  .zone-h{ width:60px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:3px; font-size:11px; font-weight:700; color:var(--ink); border-right:2px solid var(--line); padding-right:7px; }
+  .zone-h span{ font-size:10px; font-weight:500; color:var(--dim); line-height:1.4; }
+  .zone .shop{ flex:1; min-width:0; }
+  .side-col .log{ margin-top:0; }
+
+  .overlay{ position:fixed; inset:0; background:rgba(34,29,22,.55); z-index:80; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal{ background:var(--panel); border:1px solid var(--line); max-width:720px; width:100%; max-height:86vh; overflow-y:auto; padding:26px 30px; border-radius:3px; }
+  .modal h2{ font-size:24px; margin-bottom:10px; }
+  .modal table{ width:100%; border-collapse:collapse; font-size:13.5px; margin:8px 0; }
+  .modal td,.modal th{ border:1px solid var(--line); padding:6px 10px; text-align:left; }
+  .modal th{ background:#f0e9d8; }
+  .scorewin{ color:var(--accent); font-weight:700; }
+  .hint{ font-size:12px; color:var(--dim); margin-top:6px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div id="app" class="wrap"></div>
+
+<script>
+/* ═══════════════════════════ 데이터 ═══════════════════════════ */
+const GOODS = {
+  corn:   { nm:'옥수수', price:0, color:'#d9a520', text:'#4a3b0a' },
+  fruit:  { nm:'과일',   price:1, color:'#4e8c46', text:'#fff' },
+  sugar:  { nm:'설탕',   price:2, color:'#efe6d0', text:'#6b5d43' },
+  tobacco:{ nm:'담배',   price:3, color:'#7b5230', text:'#fff' },
+  coffee: { nm:'커피',   price:4, color:'#2f2620', text:'#fff' },
+};
+const GTYPES = ['corn','fruit','sugar','tobacco','coffee'];
+
+/* zone: 채석장 할인 한도(1~4). size: 건설 부지 칸 수 */
+const BUILDINGS = {
+  // 생산 건물
+  b_fruit_s : { nm:'소형 과일 공장', cost:1, vp:1, slots:1, zone:1, kind:'prod', prod:'fruit',  band:'#4e8c46' },
+  b_sugar_s : { nm:'소형 설탕 공장', cost:2, vp:1, slots:1, zone:1, kind:'prod', prod:'sugar',  band:'#efe6d0' },
+  b_fruit_l : { nm:'대형 과일 공장', cost:3, vp:2, slots:3, zone:2, kind:'prod', prod:'fruit',  band:'#4e8c46' },
+  b_sugar_l : { nm:'대형 설탕 공장', cost:4, vp:2, slots:3, zone:2, kind:'prod', prod:'sugar',  band:'#efe6d0' },
+  b_tobacco : { nm:'담배 공장',      cost:5, vp:3, slots:3, zone:3, kind:'prod', prod:'tobacco',band:'#7b5230' },
+  b_coffee  : { nm:'커피 공장',      cost:6, vp:3, slots:2, zone:3, kind:'prod', prod:'coffee', band:'#2f2620' },
+  // 일반 건물
+  b_smkt  : { nm:'소형 상가',   cost:1, vp:1, slots:1, zone:1, kind:'com', fx:'판매 시 +1주화' },
+  b_hac   : { nm:'대규모 농장', cost:2, vp:1, slots:1, zone:1, kind:'com', fx:'개척 시 더미에서 농장 +1' },
+  b_hut   : { nm:'건설막',      cost:2, vp:1, slots:1, zone:1, kind:'com', fx:'농장 대신 채석장 가능' },
+  b_swh   : { nm:'소형 창고',   cost:3, vp:1, slots:1, zone:1, kind:'com', fx:'상품 1종류 추가 저장' },
+  b_hosp  : { nm:'병원',        cost:4, vp:2, slots:1, zone:2, kind:'com', fx:'개척 배치 시 일꾼 1개' },
+  b_off   : { nm:'영업소',      cost:5, vp:2, slots:1, zone:2, kind:'com', fx:'상점의 중복 종류도 판매' },
+  b_lmkt  : { nm:'대형 상가',   cost:5, vp:2, slots:1, zone:2, kind:'com', fx:'판매 시 +2주화' },
+  b_lwh   : { nm:'대형 창고',   cost:6, vp:2, slots:1, zone:2, kind:'com', fx:'상품 2종류 추가 저장' },
+  b_fact  : { nm:'공업소',      cost:7, vp:3, slots:1, zone:3, kind:'com', fx:'생산 종류 수당 +0/1/2/3/5주화' },
+  b_univ  : { nm:'학교',        cost:8, vp:3, slots:1, zone:3, kind:'com', fx:'건설 시 일꾼 1개' },
+  b_harb  : { nm:'항구',        cost:8, vp:3, slots:1, zone:3, kind:'com', fx:'선적마다 +1점' },
+  b_wharf : { nm:'조선소',      cost:9, vp:3, slots:1, zone:3, kind:'com', fx:'가상의 수송선(단계당 1회)' },
+  // 고급 건물 (부지 2칸)
+  b_hall  : { nm:'시청',   cost:10, vp:4, slots:1, zone:4, kind:'big', size:2, fx:'상업 건물당 1점' },
+  b_cust  : { nm:'세관',   cost:10, vp:4, slots:1, zone:4, kind:'big', size:2, fx:'승점 칩 4점당 1점' },
+  b_fort  : { nm:'요새',   cost:10, vp:4, slots:1, zone:4, kind:'big', size:2, fx:'일꾼 3개당 1점' },
+  b_fire  : { nm:'소방서', cost:10, vp:4, slots:1, zone:4, kind:'big', size:2, fx:'소형 생산 1점·대형 생산 2점' },
+  b_resi  : { nm:'주거지', cost:10, vp:4, slots:1, zone:4, kind:'big', size:2, fx:'토지 칸 수에 따라 4~7점' },
+};
+const BORDER = ['b_fruit_s','b_sugar_s','b_fruit_l','b_sugar_l','b_tobacco','b_coffee',
+  'b_smkt','b_hac','b_hut','b_swh','b_hosp','b_off','b_lmkt','b_lwh','b_fact','b_univ','b_harb','b_wharf',
+  'b_hall','b_cust','b_fort','b_fire','b_resi'];
+
+const ROLES = {
+  settler:    { nm:'개척자', rn:'I',   ph:'개척 단계' },
+  mayor:      { nm:'모집관', rn:'II',  ph:'모집 단계' },
+  builder:    { nm:'건축가', rn:'III', ph:'건설 단계' },
+  craftsman:  { nm:'생산자', rn:'IV',  ph:'생산 단계' },
+  trader:     { nm:'상인',   rn:'V',   ph:'거래 단계' },
+  captain:    { nm:'선장',   rn:'VI',  ph:'선적 단계' },
+  prospector: { nm:'탐험가', rn:'VII', ph:'행동 없음' },
+  prospector2:{ nm:'탐험가', rn:'VII', ph:'행동 없음' },
+};
+
+const PLANT_NM = { corn:'옥수수', fruit:'과일', sugar:'설탕', tobacco:'담배', coffee:'커피', quarry:'채석장' };
+
+/* 이미지 규칙: img/역할_개척자.png · img/건물_소형과일공장.png · img/농장_옥수수.png (없으면 자동 텍스트 폴백) */
+function imgTag(cat, nm, cls){
+  const f = 'img/' + cat + '_' + nm.replace(/\s/g,'') + '.png';
+  return '<img class="'+(cls||'')+'" src="'+f+'" alt="" onerror="this.remove()">';
+}
+
+/* ═══════════════════════════ 게임 상태 ═══════════════════════════ */
+let G = null;           // 게임 상태 (JSON 직렬화 가능)
+let uiSel = null;       // 임시 UI 선택 상태 (모집 배치 등)
+
+function playerCountSetup(n){
+  if (n===2) return { coins:3, vp:65, workers:40, market:2, ships:[4,6],
+    startPlants:['fruit','corn'], removePerType:3, removeGoods:2, quarries:5,
+    roles:['settler','mayor','builder','craftsman','trader','captain','prospector'],
+    comCount:1, prodCount:2, picksEach:3 };
+  if (n===3) return { coins:2, vp:75, workers:55, market:3, ships:[4,5,6],
+    startPlants:['fruit','fruit','corn'], removePerType:0, removeGoods:0, quarries:8,
+    roles:['settler','mayor','builder','craftsman','trader','captain'],
+    comCount:2, prodCount:0, picksEach:1 };
+  if (n===4) return { coins:3, vp:100, workers:75, market:4, ships:[5,6,7],
+    startPlants:['fruit','fruit','corn','corn'], removePerType:0, removeGoods:0, quarries:8,
+    roles:['settler','mayor','builder','craftsman','trader','captain','prospector'],
+    comCount:2, prodCount:0, picksEach:1 };
+  return { coins:4, vp:126, workers:95, market:5, ships:[6,7,8],
+    startPlants:['fruit','fruit','fruit','corn','corn'], removePerType:0, removeGoods:0, quarries:8,
+    roles:['settler','mayor','builder','craftsman','trader','captain','prospector','prospector2'],
+    comCount:2, prodCount:0, picksEach:1 };
+}
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function newGame(seats){
+  const n = seats.length, cfg = playerCountSetup(n);
+  // 농장 더미
+  const deckCount = { coffee:8, tobacco:9, corn:10, sugar:11, fruit:12 };
+  const goodsSup  = { coffee:9, tobacco:9, corn:10, sugar:11, fruit:11 };
+  if (cfg.removePerType){ for(const t of GTYPES) deckCount[t]-=cfg.removePerType; }
+  if (cfg.removeGoods){ for(const t of GTYPES) goodsSup[t]-=cfg.removeGoods; }
+  let deck=[]; for(const t in deckCount) for(let i=0;i<deckCount[t];i++) deck.push(t);
+  shuffle(deck);
+  // 시작 농장 제거
+  for (const t of cfg.startPlants){ deck.splice(deck.indexOf(t),1); }
+  // 건물 재고
+  const stock={};
+  for(const id of BORDER){
+    const b=BUILDINGS[id];
+    if (b.kind==='big') stock[id]=1;
+    else if (b.kind==='prod'){
+      if (n===2) stock[id]=2;
+      else stock[id] = (id==='b_tobacco'||id==='b_coffee') ? 3 : (id.endsWith('_l')?3:4);
+    } else stock[id] = (n===2)?1:2;
+  }
+  G = {
+    n, round:1, governor:0, over:false, endReasons:[], scores:null,
+    players: seats.map((s,i)=>({
+      i, name:s.name, ai:s.ai,
+      coins:cfg.coins, vp:0,
+      goods:{corn:0,fruit:0,sugar:0,tobacco:0,coffee:0},
+      land:[{type:cfg.startPlants[i], w:0}],
+      buildings:[], stored:0,
+    })),
+    supply:{ workers:cfg.workers, vp:cfg.vp, goods:goodsSup, quarries:cfg.quarries,
+      deck, discard:[], display:[], stock,
+      ships: cfg.ships.map(sz=>({size:sz,type:null,count:0})),
+      labor: cfg.market, market:[] },
+    roles: cfg.roles.map(id=>({id,coins:0,takenBy:null})),
+    picksEach: cfg.picksEach,
+    chooserQueue:[], chooserIdx:0,
+    phase:null, pending:null,
+    log:[],
+  };
+  // 초기 농장 공개 (인원+1)
+  refillDisplay();
+  log('<span class="r">게임 시작</span> — '+n+'인 · 승점 칩 '+cfg.vp+'점 · 일꾼 '+cfg.workers+'개');
+  startRound();
+}
+
+function refillDisplay(){
+  const S=G.supply, need=G.n+1;
+  S.discard.push(...S.display); S.display=[];
+  while(S.display.length<need){
+    if(!S.deck.length){
+      if(!S.discard.length) break;
+      S.deck=shuffle(S.discard.splice(0));
+    }
+    S.display.push(S.deck.pop());
+  }
+}
+
+/* ═══════════════════════════ 유틸 ═══════════════════════════ */
+const P = i => G.players[i];
+function log(html){ G.log.push(html); if(G.log.length>400) G.log.shift(); }
+function pname(p){ return '<b>'+p.name+'</b>'; }
+function occupied(b){ return b.w>0; }
+function hasB(p,id){ return p.buildings.some(b=>b.id===id); }
+function occB(p,id){ const b=p.buildings.find(b=>b.id===id); return b&&b.w>0; }
+function sitesUsed(p){ return p.buildings.reduce((s,b)=>s+(BUILDINGS[b.id].size||1),0); }
+function goodsTotal(p){ return GTYPES.reduce((s,t)=>s+p.goods[t],0); }
+function order(from){ const o=[]; for(let k=0;k<G.n;k++) o.push((from+k)%G.n); return o; }
+function giveVP(p,amt){
+  if(amt<=0) return;
+  const got=Math.min(amt,G.supply.vp);
+  G.supply.vp-=got; p.vp+=amt; // 칩 부족분도 기록(규칙: 종이에 기록)
+  if(G.supply.vp===0 && !G.endReasons.includes('vp')){ G.endReasons.push('vp'); log('⚠️ 승점 칩이 바닥났습니다 — 이번 라운드가 끝나면 게임이 종료됩니다.'); }
+}
+function takeWorkerSupplyFirst(){ // 병원/학교용: 공급처 → 인력시장 → 없음
+  if(G.supply.workers>0){ G.supply.workers--; return true; }
+  if(G.supply.labor>0){ G.supply.labor--; return true; }
+  return false;
+}
+
+/* ═══════════════════════════ 라운드 / 역할 선택 ═══════════════════════════ */
+function startRound(){
+  G.roles.forEach(r=>r.takenBy=null);
+  G.chooserQueue=[];
+  if(G.n===2){
+    for(let k=0;k<3;k++){ G.chooserQueue.push(G.governor, (G.governor+1)%2); }
+  } else {
+    G.chooserQueue=order(G.governor);
+  }
+  G.chooserIdx=0;
+  log('<span class="r">라운드 '+G.round+'</span> — 주지사: '+pname(P(G.governor)));
+  nextChooser();
+}
+
+function nextChooser(){
+  if(G.chooserIdx>=G.chooserQueue.length){ endRound(); return; }
+  const pi=G.chooserQueue[G.chooserIdx];
+  G.pending={type:'pickRole', player:pi};
+  schedule();
+}
+
+function pickRole(pi, roleIdx){
+  const r=G.roles[roleIdx]; const p=P(pi);
+  r.takenBy=pi;
+  if(r.coins>0){ p.coins+=r.coins; log(pname(p)+' — 타일 위 '+r.coins+'주화 획득'); r.coins=0; }
+  log(pname(p)+'이(가) <b>'+ROLES[r.id].nm+'</b> 역할을 선택했습니다.');
+  G.chooserIdx++;
+  startPhase(r.id, pi);
+}
+
+function endRound(){
+  G.roles.forEach(r=>{ if(r.takenBy===null) r.coins++; });
+  // 게임 종료 체크
+  if(G.endReasons.length){ finishGame(); return; }
+  G.governor=(G.governor+1)%G.n;
+  G.round++;
+  startRound();
+}
+
+/* ═══════════════════════════ 단계 공통 흐름 ═══════════════════════════ */
+/* phase state: G.phase = {id, chooser, queue:[pi...], qi, ...phase별 필드} */
+function startPhase(roleId, chooser){
+  const base={id:roleId, chooser, queue:order(chooser), qi:0};
+  if(roleId==='prospector'||roleId==='prospector2'){
+    P(chooser).coins++; log(pname(P(chooser))+' — 탐험가 혜택으로 1주화 획득');
+    G.phase=null; nextChooser(); return;
+  }
+  if(roleId==='settler'){ G.phase={...base}; settlerNext(); return; }
+  if(roleId==='mayor'){ mayorStart(base); return; }
+  if(roleId==='builder'){ G.phase={...base}; builderNext(); return; }
+  if(roleId==='craftsman'){ craftsmanRun(base); return; }
+  if(roleId==='trader'){ G.phase={...base}; traderNext(); return; }
+  if(roleId==='captain'){ G.phase={...base, passes:0, cur:chooser, firstShip:{}, wharfUsed:{}, anyAction:true}; captainNext(); return; }
+}
+
+/* ── 개척자 ── */
+function settlerNext(){
+  const F=G.phase;
+  if(F.qi>=F.queue.length){
+    refillDisplay();
+    log('개척 단계 종료 — 남은 농장을 버리고 새로 '+G.supply.display.length+'개를 공개했습니다.');
+    G.phase=null; nextChooser(); return;
+  }
+  const pi=F.queue[F.qi]; const p=P(pi);
+  if(p.land.length>=12){ log(pname(p)+' — 토지 칸이 가득 차 개척을 생략합니다.'); F.qi++; settlerNext(); return; }
+  G.pending={type:'settler', player:pi, haciendaUsed:false, took:false};
+  schedule();
+}
+function settlerCanQuarry(pi){
+  const F=G.phase; const p=P(pi);
+  return G.supply.quarries>0 && (F.chooser===pi || occB(p,'b_hut'));
+}
+function settlerPlace(p, type, fromDeck){
+  p.land.push({type, w:0});
+  // 병원: 더미(대규모 농장)로 가져온 타일에는 적용 안 됨
+  if(!fromDeck && occB(p,'b_hosp')){
+    if(takeWorkerSupplyFirst()){ p.land[p.land.length-1].w=1; log(pname(p)+' — 병원 기능으로 일꾼 1개를 새 타일에 배치'); }
+  }
+}
+function actSettler(action, arg){
+  const pd=G.pending; const p=P(pd.player);
+  if(action==='deck'){ // 대규모 농장
+    const S=G.supply;
+    if(!S.deck.length && S.discard.length) S.deck=shuffle(S.discard.splice(0));
+    if(S.deck.length){
+      const t=S.deck.pop(); settlerPlace(p,t,true); pd.haciendaUsed=true;
+      log(pname(p)+' — 대규모 농장 기능으로 더미에서 <b>'+PLANT_NM[t]+'</b> 농장을 배치');
+    } else pd.haciendaUsed=true;
+    if(p.land.length>=12){ finishSettlerTurn(); return; }
+    schedule(); return;
+  }
+  if(action==='display'){
+    const t=G.supply.display.splice(arg,1)[0];
+    settlerPlace(p,t,false);
+    log(pname(p)+' — <b>'+PLANT_NM[t]+'</b> 농장을 개척');
+    finishSettlerTurn(); return;
+  }
+  if(action==='quarry'){
+    G.supply.quarries--; settlerPlace(p,'quarry',false);
+    log(pname(p)+' — <b>채석장</b>을 개척');
+    finishSettlerTurn(); return;
+  }
+  if(action==='skip'){ log(pname(p)+' — 개척을 생략'); finishSettlerTurn(); return; }
+}
+function finishSettlerTurn(){ G.pending=null; G.phase.qi++; settlerNext(); }
+
+/* ── 모집관 ── */
+function mayorStart(base){
+  const chooser=base.chooser, p=P(chooser);
+  if(G.supply.workers>0){ G.supply.workers--; p.stored++; log(pname(p)+' — 모집관 혜택으로 공급처에서 일꾼 1개'); }
+  // 인력 시장 분배
+  let idx=0; const o=order(chooser); const got={};
+  while(G.supply.labor>0){
+    const pi=o[idx%G.n]; G.supply.labor--; P(pi).stored++;
+    got[pi]=(got[pi]||0)+1; idx++;
+  }
+  const parts=o.filter(pi=>got[pi]).map(pi=>P(pi).name+' '+got[pi]+'개');
+  if(parts.length) log('인력 시장 분배 — '+parts.join(', '));
+  G.phase={...base, placed:[]};
+  mayorNextPlace();
+}
+function emptyCirclesOf(p){
+  let c=0;
+  for(const b of p.buildings) c+=BUILDINGS[b.id].slots-b.w;
+  for(const l of p.land) c+=1-l.w;
+  return c;
+}
+function emptyBuildingCircles(){
+  let c=0;
+  for(const p of G.players) for(const b of p.buildings) c+=BUILDINGS[b.id].slots-b.w;
+  return c;
+}
+function mayorNextPlace(){
+  const F=G.phase;
+  if(F.qi>=F.queue.length){ mayorEnd(); return; }
+  const pi=F.queue[F.qi];
+  G.pending={type:'mayorPlace', player:pi};
+  uiSel=null;
+  schedule();
+}
+function totalWorkersOf(p){
+  let c=p.stored;
+  for(const b of p.buildings) c+=b.w;
+  for(const l of p.land) c+=l.w;
+  return c;
+}
+function mayorAutoPlace(p){
+  // 전체 회수 후 그리디 배치
+  let pool=totalWorkersOf(p);
+  p.stored=0; p.buildings.forEach(b=>b.w=0); p.land.forEach(l=>l.w=0);
+  const late = G.round>=8 || sitesUsed(p)>=9;
+  const score=[];
+  // 농장+공장 짝 점수
+  const cap={}; // 공장 슬롯 잠재
+  for(const t of GTYPES) cap[t] = (t==='corn') ? 99 : p.buildings.filter(b=>BUILDINGS[b.id].prod===t).reduce((s,b)=>s+BUILDINGS[b.id].slots,0);
+  for(const t of GTYPES){
+    const farms=p.land.filter(l=>l.type===t);
+    const pairs=Math.min(farms.length, cap[t]);
+    for(let k=0;k<farms.length;k++){
+      const v = (k<pairs) ? 3+GOODS[t].price*0.6 : 0.2;
+      score.push({v, apply:()=>{farms[k].w=1;}});
+    }
+  }
+  for(const b of p.buildings){
+    const B=BUILDINGS[b.id];
+    if(B.kind==='prod'){
+      const farms=p.land.filter(l=>l.type===B.prod).length;
+      for(let s=0;s<B.slots;s++){
+        const v = (s<farms) ? 3+GOODS[B.prod].price*0.6+0.1 : 0.2;
+        score.push({v, apply:()=>{b.w++;}});
+      }
+    } else {
+      const val={b_hut:1.6,b_hac:1.4,b_hosp:1.5,b_smkt:1.8,b_lmkt:2.0,b_swh:1.2,b_lwh:1.3,b_fact:2.6,b_univ:1.7,b_harb:2.8,b_wharf:2.4,b_off:0.9,
+        b_hall:late?3.5:1.0,b_cust:late?3.5:1.0,b_fort:late?3.5:1.0,b_fire:late?3.5:1.0,b_resi:late?3.5:1.0}[b.id]||1;
+      score.push({v:val, apply:()=>{b.w++;}});
+    }
+  }
+  // 채석장
+  const quarries=p.land.filter(l=>l.type==='quarry');
+  quarries.forEach((q,k)=>score.push({v:2.2-k*0.15, apply:()=>{q.w=1;}}));
+  score.sort((a,b)=>b.v-a.v);
+  for(const s of score){ if(pool<=0) break; s.apply(); pool--; }
+  p.stored=pool;
+}
+function actMayorDone(){
+  const p=P(G.pending.player);
+  G.pending=null; G.phase.qi++; mayorNextPlace();
+}
+function mayorEnd(){
+  const need=Math.max(emptyBuildingCircles(), G.n);
+  const put=Math.min(need,G.supply.workers);
+  G.supply.workers-=put;
+  G.supply.labor+=put;
+  log('모집 단계 종료 — 인력 시장에 일꾼 '+put+'개 보충 (필요 '+need+'개)');
+  if(put<need && !G.endReasons.includes('workers')){
+    G.endReasons.push('workers');
+    log('⚠️ 일꾼이 부족합니다 — 이번 라운드가 끝나면 게임이 종료됩니다.');
+  }
+  G.phase=null; nextChooser();
+}
+
+/* ── 건축가 ── */
+function quarryDiscount(p,id){
+  const occQ=p.land.filter(l=>l.type==='quarry'&&l.w>0).length;
+  return Math.min(occQ, BUILDINGS[id].zone);
+}
+function buildCost(p,id,isChooser){
+  let c=BUILDINGS[id].cost - quarryDiscount(p,id) - (isChooser?1:0);
+  return Math.max(0,c);
+}
+function canBuild(p,id,isChooser){
+  const B=BUILDINGS[id];
+  if(G.supply.stock[id]<=0) return false;
+  if(hasB(p,id)) return false;
+  if(sitesUsed(p)+(B.size||1)>12) return false;
+  return p.coins>=buildCost(p,id,isChooser);
+}
+function builderNext(){
+  const F=G.phase;
+  if(F.qi>=F.queue.length){ G.phase=null; nextChooser(); return; }
+  const pi=F.queue[F.qi];
+  const p=P(pi), isC=(pi===F.chooser);
+  const any=BORDER.some(id=>canBuild(p,id,isC));
+  if(!any){ log(pname(p)+' — 건설할 수 있는 건물이 없어 생략합니다.'); F.qi++; builderNext(); return; }
+  G.pending={type:'builder', player:pi};
+  schedule();
+}
+function actBuild(id){
+  const pd=G.pending; const p=P(pd.player); const isC=(pd.player===G.phase.chooser);
+  if(id==='skip'){ log(pname(p)+' — 건설을 생략'); G.pending=null; G.phase.qi++; builderNext(); return; }
+  const cost=buildCost(p,id,isC);
+  p.coins-=cost; G.supply.stock[id]--;
+  const b={id,w:0}; p.buildings.push(b);
+  log(pname(p)+' — <b>'+BUILDINGS[id].nm+'</b> 건설 ('+cost+'주화)');
+  if(occB(p,'b_univ')){
+    if(takeWorkerSupplyFirst()){ b.w=1; log(pname(p)+' — 학교 기능으로 일꾼 1개를 새 건물에 배치'); }
+  }
+  if(sitesUsed(p)>=12 && !G.endReasons.includes('sites')){
+    G.endReasons.push('sites');
+    log('⚠️ '+pname(p)+'의 건설 부지 12칸이 모두 찼습니다 — 이번 라운드가 끝나면 게임이 종료됩니다.');
+  }
+  G.pending=null; G.phase.qi++; builderNext();
+}
+
+/* ── 생산자 ── */
+function productionOf(p){
+  const out={};
+  for(const t of GTYPES){
+    let amt;
+    const farms=p.land.filter(l=>l.type===t&&l.w>0).length;
+    if(t==='corn') amt=farms;
+    else{
+      const cap=p.buildings.filter(b=>BUILDINGS[b.id].prod===t).reduce((s,b)=>s+b.w,0);
+      amt=Math.min(farms,cap);
+    }
+    if(amt>0) out[t]=amt;
+  }
+  return out;
+}
+function craftsmanRun(base){
+  const producedBy={};
+  for(const pi of base.queue){
+    const p=P(pi); const want=productionOf(p); const got={};
+    for(const t of GTYPES){
+      if(!want[t]) continue;
+      const real=Math.min(want[t],G.supply.goods[t]);
+      if(real>0){ G.supply.goods[t]-=real; p.goods[t]+=real; got[t]=real; }
+    }
+    producedBy[pi]=got;
+    const kinds=Object.keys(got);
+    if(kinds.length){
+      log(pname(p)+' — 생산: '+kinds.map(t=>PLANT_NM[t]+' '+got[t]).join(', '));
+      if(occB(p,'b_fact')&&kinds.length>=2){
+        const bonus=[0,0,1,2,3,5][kinds.length];
+        p.coins+=bonus; log(pname(p)+' — 공업소 보너스 +'+bonus+'주화');
+      }
+    } else log(pname(p)+' — 생산할 수 있는 상품이 없습니다.');
+  }
+  const cp=P(base.chooser); const mine=producedBy[base.chooser];
+  const avail=Object.keys(mine||{}).filter(t=>G.supply.goods[t]>0);
+  if(avail.length){
+    G.phase={...base, bonusOptions:avail};
+    G.pending={type:'craftBonus', player:base.chooser};
+    schedule();
+  } else { G.phase=null; nextChooser(); }
+}
+function actCraftBonus(t){
+  const p=P(G.pending.player);
+  G.supply.goods[t]--; p.goods[t]++;
+  log(pname(p)+' — 생산자 혜택으로 <b>'+PLANT_NM[t]+'</b> 1개 추가');
+  G.pending=null; G.phase=null; nextChooser();
+}
+
+/* ── 상인 ── */
+function sellableTypes(p){
+  const M=G.supply.market;
+  if(M.length>=4) return [];
+  const office=occB(p,'b_off');
+  return GTYPES.filter(t=>p.goods[t]>0 && (office||!M.includes(t)));
+}
+function traderNext(){
+  const F=G.phase;
+  if(F.qi>=F.queue.length){
+    if(G.supply.market.length>=4){
+      for(const t of G.supply.market) G.supply.goods[t]++;
+      G.supply.market=[];
+      log('상점이 가득 차 상품을 모두 공급처로 치웠습니다.');
+    }
+    G.phase=null; nextChooser(); return;
+  }
+  const pi=F.queue[F.qi]; const p=P(pi);
+  const opts=sellableTypes(p);
+  if(!opts.length){ log(pname(p)+' — 판매할 수 있는 상품이 없어 생략합니다.'); F.qi++; traderNext(); return; }
+  G.pending={type:'trader', player:pi};
+  schedule();
+}
+function saleCoins(p,t,isChooser){
+  let c=GOODS[t].price+(isChooser?1:0);
+  if(occB(p,'b_smkt')) c+=1;
+  if(occB(p,'b_lmkt')) c+=2;
+  return c;
+}
+function actTrade(t){
+  const pd=G.pending; const p=P(pd.player); const isC=(pd.player===G.phase.chooser);
+  if(t==='skip'){ log(pname(p)+' — 판매를 생략'); G.pending=null; G.phase.qi++; traderNext(); return; }
+  const c=saleCoins(p,t,isC);
+  p.goods[t]--; G.supply.market.push(t); p.coins+=c;
+  log(pname(p)+' — <b>'+PLANT_NM[t]+'</b> 판매 (+'+c+'주화)');
+  G.pending=null; G.phase.qi++; traderNext();
+}
+
+/* ── 선장 ── */
+function shipOptions(p){
+  // 적재 가능한 (배, 상품) — 각 상품마다 최대 적재 배만 허용
+  const res=[];
+  for(const t of GTYPES){
+    if(p.goods[t]<=0) continue;
+    let best=-1, cand=[];
+    G.supply.ships.forEach((s,si)=>{
+      const space=s.size-s.count;
+      if(space<=0) return;
+      if(s.type===null){
+        if(G.supply.ships.some(o=>o!==s&&o.type===t)) return;
+      } else if(s.type!==t) return;
+      const load=Math.min(space,p.goods[t]);
+      if(load>best){ best=load; cand=[si]; }
+      else if(load===best) cand.push(si);
+    });
+    for(const si of cand) if(best>0) res.push({ship:si,type:t,load:best});
+  }
+  return res;
+}
+function captainNext(){
+  const F=G.phase;
+  if(F.passes>=G.n){ captainStorage(); return; }
+  const pi=F.cur; const p=P(pi);
+  const opts=shipOptions(p);
+  const wharfOK=occB(p,'b_wharf') && !F.wharfUsed[pi] && goodsTotal(p)>0;
+  if(!opts.length && !wharfOK){
+    F.passes++; F.cur=(F.cur+1)%G.n; captainNext(); return;
+  }
+  if(!opts.length && wharfOK){
+    // 조선소는 선택 사항 → 결정 필요 (통과 가능)
+    G.pending={type:'captain', player:pi, opts, wharfOK, mayPass:true};
+  } else {
+    G.pending={type:'captain', player:pi, opts, wharfOK, mayPass:false};
+  }
+  schedule();
+}
+function captainShipVP(p,pi,amount){
+  const F=G.phase;
+  let vp=amount;
+  if(occB(p,'b_harb')) vp+=1;
+  if(pi===F.chooser && !F.firstShip[pi]) vp+=1;
+  F.firstShip[pi]=true;
+  return vp;
+}
+function actCaptain(action,arg){
+  const F=G.phase; const pd=G.pending; const pi=pd.player; const p=P(pi);
+  if(action==='pass'){
+    log(pname(p)+' — 조선소를 사용하지 않고 넘깁니다.');
+    G.pending=null; F.passes++; F.cur=(F.cur+1)%G.n; captainNext(); return;
+  }
+  if(action==='wharf'){
+    const t=arg; const amt=p.goods[t];
+    p.goods[t]=0; G.supply.goods[t]+=amt;
+    F.wharfUsed[pi]=true;
+    const vp=captainShipVP(p,pi,amt);
+    giveVP(p,vp);
+    log(pname(p)+' — 조선소(가상의 수송선)로 <b>'+PLANT_NM[t]+' '+amt+'개</b> 선적 (+'+vp+'점)');
+  } else {
+    const o=pd.opts[arg]; const s=G.supply.ships[o.ship];
+    s.type=o.type; s.count+=o.load; p.goods[o.type]-=o.load;
+    const vp=captainShipVP(p,pi,o.load);
+    giveVP(p,vp);
+    log(pname(p)+' — '+s.size+'칸 수송선에 <b>'+PLANT_NM[o.type]+' '+o.load+'개</b> 선적 (+'+vp+'점)');
+  }
+  G.pending=null; F.passes=0; F.cur=(F.cur+1)%G.n; captainNext();
+}
+/* 저장 */
+function storageCapacity(p){
+  let types=0;
+  if(occB(p,'b_swh')) types+=1;
+  if(occB(p,'b_lwh')) types+=2;
+  return types; // + 낱개 1개
+}
+function captainStorage(){
+  const F=G.phase;
+  F.storageQueue=F.queue.filter(pi=>goodsTotal(P(pi))>0);
+  F.sqi=0;
+  storageNext();
+}
+function storageNext(){
+  const F=G.phase;
+  if(F.sqi>=F.storageQueue.length){ captainEnd(); return; }
+  const pi=F.storageQueue[F.sqi]; const p=P(pi);
+  const cap=storageCapacity(p);
+  const types=GTYPES.filter(t=>p.goods[t]>0);
+  // 전부 저장 가능하면 자동
+  if(types.length<=cap || (types.length===cap+1 && types.some(t=>p.goods[t]===1))){
+    // cap종류 + 낱개1 로 전부 커버되는지 정확 판정
+    const sorted=[...types].sort((a,b)=>p.goods[a]-p.goods[b]);
+    let keepAll=false;
+    if(types.length<=cap) keepAll=true;
+    else if(types.length===cap+1){
+      keepAll = sorted.some(t=>p.goods[t]===1);
+    }
+    if(keepAll){ F.sqi++; storageNext(); return; }
+  }
+  G.pending={type:'storage', player:pi, cap};
+  uiSel={types:[], single:null};
+  schedule();
+}
+function actStorage(keepTypes, single){
+  const p=P(G.pending.player);
+  const kept={};
+  for(const t of keepTypes) kept[t]=p.goods[t];
+  if(single && !kept[single]) kept[single]=(kept[single]||0)+1;
+  let lost=[];
+  for(const t of GTYPES){
+    const k=kept[t]||0;
+    const drop=p.goods[t]-Math.min(p.goods[t],k);
+    if(drop>0){ G.supply.goods[t]+=drop; p.goods[t]-=drop; lost.push(PLANT_NM[t]+' '+drop); }
+  }
+  if(lost.length) log(pname(p)+' — 저장 한도 초과로 반납: '+lost.join(', '));
+  G.pending=null; G.phase.sqi++; storageNext();
+}
+function captainEnd(){
+  for(const s of G.supply.ships){
+    if(s.count>=s.size && s.type){
+      G.supply.goods[s.type]+=s.count;
+      log(s.size+'칸 수송선이 가득 차 '+PLANT_NM[s.type]+' '+s.count+'개를 공급처로 치웠습니다.');
+      s.type=null; s.count=0;
+    }
+  }
+  G.phase=null; nextChooser();
+}
+
+/* ═══════════════════════════ 게임 종료 / 점수 ═══════════════════════════ */
+function finishGame(){
+  G.over=true;
+  const rows=G.players.map(p=>{
+    const bvp=p.buildings.reduce((s,b)=>s+BUILDINGS[b.id].vp,0);
+    let bigBonus=0; const notes=[];
+    for(const b of p.buildings){
+      if(!occupied(b)) continue;
+      if(b.id==='b_fire'){
+        const s=p.buildings.filter(x=>['b_fruit_s','b_sugar_s'].includes(x.id)).length;
+        const l=p.buildings.filter(x=>['b_fruit_l','b_sugar_l','b_tobacco','b_coffee'].includes(x.id)).length;
+        const v=s+l*2; bigBonus+=v; notes.push('소방서 +'+v);
+      }
+      if(b.id==='b_resi'){
+        const c=p.land.length;
+        const v=c>=12?7:c>=11?6:c>=10?5:4; bigBonus+=v; notes.push('주거지 +'+v);
+      }
+      if(b.id==='b_fort'){
+        const v=Math.floor(totalWorkersOf(p)/3); bigBonus+=v; notes.push('요새 +'+v);
+      }
+      if(b.id==='b_cust'){
+        const v=Math.floor(p.vp/4); bigBonus+=v; notes.push('세관 +'+v);
+      }
+      if(b.id==='b_hall'){
+        const v=p.buildings.filter(x=>BUILDINGS[x.id].kind!=='prod').length;
+        bigBonus+=v; notes.push('시청 +'+v);
+      }
+    }
+    return {p, chips:p.vp, bvp, bigBonus, total:p.vp+bvp+bigBonus,
+      tie:p.coins+goodsTotal(p), notes};
+  });
+  rows.sort((a,b)=> b.total-a.total || b.tie-a.tie);
+  G.scores=rows.map(r=>({name:r.p.name, chips:r.chips, bvp:r.bvp, big:r.bigBonus, total:r.total, tie:r.tie, notes:r.notes}));
+  const reasons={workers:'인력 시장 보충 불가', sites:'건설 부지 12칸 완성', vp:'승점 칩 소진'};
+  log('<span class="r">게임 종료</span> — '+G.endReasons.map(r=>reasons[r]).join(', '));
+  log('🏆 승자: <b>'+G.scores[0].name+'</b> ('+G.scores[0].total+'점)');
+  G.pending={type:'gameOver'};
+  render(); save();
+}
+
+/* ═══════════════════════════ AI ═══════════════════════════ */
+function aiValueOfRole(pi, role){
+  const p=P(pi); let v=role.coins;
+  const id=role.id;
+  if(id==='prospector'||id==='prospector2') return v+1;
+  if(id==='settler'){
+    if(p.land.length>=12) return v;
+    let best=0;
+    for(const t of G.supply.display){
+      const cap=(t==='corn')?99:p.buildings.filter(b=>BUILDINGS[b.id].prod===t).reduce((s,b)=>s+BUILDINGS[b.id].slots,0);
+      const farms=p.land.filter(l=>l.type===t).length;
+      const val=(t==='corn')?0.9:(farms<cap?1.1+GOODS[t].price*0.15:0.4);
+      best=Math.max(best,val);
+    }
+    if(G.supply.quarries>0 && sitesUsed(p)<9) best=Math.max(best,1.3);
+    return v+best;
+  }
+  if(id==='mayor'){
+    const share=Math.ceil(G.supply.labor/G.n)+1;
+    return v+share*0.65+(emptyCirclesOf(p)>2?0.5:0);
+  }
+  if(id==='builder'){
+    let best=0;
+    for(const bid of BORDER) if(canBuild(p,bid,true)) best=Math.max(best,aiBuildScore(p,bid));
+    return v+Math.min(best,3.2);
+  }
+  if(id==='craftsman'){
+    const mine=Object.entries(productionOf(p)).reduce((s,[t,c])=>s+c*(GOODS[t].price*0.5+0.8),0);
+    let othersMax=0;
+    for(const q of G.players) if(q.i!==pi){
+      const o=Object.entries(productionOf(q)).reduce((s,[t,c])=>s+c*(GOODS[t].price*0.5+0.8),0);
+      othersMax=Math.max(othersMax,o);
+    }
+    return v+mine-othersMax*0.35;
+  }
+  if(id==='trader'){
+    const opts=sellableTypes(p);
+    let best=0; for(const t of opts) best=Math.max(best,saleCoins(p,t,true));
+    return v+best*0.8;
+  }
+  if(id==='captain'){
+    let mine=0;
+    for(const o of shipOptions(p)) mine=Math.max(mine,o.load);
+    if(occB(p,'b_wharf')) mine=Math.max(mine,Math.max(...GTYPES.map(t=>p.goods[t])));
+    let othersMax=0;
+    for(const q of G.players) if(q.i!==pi){
+      let m=0; for(const o of shipOptions(q)) m=Math.max(m,o.load);
+      othersMax=Math.max(othersMax,m);
+    }
+    return v+mine*1.0-othersMax*0.3+(mine>0?1:0);
+  }
+  return v;
+}
+function aiBuildScore(p,id){
+  const B=BUILDINGS[id];
+  const late=G.round>=8||sitesUsed(p)>=8;
+  if(B.kind==='prod'){
+    const farms=p.land.filter(l=>l.type===B.prod).length;
+    const cap=p.buildings.filter(b=>BUILDINGS[b.id].prod===B.prod).reduce((s,b)=>s+BUILDINGS[b.id].slots,0);
+    if(farms>cap) return 2.2+GOODS[B.prod].price*0.25;
+    return 0.4;
+  }
+  if(B.kind==='big') return late ? 3.2 : (p.coins>=12?2.2:0.8);
+  const table={
+    b_smkt:G.round<=4?1.6:1.0, b_hac:G.round<=4?1.3:0.6, b_hut:G.round<=4?1.5:0.6,
+    b_swh:0.9, b_hosp:G.round<=5?1.4:0.7, b_off:0.7, b_lmkt:1.6, b_lwh:1.0,
+    b_fact:2.6, b_univ:1.6, b_harb:2.9, b_wharf:2.3,
+  };
+  return table[id]||1;
+}
+function aiDecide(){
+  const pd=G.pending; if(!pd) return;
+  const p=P(pd.player);
+  if(pd.type==='pickRole'){
+    const avail=G.roles.map((r,i)=>({r,i})).filter(x=>x.r.takenBy===null);
+    let best=avail[0], bv=-1e9;
+    for(const a of avail){
+      const v=aiValueOfRole(pd.player,a.r)+Math.random()*0.15;
+      if(v>bv){ bv=v; best=a; }
+    }
+    pickRole(pd.player,best.i); return;
+  }
+  if(pd.type==='settler'){
+    // 대규모 농장
+    if(!pd.haciendaUsed && occB(p,'b_hac') && p.land.length<=10 && (G.supply.deck.length||G.supply.discard.length)){
+      actSettler('deck'); return;
+    }
+    if(settlerCanQuarry(pd.player) && sitesUsed(p)<9 && p.land.filter(l=>l.type==='quarry').length<3 && G.round<=8){
+      actSettler('quarry'); return;
+    }
+    let bi=-1,bv=-1;
+    G.supply.display.forEach((t,i)=>{
+      const cap=(t==='corn')?99:p.buildings.filter(b=>BUILDINGS[b.id].prod===t).reduce((s,b)=>s+BUILDINGS[b.id].slots,0);
+      const farms=p.land.filter(l=>l.type===t).length;
+      const v=(t==='corn')?1.0:(farms<cap?1.2+GOODS[t].price*0.12:0.35+GOODS[t].price*0.03);
+      if(v>bv){bv=v;bi=i;}
+    });
+    if(bi>=0) actSettler('display',bi);
+    else if(settlerCanQuarry(pd.player)) actSettler('quarry');
+    else actSettler('skip');
+    return;
+  }
+  if(pd.type==='mayorPlace'){ mayorAutoPlace(p); log(pname(p)+' — 일꾼 배치 완료 (보관 '+p.stored+'개)'); actMayorDone(); return; }
+  if(pd.type==='builder'){
+    const isC=(pd.player===G.phase.chooser);
+    let best=null,bv=0.85;
+    for(const id of BORDER){
+      if(!canBuild(p,id,isC)) continue;
+      const v=aiBuildScore(p,id)-buildCost(p,id,isC)*0.06;
+      if(v>bv){bv=v;best=id;}
+    }
+    actBuild(best||'skip'); return;
+  }
+  if(pd.type==='craftBonus'){
+    let best=G.phase.bonusOptions[0];
+    for(const t of G.phase.bonusOptions) if(GOODS[t].price>GOODS[best].price) best=t;
+    actCraftBonus(best); return;
+  }
+  if(pd.type==='trader'){
+    const opts=sellableTypes(p);
+    let best=null,bv=0;
+    for(const t of opts){ const c=saleCoins(p,t,pd.player===G.phase.chooser); if(c>bv){bv=c;best=t;} }
+    actTrade(best||'skip'); return;
+  }
+  if(pd.type==='captain'){
+    let bestIdx=-1,bv=-1;
+    pd.opts.forEach((o,i)=>{ if(o.load>bv){bv=o.load;bestIdx=i;} });
+    if(pd.wharfOK){
+      let wt=null,wv=0;
+      for(const t of GTYPES) if(p.goods[t]>wv){wv=p.goods[t];wt=t;}
+      if(wv>=bv+2 || bestIdx<0){
+        if(pd.mayPass && wv<3){ actCaptain('pass'); return; }
+        actCaptain('wharf',wt); return;
+      }
+    }
+    if(bestIdx>=0) actCaptain('ship',bestIdx);
+    else actCaptain('pass');
+    return;
+  }
+  if(pd.type==='storage'){
+    const cap=pd.cap;
+    const types=GTYPES.filter(t=>p.goods[t]>0).sort((a,b)=>{
+      const va=p.goods[a]*(GOODS[a].price+0.5), vb=p.goods[b]*(GOODS[b].price+0.5);
+      return vb-va;
+    });
+    const keep=types.slice(0,cap);
+    const rest=types.filter(t=>!keep.includes(t)).sort((a,b)=>GOODS[b].price-GOODS[a].price);
+    actStorage(keep, rest[0]||null); return;
+  }
+}
+
+/* ═══════════════════════════ 흐름 제어 ═══════════════════════════ */
+let aiTimer=null;
+function schedule(){
+  render(); save();
+  const pd=G.pending;
+  if(!pd || pd.type==='gameOver') return;
+  const p=(pd.player!==undefined)?P(pd.player):null;
+  if(p && p.ai){
+    clearTimeout(aiTimer);
+    aiTimer=setTimeout(()=>{ try{ aiDecide(); }catch(e){ console.error(e); log('⚠️ AI 오류: '+e.message); render(); } }, 420);
+  }
+}
+
+/* ═══════════════════════════ 저장 ═══════════════════════════ */
+function save(){
+  try{ localStorage.setItem('pr1897_save', JSON.stringify(G)); }catch(e){}
+}
+function loadSave(){
+  try{
+    const s=localStorage.getItem('pr1897_save');
+    if(!s) return false;
+    G=JSON.parse(s);
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ═══════════════════════════ 렌더링 ═══════════════════════════ */
+const $app=document.getElementById('app');
+function goodChip(t,txt){
+  const g=GOODS[t];
+  return '<span class="goodchip" style="background:'+g.color+';color:'+g.text+'" title="'+g.nm+'">'+(txt!==undefined?txt:g.nm[0])+'</span>';
+}
+function esc(s){ return String(s).replace(/</g,'&lt;'); }
+
+/* 설정 화면 */
+let setupSeats=[{name:'플레이어 1',ai:false},{name:'AI 가영',ai:true},{name:'AI 나정',ai:true},{name:'AI 도준',ai:true}];
+let setupN=4;
+function renderSetup(){
+  const canResume=!!localStorage.getItem('pr1897_save');
+  let seatRows='';
+  for(let i=0;i<setupN;i++){
+    const s=setupSeats[i];
+    seatRows+='<div class="seat"><span class="num">'+(i+1)+'</span>'
+      +'<input type="text" value="'+esc(s.name)+'" onchange="setupSeats['+i+'].name=this.value">'
+      +'<span class="tgl">'
+      +'<button class="'+(!s.ai?'on':'')+'" onclick="setupSeats['+i+'].ai=false;renderSetup()">사람</button>'
+      +'<button class="'+(s.ai?'on':'')+'" onclick="setupSeats['+i+'].ai=true;renderSetup()">AI</button>'
+      +'</span></div>';
+  }
+  $app.innerHTML=
+  '<div class="setup">'
+  +'<h2>푸에르토리코 <span style="color:var(--accent);font-style:italic">1897</span></h2>'
+  +'<div class="lead">기본 게임 · 2~5인 · 각 자리를 사람 또는 AI로 정할 수 있습니다.</div>'
+  +'<div class="row"><label>인원수</label><select onchange="setupN=+this.value;renderSetup()">'
+  +[2,3,4,5].map(n=>'<option value="'+n+'" '+(n===setupN?'selected':'')+'>'+n+'인</option>').join('')
+  +'</select></div>'
+  +seatRows
+  +'<div style="display:flex;gap:10px;margin-top:26px">'
+  +'<button class="btn-primary" onclick="startNewGame()">게임 시작</button>'
+  +(canResume?'<button class="btn-ghost" onclick="resumeGame()">이어서 하기</button>':'')
+  +'</div>'
+  +'<div class="hint">타일 이미지를 넣으려면 이 파일과 같은 폴더에 <b>img/</b> 폴더를 만들고<br>'
+  +'<b>역할_개척자.png · 건물_소형과일공장.png · 농장_옥수수.png</b> 형식(띄어쓰기 없이)으로 저장하세요. 없으면 텍스트 타일로 표시됩니다.</div>'
+  +'</div>';
+}
+function startNewGame(){
+  while(setupSeats.length<setupN) setupSeats.push({name:'AI '+['가영','나정','도준','민수','서연'][setupSeats.length%5], ai:true});
+  newGame(setupSeats.slice(0,setupN).map(s=>({name:s.name||'플레이어', ai:s.ai})));
+}
+function resumeGame(){ if(loadSave()){ render(); schedule(); } }
+function confirmNew(){ if(confirm('현재 게임을 버리고 새 게임을 시작할까요?')){ localStorage.removeItem('pr1897_save'); G=null; renderSetup(); } }
+
+/* 본 게임 렌더 */
+function render(){
+  if(!G){ renderSetup(); return; }
+  const pd=G.pending||{};
+  const curPi=(pd.player!==undefined)?pd.player:null;
+
+  /* 역할 타일 */
+  const phaseRole=G.phase?G.phase.id:null;
+  const rolesHtml=G.roles.map((r,i)=>{
+    const R=ROLES[r.id];
+    const pickable=(pd.type==='pickRole'&&!P(curPi).ai&&r.takenBy===null);
+    const cls='role'+(r.takenBy!==null?' taken':'')+(pickable?' pickable':'')+(phaseRole===r.id&&r.takenBy!==null?' cur':'');
+    return '<div class="'+cls+'" '+(pickable?'onclick="pickRole('+curPi+','+i+')"':'')+'>'
+      +imgTag('역할',R.nm,'img')
+      +imgTag('역할',R.nm,'zoom')
+      +'<div class="rolefb">'+R.rn+' '+R.nm+'<br><span>'+R.ph+'</span></div>'
+      +(r.coins>0?'<div class="coin">'+r.coins+'</div>':'')
+      +(r.takenBy!==null?'<div class="took">'+esc(P(r.takenBy).name)+'</div>':'')
+      +'</div>';
+  }).join('');
+
+  /* 수송선 */
+  const shipsHtml=G.supply.ships.map(s=>{
+    let slots='';
+    for(let i=0;i<s.size;i++){
+      if(i<s.count) slots+='<span class="slot g">'+goodChip(s.type,'')+'</span>';
+      else slots+='<span class="slot"></span>';
+    }
+    return '<div class="ship"><div class="cap">'+s.size+'칸'+(s.type?' · '+PLANT_NM[s.type]:'')+'</div><div class="slots">'+slots+'</div></div>';
+  }).join('');
+
+  /* 상점 */
+  let mkt='';
+  for(let i=0;i<4;i++){
+    mkt+= (G.supply.market[i]!==undefined)
+      ? goodChip(G.supply.market[i])
+      : '<span class="slot" style="width:22px;height:22px"></span>';
+  }
+
+  /* 공급처 */
+  const S=G.supply;
+  const supHtml='<div class="supply-line">'
+    +'<span class="sup-item">일꾼 <b>'+S.workers+'</b></span>'
+    +'<span class="sup-item">인력 시장 <b>'+S.labor+'</b></span>'
+    +'<span class="sup-item">승점 칩 <b>'+S.vp+'</b></span>'
+    +'<span class="sup-item">채석장 <b>'+S.quarries+'</b></span>'
+    +'<span class="sup-item">농장 더미 <b>'+S.deck.length+'</b></span>'
+    +GTYPES.map(t=>'<span class="sup-item">'+goodChip(t)+' <b>'+S.goods[t]+'</b></span>').join('')
+    +'</div>';
+
+  /* 공개 농장 */
+  const settlerActive=(pd.type==='settler'&&!P(curPi).ai);
+  const plantsHtml=S.display.map((t,i)=>{
+    const g=GOODS[t];
+    return '<div class="plant'+(settlerActive?' pickable':'')+'" '+(settlerActive?'onclick="actSettler(\'display\','+i+')"':'')+'>'
+      +'<div class="art" style="background:'+(g?g.color:'#888')+'22">'+imgTag('농장',PLANT_NM[t])+'</div>'
+      +'<div class="lbl">'+PLANT_NM[t]+'</div></div>';
+  }).join('');
+
+  /* 건물 상점 (건설 단계 또는 항상 표시) */
+  const builderActive=(pd.type==='builder'&&!P(curPi).ai);
+  const shopCell=id=>{
+    const B=BUILDINGS[id]; const cnt=S.stock[id];
+    let cls='shopb'; let click=''; let costNow;
+    if(cnt<=0) cls+=' none';
+    if(builderActive && canBuild(P(curPi),id,curPi===G.phase.chooser)){
+      cls+=' buyable';
+      click='onclick="actBuild(\''+id+'\')"';
+      costNow=buildCost(P(curPi),id,curPi===G.phase.chooser);
+    }
+    return '<div class="'+cls+'" '+click+'>'
+      +imgTag('건물',B.nm,'card')
+      +imgTag('건물',B.nm,'zoom')
+      +'<div class="nm imgless-only">'+B.nm+'</div>'
+      +(costNow!==undefined&&costNow!==B.cost?'<div class="inf" style="text-align:center">구매가 <b style="color:var(--accent)">'+costNow+'주화</b></div>':'')
+      +'<div class="cnt">×'+cnt+'</div></div>';
+  };
+  const ZONE_LABELS={
+    1:'1구역<span>채석장 할인<br>최대 1개</span>',
+    2:'2구역<span>채석장 할인<br>최대 2개</span>',
+    3:'3구역<span>채석장 할인<br>최대 3개</span>',
+    4:'고급<span>채석장 할인<br>최대 4개</span>'};
+  const shopHtml=[1,2,3,4].map(z=>
+    '<div class="zone"><div class="zone-h">'+ZONE_LABELS[z]+'</div>'
+    +'<div class="shop">'+BORDER.filter(id=>BUILDINGS[id].zone===z).map(shopCell).join('')+'</div></div>'
+  ).join('');
+
+  /* 플레이어 보드 */
+  const mayorActive=(pd.type==='mayorPlace'&&!P(curPi).ai);
+  const playersHtml=G.players.map(p=>{
+    const isCur=(curPi===p.i);
+    const isMayorMe=mayorActive&&isCur;
+    // 토지
+    let land='';
+    for(let i=0;i<12;i++){
+      const l=p.land[i];
+      if(l){
+        const g=GOODS[l.type];
+        const clickable=isMayorMe;
+        land+='<div class="cell land'+(clickable?' clickable':'')+'" '+(clickable?'onclick="uiToggleLand('+p.i+','+i+')"':'')+'>'
+          +'<div class="art" style="background:'+(g?g.color+'26':'#ddd')+'">'
+          +imgTag('농장',PLANT_NM[l.type])
+          +'<span class="wk">'+(l.w?'<span class="wtok"></span>':'<span class="wtok empty"></span>')+'</span></div>'
+          +'<div class="lbl">'+PLANT_NM[l.type]+'</div></div>';
+      } else land+='<div class="cell"></div>';
+    }
+    // 건물
+    let blds='';
+    let used=0;
+    for(const b of p.buildings){
+      const B=BUILDINGS[b.id]; used+=(B.size||1);
+      let wk='';
+      for(let s=0;s<B.slots;s++) wk+= s<b.w ? '<span class="wtok"></span>':'<span class="wtok empty"></span>';
+      const clickable=isMayorMe;
+      blds+='<div class="cell'+(B.size===2?' b2':'')+(clickable?' clickable':'')+'" '+(clickable?'onclick="uiToggleBld('+p.i+',\''+b.id+'\')"':'')+'>'
+        +imgTag('건물',B.nm)
+        +imgTag('건물',B.nm,'zoom')
+        +'<span class="wk">'+wk+'</span><span class="vpmark">'+B.vp+'</span>'
+        +'<div class="lbl">'+B.nm+'</div></div>';
+    }
+    for(let i=used;i<12;i++) blds+='<div class="cell"></div>';
+    const tags=(G.governor===p.i?'<span class="tag gov">주지사</span>':'')+(p.ai?'<span class="tag">AI</span>':'');
+    return '<div class="pboard'+(isCur?' cur':'')+'">'
+      +'<div class="phead"><span class="nm">'+esc(p.name)+'</span>'+tags
+      +'<span class="stats"><span>💰 <b>'+p.coins+'</b></span><span>⬡ <b>'+p.vp+'</b></span></span></div>'
+      +'<div class="sec-title" style="margin-bottom:3px">토지 (' +p.land.length+'/12)</div><div class="grid12">'+land+'</div>'
+      +'<div class="sec-title" style="margin-bottom:3px">건설 부지 ('+used+'/12)</div><div class="grid12">'+blds+'</div>'
+      +'<div class="portrait">보관 일꾼 <b>'+p.stored+'</b>'
+      +'<span class="goodrow">'+GTYPES.filter(t=>p.goods[t]>0).map(t=>goodChip(t)+'×'+p.goods[t]).join(' ')+'</span></div>'
+      +'</div>';
+  }).join('');
+
+  /* 액션 바 */
+  let bar='';
+  if(pd.type==='gameOver'){
+    bar='';
+  } else if(pd.type && curPi!==null && !P(curPi).ai){
+    bar=renderActionBar(pd);
+  } else if(curPi!==null && P(curPi).ai){
+    bar='<div class="actionbar"><div class="inner"><span class="who">'+esc(P(curPi).name)+'</span><span class="msg">AI가 생각 중…</span></div></div>';
+  }
+
+  /* 로그 */
+  const logHtml='<div class="log" id="logbox">'+G.log.slice(-120).map(l=>'<div>'+l+'</div>').join('')+'</div>';
+
+  /* 종료 모달 */
+  let modal='';
+  if(G.over&&G.scores){
+    modal='<div class="overlay"><div class="modal">'
+    +'<h2>최종 점수</h2>'
+    +'<table><tr><th>플레이어</th><th>승점 칩</th><th>건물</th><th>고급 건물 보너스</th><th>합계</th></tr>'
+    +G.scores.map((s,i)=>'<tr'+(i===0?' class="scorewin"':'')+'><td>'+esc(s.name)+(i===0?' 🏆':'')+'</td><td>'+s.chips+'</td><td>'+s.bvp+'</td>'
+      +'<td>'+s.big+(s.notes.length?' <span style="color:var(--dim);font-size:11px">('+s.notes.join(', ')+')</span>':'')+'</td>'
+      +'<td><b>'+s.total+'</b></td></tr>').join('')
+    +'</table>'
+    +'<div class="hint">동점 시 주화+상품 개수로 승부: '+G.scores.map(s=>esc(s.name)+' '+s.tie).join(' · ')+'</div>'
+    +'<div style="display:flex;gap:10px;margin-top:20px"><button class="btn-primary" onclick="confirmNew()">새 게임</button></div>'
+    +'</div></div>';
+  }
+
+  $app.innerHTML=
+  '<div class="hdr"><h1>푸에르토리코</h1><span class="sub">1897</span>'
+  +'<div class="meta"><span>라운드 <b>'+G.round+'</b></span><span>주지사 <b>'+esc(P(G.governor).name)+'</b></span>'
+  +(G.phase?'<span>단계 <b>'+ROLES[G.phase.id].ph+'</b></span>':'')
+  +'<button onclick="confirmNew()">새 게임</button></div></div>'
+  +'<div class="layout" style="margin-top:14px">'
+    +'<div class="main-col">'
+      +'<div><div class="sec-title">역할</div><div class="roles">'+rolesHtml+'</div></div>'
+      +'<div class="sec"><div class="sec-title">건물 (보관판)</div>'+shopHtml+'</div>'
+      +'<div class="sec"><div class="sec-title">플레이어</div><div class="players">'+playersHtml+'</div></div>'
+    +'</div>'
+    +'<div class="side-col">'
+      +'<div class="card"><div class="sec-title">공개된 농장</div><div class="plants">'+plantsHtml+'</div></div>'
+      +'<div class="card"><div class="sec-title">수송선</div><div class="ships">'+shipsHtml+'</div></div>'
+      +'<div class="card"><div class="sec-title">상점</div><div class="market-slots">'+mkt+'</div></div>'
+      +'<div class="card"><div class="sec-title">공급처</div>'+supHtml+'</div>'
+      +logHtml
+    +'</div>'
+  +'</div>'
+  +bar+modal;
+
+  const lb=document.getElementById('logbox'); if(lb) lb.scrollTop=lb.scrollHeight;
+}
+
+function renderActionBar(pd){
+  const p=P(pd.player);
+  const who='<span class="who">'+esc(p.name)+'</span>';
+  let msg='', btns='';
+  if(pd.type==='pickRole'){
+    msg='역할 타일을 선택하세요. (위 역할 카드를 클릭)';
+  }
+  else if(pd.type==='settler'){
+    msg='공개된 농장을 클릭해 가져가세요.';
+    if(!pd.haciendaUsed && occB(p,'b_hac') && (G.supply.deck.length||G.supply.discard.length) && p.land.length<12)
+      btns+='<button onclick="actSettler(\'deck\')">대규모 농장: 더미에서 1개</button>';
+    if(settlerCanQuarry(pd.player))
+      btns+='<button class="hot" onclick="actSettler(\'quarry\')">채석장 가져가기</button>';
+    btns+='<button onclick="actSettler(\'skip\')">생략</button>';
+  }
+  else if(pd.type==='mayorPlace'){
+    msg='타일을 클릭해 일꾼을 배치/회수하세요. 보관 일꾼: <b>'+p.stored+'</b>';
+    btns+='<button onclick="uiMayorAuto('+p.i+')">자동 배치</button>';
+    btns+='<button class="hot" onclick="uiMayorDone('+p.i+')">배치 완료</button>';
+  }
+  else if(pd.type==='builder'){
+    msg='건설할 건물을 위 보관판에서 클릭하세요. (빨간 테두리 = 건설 가능'+(pd.player===G.phase.chooser?' · 혜택 -1주화':'')+')';
+    btns+='<button onclick="actBuild(\'skip\')">생략</button>';
+  }
+  else if(pd.type==='craftBonus'){
+    msg='생산자 혜택 — 추가로 받을 상품을 고르세요.';
+    for(const t of G.phase.bonusOptions)
+      btns+='<button class="hot" onclick="actCraftBonus(\''+t+'\')">'+PLANT_NM[t]+'</button>';
+  }
+  else if(pd.type==='trader'){
+    msg='판매할 상품을 고르세요.';
+    for(const t of sellableTypes(p))
+      btns+='<button class="hot" onclick="actTrade(\''+t+'\')">'+PLANT_NM[t]+' (+'+saleCoins(p,t,pd.player===G.phase.chooser)+'주화)</button>';
+    btns+='<button onclick="actTrade(\'skip\')">생략</button>';
+  }
+  else if(pd.type==='captain'){
+    msg=pd.mayPass?'선적할 배가 없습니다. 조선소를 사용할 수 있습니다.':'선적은 의무입니다 — 선택하세요.';
+    pd.opts.forEach((o,i)=>{
+      btns+='<button class="hot" onclick="actCaptain(\'ship\','+i+')">'+PLANT_NM[o.type]+' '+o.load+'개 → '+G.supply.ships[o.ship].size+'칸 배</button>';
+    });
+    if(pd.wharfOK){
+      for(const t of GTYPES) if(p.goods[t]>0)
+        btns+='<button onclick="actCaptain(\'wharf\',\''+t+'\')">조선소: '+PLANT_NM[t]+' '+p.goods[t]+'개 전부</button>';
+    }
+    if(pd.mayPass) btns+='<button onclick="actCaptain(\'pass\')">넘기기</button>';
+  }
+  else if(pd.type==='storage'){
+    const cap=pd.cap;
+    const types=GTYPES.filter(t=>p.goods[t]>0);
+    msg='저장 한도 초과 — 창고 저장 종류 <b>'+cap+'</b>개 + 낱개 1개를 고르세요.';
+    for(const t of types){
+      const on=uiSel.types.includes(t);
+      btns+='<button style="'+(on?'background:#4e8c46;border-color:#4e8c46':'')+'" onclick="uiStoreType(\''+t+'\')">'
+        +(on?'✓ ':'')+PLANT_NM[t]+' 전부('+p.goods[t]+')</button>';
+    }
+    for(const t of types){
+      const on=uiSel.single===t;
+      btns+='<button style="'+(on?'background:#9a7b2f;border-color:#9a7b2f':'')+'" onclick="uiStoreSingle(\''+t+'\')">'
+        +(on?'✓ ':'')+'낱개: '+PLANT_NM[t]+'</button>';
+    }
+    btns+='<button class="hot" onclick="uiStoreDone()">확정</button>';
+  }
+  return '<div class="actionbar"><div class="inner">'+who+'<span class="msg">'+msg+'</span><div class="btns">'+btns+'</div></div></div>';
+}
+
+/* ── UI 헬퍼 (사람 전용) ── */
+function uiToggleLand(pi,li){
+  const p=P(pi); const l=p.land[li];
+  if(l.w>0){ l.w=0; p.stored++; }
+  else if(p.stored>0){ l.w=1; p.stored--; }
+  render();
+}
+function uiToggleBld(pi,id){
+  const p=P(pi); const b=p.buildings.find(b=>b.id===id);
+  const B=BUILDINGS[id];
+  if(p.stored>0 && b.w<B.slots){ b.w++; p.stored--; }
+  else if(b.w>0){ p.stored+=b.w; b.w=0; }
+  render();
+}
+function uiMayorAuto(pi){ mayorAutoPlace(P(pi)); render(); }
+function uiMayorDone(pi){
+  const p=P(pi);
+  if(p.stored>0 && emptyCirclesOf(p)>0){
+    alert('빈 원형 칸이 있으면 일꾼을 반드시 배치해야 합니다.');
+    return;
+  }
+  log(pname(p)+' — 일꾼 배치 완료 (보관 '+p.stored+'개)');
+  actMayorDone();
+}
+function uiStoreType(t){
+  const cap=G.pending.cap;
+  const i=uiSel.types.indexOf(t);
+  if(i>=0) uiSel.types.splice(i,1);
+  else if(uiSel.types.length<cap) uiSel.types.push(t);
+  render();
+}
+function uiStoreSingle(t){ uiSel.single=(uiSel.single===t)?null:t; render(); }
+function uiStoreDone(){ actStorage(uiSel.types, uiSel.single); }
+
+/* ═══════════════════════════ 부팅 ═══════════════════════════ */
+(function(){
+  if(loadSave() && G && !G.over){
+    render();
+    schedule();
+  } else {
+    G=null;
+    renderSetup();
+  }
+})();
+</script>
+</body>
+</html>
