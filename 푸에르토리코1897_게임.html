@@ -430,8 +430,9 @@ let uiSel = null;       // 임시 UI 선택 상태 (모집 배치 등)
 let fxMark=null;
 let cardFx=null;   // 사건이 일어난 사이드 카드 번쩍임
 function cardFxCls(id){ return (cardFx && cardFx.sel===id && Date.now()-cardFx.t<1400) ? ' cardflash' : ''; }
-function markFx(pi, key){ fxMark={key:key, t:Date.now()}; uiBoardSel=pi; }
-function fxCls(key){ return (fxMark && fxMark.key===key && Date.now()-fxMark.t<1900) ? ' fx-pop' : ''; }
+function markFxKeys(pi, keys){ const m={}; keys.forEach(k=>m[k]=1); fxMark={keys:m, t:Date.now()}; uiBoardSel=pi; }
+function markFx(pi, key){ markFxKeys(pi, [key]); }
+function fxCls(key){ return (fxMark && fxMark.keys[key] && Date.now()-fxMark.t<1900) ? ' fx-pop' : ''; }
 
 let toastLive={};
 function toast(html, sel, big, color){
@@ -753,7 +754,9 @@ function totalWorkersOf(p){
   return c;
 }
 function mayorAutoPlace(p){
-  // 전체 회수 후 그리디 배치
+  // 전체 회수 후 그리디 배치 — 이펙트는 배치 전과 달라진 자리에만
+  const beforeLand=p.land.map(l=>l.w);
+  const beforeBld={}; p.buildings.forEach(b=>beforeBld[b.id]=b.w);
   let pool=totalWorkersOf(p);
   p.stored=0; p.buildings.forEach(b=>b.w=0); p.land.forEach(l=>l.w=0);
   const late = G.round>=8 || sitesUsed(p)>=9;
@@ -789,7 +792,12 @@ function mayorAutoPlace(p){
   score.sort((a,b)=>b.v-a.v);
   for(const s of score){ if(pool<=0) break; s.apply(); pool--; }
   p.stored=pool;
-  if(p.ai) markFx(p.i, 'wk-'+p.i);   // 이펙트는 봇 배치에만
+  if(p.ai){
+    const keys=[];
+    p.land.forEach((l,i)=>{ if(l.w>0 && !beforeLand[i]) keys.push('wkl-'+p.i+'-'+i); });
+    p.buildings.forEach(b=>{ for(let s=(beforeBld[b.id]||0); s<b.w; s++) keys.push('wkb-'+p.i+'-'+b.id+'-'+s); });
+    if(keys.length) markFxKeys(p.i, keys);   // 새로 놓였거나 이동해 들어온 일꾼만 팝
+  }
 }
 /* 사람용 자동 배치: 이미 놓인 일꾼은 건드리지 않고, 보관 일꾼만 좋은 빈 칸부터 채운다 */
 function mayorAutoFill(p){
@@ -1531,7 +1539,7 @@ function render(){
         land+='<div class="cell land'+(clickable?' clickable':'')+fxCls('land-'+p.i+'-'+i)+'" '+(clickable?'onclick="uiToggleLand('+p.i+','+i+')"':'')+'>'
           +'<div class="art" style="background:'+(g?g.color+'26':'#ddd')+'">'
           +imgTag('농장',PLANT_NM[l.type])
-          +(l.w?'<span class="wk"><span class="wtok'+fxCls('wk-'+p.i)+'"></span></span>':'')+'</div>'
+          +(l.w?'<span class="wk"><span class="wtok'+fxCls('wkl-'+p.i+'-'+i)+'"></span></span>':'')+'</div>'
           +'<div class="lbl">'+PLANT_NM[l.type]+'</div></div>';
       } else land+='<div class="cell land empty"></div>';
     }
@@ -1551,7 +1559,7 @@ function render(){
         if(B.size===2){ x=23.9; y=30.2; }
         else if(B.kind==='prod'){ x=21.4+s*24.5; y=59; }
         else { x=23; y=64.3; }
-        wk+='<span class="wtok'+fxCls('wk-'+p.i)+'" style="left:'+x+'%;top:'+y+'%"></span>';
+        wk+='<span class="wtok'+fxCls('wkb-'+p.i+'-'+b.id+'-'+s)+'" style="left:'+x+'%;top:'+y+'%"></span>';
       }
       const clickable=isMayorMe;
       blds+='<div class="cell'+(B.size===2?' b2':'')+(clickable?' clickable':'')+fxCls('bld-'+p.i+'-'+b.id)+'" '+(clickable?'onclick="uiToggleBld('+p.i+',\''+b.id+'\')"':'')
