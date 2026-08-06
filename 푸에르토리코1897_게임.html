@@ -145,7 +145,10 @@
   .sup-item{ display:flex; align-items:center; gap:5px; }
 
   /* plantation display */
-  .plants{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+  /* 항상 농장 2줄 높이를 확보 — 타일 수가 변해도 레이아웃이 흔들리지 않게.
+     배치는 위아래 반반 (홀수면 윗줄이 1개 더) */
+  .plants{ display:flex; flex-direction:column; gap:6px; align-items:center; min-height:174px; }
+  .plants .prow{ display:flex; gap:6px; justify-content:center; }
   .plant{ width:62px; border:1px solid var(--line); border-radius:3px; overflow:hidden; background:#fff; text-align:center; }
   .plant .art{ position:relative; width:100%; aspect-ratio:1; }
   .plant .art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
@@ -1464,12 +1467,16 @@ function render(){
 
   /* 공개 농장 */
   const settlerActive=(pd.type==='settler'&&!P(curPi).ai);
-  const plantsHtml=S.display.map((t,i)=>{
+  const plantCell=(t,i)=>{
     const g=GOODS[t];
     return '<div class="plant'+(settlerActive?' pickable':'')+'" '+(settlerActive?'onclick="actSettler(\'display\','+i+')"':'')+'>'
       +'<div class="art" style="background:'+(g?g.color:'#888')+'22">'+imgTag('농장',PLANT_NM[t])+'</div>'
       +'<div class="lbl">'+PLANT_NM[t]+'</div></div>';
-  }).join('');
+  };
+  // 위아래 반반 배치 (홀수면 윗줄이 1개 더)
+  const phalf=Math.ceil(S.display.length/2);
+  const plantsHtml='<div class="prow">'+S.display.slice(0,phalf).map((t,i)=>plantCell(t,i)).join('')+'</div>'
+    +(S.display.length>phalf?'<div class="prow">'+S.display.slice(phalf).map((t,i)=>plantCell(t,phalf+i)).join('')+'</div>':'');
 
   /* 건물 상점 (건설 단계 또는 항상 표시) */
   const builderActive=(pd.type==='builder'&&!P(curPi).ai);
