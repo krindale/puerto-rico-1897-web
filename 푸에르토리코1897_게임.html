@@ -43,6 +43,13 @@
   .hdr button:hover{ background:#e2d7c2; }
   .hdr button:disabled{ opacity:.35; cursor:default; }
   .hdr button:disabled:hover{ background:transparent; }
+  .hdr .ver{ font-size:11px; color:var(--dim); opacity:.75; }
+  /* 소개 페이지 안에 끼워져(iframe) 열렸을 때만 나오는 "소개로" 버튼.
+     혼자 열었을 때는 돌아갈 곳이 없으므로 아예 안 그린다 (renderSetup·rd-hdr 양쪽) */
+  .backbtn{ border:1px solid var(--line); background:transparent; padding:5px 10px; font-size:12px;
+    border-radius:2px; color:var(--dim); white-space:nowrap; align-self:center; }
+  .backbtn:hover{ background:#e2d7c2; color:var(--ink); }
+  .setup .backbtn{ margin-bottom:18px; }
 
   /* ── setup ── */
   .setup{ max-width:640px; margin:40px auto; background:var(--panel); border:1px solid var(--line); padding:34px 38px; }
@@ -164,43 +171,87 @@
      맞춰 안쪽 flex(자원 패널 등)가 재계산되면서 갑자기 튀어나오듯 보이는 걸 막는다. 바깥은 그 위에서
      넓어지거나(overflow:hidden으로) 가리는 창 역할만 한다 — 내용 자체는 한 번만 배치되고 안 움직인다. */
   .pcontent{ width:max-content; }
+  /* 요약 카드만 예외 — 카드 폭에 맞춰 줄어든다(이름은 …로 잘리고 칩은 줄바꿈).
+     펼친 보드가 필요한 폭을 먼저 가져가고 남는 걸 접힌 카드들이 나눠 가지는 구조라,
+     접힌 쪽이 유연해야 펼친 보드의 건설 부지가 안 잘린다. */
+  .pboard.collapsed .pcontent{ width:auto; min-width:0; flex:1; display:flex; flex-direction:column; gap:2px; }
   /* 펼침↔접힘 전환: 펼쳐지는 보드는 실제 flex 폭(flex-grow)이 자라면서 좌우 접힌 카드들을 밀어낸다.
      접힌 카드가 애니메이션 도중 너무 좁아지면 글자가 줄바꿈되며 깨지므로, .pboard.collapsed에
      최소 폭을 둬서 절대 그 밑으로는 안 눌리게 막는다 — 대신 잠깐 총 폭이 넘칠 수 있는데 그건
      위 .players의 overflow-x:hidden이 가려준다. */
-  @keyframes boardGrow{ 0%{ flex-grow:1; flex-basis:0%; flex-shrink:1; } 100%{ flex-grow:6; flex-basis:0%; flex-shrink:1; } }
-  @keyframes boardShrink{ 0%{ flex-grow:6; flex-basis:0%; flex-shrink:1; } 100%{ flex-grow:1; flex-basis:0%; flex-shrink:1; } }
-  .pboard.board-in{ animation:boardGrow .3s ease-out; overflow:hidden; }
-  .pboard.board-out{ animation:boardShrink .3s ease-out; overflow:hidden; }
+  /* 폭이 flex-grow로 자라는데, 실제 폭은 g/(g+접힌카드수)라 g에 비례하지 않는다 —
+     g를 등속으로 올리면 앞부분에서 폭이 확 벌어지고 뒤로 갈수록 기어가서, 가감속이 없는 것처럼 보인다.
+     그래서 ① 중간 키프레임으로 g의 진행을 폭 기준에 맞게 펴 주고(앞을 느리게, 뒤를 촘촘하게)
+           ② 타이밍 함수도 ease-in-out 계열을 써서 시작·끝을 부드럽게 만든다. */
+  @keyframes boardGrow{
+    0%  { flex-grow:1;   flex-basis:0%; flex-shrink:1; }
+    25% { flex-grow:1.6; flex-basis:0%; flex-shrink:1; }
+    50% { flex-grow:2.6; flex-basis:0%; flex-shrink:1; }
+    75% { flex-grow:4.1; flex-basis:0%; flex-shrink:1; }
+    100%{ flex-grow:6;   flex-basis:0%; flex-shrink:1; }
+  }
+  @keyframes boardShrink{
+    0%  { flex-grow:6;   flex-basis:0%; flex-shrink:1; }
+    25% { flex-grow:4.1; flex-basis:0%; flex-shrink:1; }
+    50% { flex-grow:2.6; flex-basis:0%; flex-shrink:1; }
+    75% { flex-grow:1.6; flex-basis:0%; flex-shrink:1; }
+    100%{ flex-grow:1;   flex-basis:0%; flex-shrink:1; }
+  }
+  /* 슬라이드 중에만 보드를 창처럼 잘라낸다 — 슬라이드가 끝나는 순간 overflow를 풀어야
+     뒤이어 재생되는 타일·일꾼 팝(확대 1.55배)이 보드 경계에서 잘리지 않는다.
+     step-end라 0.3초 동안은 hidden으로 있다가 끝나는 순간 visible로 바뀌고, forwards로 그대로 유지된다. */
+  @keyframes unclip{ from{ overflow:hidden; } to{ overflow:visible; } }
+  .pboard.board-in{ animation:boardGrow var(--board-anim) var(--board-ease), unclip var(--board-anim) step-end forwards; }
+  .pboard.board-out{ animation:boardShrink var(--board-anim) var(--board-ease), unclip var(--board-anim) step-end forwards; }
   /* 슬라이드와 이펙트의 순서 보장 —
      ① 보드가 열리는 동안(.board-in) 안의 타일·일꾼 팝은 슬라이드가 끝난 뒤에 시작한다.
         (동시에 돌리면 보드 전체가 움직이는 데 눈이 뺏겨 작은 팝이 안 보인다)
         fill-mode:backwards → 대기 중에는 0% 키프레임(확대+금빛)으로 떠서 시선을 미리 끈다.
      ② .cardflash(보드 전체 금빛 테두리)가 .board-in/.board-out과 같은 요소에 겹치면 animation
-        속성이 서로를 덮어써 플래시가 통째로 무시된다 — 반드시 쉼표로 합쳐 둘 다 재생시킨다. */
-  .pboard.board-in .fx-pop{ animation-delay:.32s; animation-fill-mode:backwards; }
-  .pboard.board-in.cardflash{ animation:boardGrow .3s ease-out, cardflash 1.3s ease .32s backwards; overflow:hidden; }
-  .pboard.board-out.cardflash{ animation:boardShrink .3s ease-out, cardflash 1.3s ease .32s backwards; overflow:hidden; }
-  /* 요약 카드: 자리 순서대로 좌우 배치, 남는 폭을 나눠 가진다. 최소 폭 확보 — 이 밑으로 눌리면 텍스트가 깨진다 */
-  .pboard.collapsed{ flex:1 1 0; min-width:132px; display:flex; flex-direction:column; gap:3px; padding:6px 9px; cursor:pointer; }
+        속성이 서로를 덮어써 플래시가 통째로 무시된다 — 반드시 쉼표로 합쳐 둘 다 재생시킨다.
+     ③ 연속된 애니메이션은 붙여 돌리지 않는다 — 앞 동작이 끝나고 --fx-gap(0.3초)을 쉰 뒤에 시작한다.
+        그래서 대기 시간 --fx-step = 보드 슬라이드(--board-anim) + 간격(--fx-gap).
+        (JS 쪽 BOARD_ANIM·SHOP_DELAY도 같은 규칙이다 — 값을 바꾸면 양쪽을 같이 바꿀 것) */
+  :root{ --board-anim:.42s; --board-ease:cubic-bezier(.4,0,.2,1); --fx-gap:.3s; --fx-step:.72s; }
+  .pboard.board-in .fx-pop{ animation-delay:var(--fx-step); }   /* 보드가 열리는 중이면 그 뒤로 더 민다 */
+  .pboard.board-in.cardflash{ animation:boardGrow var(--board-anim) var(--board-ease), unclip var(--board-anim) step-end forwards, cardflash 1.3s ease var(--fx-step) backwards; }
+  .pboard.board-out.cardflash{ animation:boardShrink var(--board-anim) var(--board-ease), unclip var(--board-anim) step-end forwards, cardflash 1.3s ease var(--fx-step) backwards; }
+  /* 팝이 칸 밖으로 나갈 수 있게 — 일꾼 토큰은 칸 안에 있어서 .cell의 overflow:hidden에 잘렸다.
+     그리고 팝이 진행 중인 보드를 옆 보드보다 위로 올려 잘려 보이지 않게 한다. */
+  .cell:has(.fx-pop), .cell.fx-pop{ overflow:visible; }
+  .pboard:has(.fx-pop){ z-index:20; }
+  /* 요약 카드: 자리 순서대로 좌우 배치, 남는 폭을 나눠 가진다.
+     최소 폭(--cbmin)은 펼친 보드의 건설 부지 6칸과 경쟁하는 값이라 좁게 잡았다 —
+     5인이면 이 카드가 4장이라 132px씩 쓰면 펼친 보드가 200px 넘게 모자라 부지가 잘렸다.
+     그래서 농장·건물 "이름 목록"은 빼고 개수만 남긴다 (목록은 카드 툴팁과 펼친 보드에서 본다).
+     JS의 CB_MIN과 같은 값이어야 한다 — 타일 폭 계산이 이 값을 전제로 남는 폭을 잰다. */
+  .pboard.collapsed{ flex:1 1 0; min-width:var(--cbmin,84px); display:flex; flex-direction:column; gap:2px; padding:6px 7px; cursor:pointer; }
   .pboard.collapsed:hover{ background:#f3ecdb; }
+  .pboard.collapsed .chead{ flex-wrap:nowrap; gap:4px; font-size:13px; }
+  .cnm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  .ctags{ display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+  .ctags .tag{ font-size:9.5px; padding:1px 4px; }
+  .ctags .gov-ic{ width:18px; height:12px; }
+  /* 농장·건물은 개수만 — 무엇을 가졌는지는 title 툴팁 */
+  .cmini{ font-size:11.5px; color:var(--dim); display:flex; flex-wrap:wrap; gap:2px 8px; }
+  .cmini b{ color:var(--ink); font-size:12.5px; }
   .pdot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; flex-shrink:0; }
   .chead{ display:flex; gap:5px; align-items:center; font-weight:700; font-size:14px; flex-wrap:wrap; }
-  .cstat{ font-size:12.5px; color:var(--dim); display:grid; grid-template-columns:repeat(2,auto); justify-content:start; gap:4px 12px; }  /* 주화·승점 / 일꾼 — 펼친 보드와 같은 2열 */
+  /* 주화·승점·일꾼 — 카드가 좁으면 알아서 다음 줄로 접힌다 (고정 2열이면 좁을 때 카드 밖으로 넘친다) */
+  .cstat{ font-size:12.5px; color:var(--dim); display:flex; flex-wrap:wrap; gap:2px 9px; }
   .cpair{ display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
   .cstat .tok-coin.sm{ width:17px; height:17px; font-size:9.5px; }
   .cstat .tok-vp.sm{ width:15px; height:17px; font-size:6px; }
   .cstat .wtok.smw{ width:15px; height:15px; }
   .cstat b{ color:var(--ink); font-size:14px; }
-  .csec{ font-size:10.5px; letter-spacing:.2em; color:var(--gold); font-weight:700; }
-  .crow{ display:grid; grid-template-columns:repeat(2,auto); justify-content:start; gap:4px 9px; font-size:11px; }
+  .crow{ display:flex; flex-wrap:wrap; gap:3px 8px; font-size:11px; }
   .crow>*{ white-space:nowrap; }
-  .cg{ display:flex; align-items:center; gap:4px; }
-  .crow .goodchip{ width:16px; height:18px; }
-  .clist{ font-size:11.5px; line-height:1.4; color:#4b4237; }
-  .clist .un{ color:var(--dim); }
+  .cg{ display:flex; align-items:center; gap:3px; }
+  .crow .goodchip{ width:15px; height:17px; }
   .dim{ color:var(--dim); }
-  .pboard.collapsed .expand{ display:none; }
+  /* 목록을 뺀 만큼 카드 아래가 비었다 — 그 자리에 "펼치면 다 볼 수 있다"는 힌트를 둔다 */
+  .pboard.collapsed .expand{ margin-top:auto; padding-top:4px; font-size:10px; text-align:center; color:var(--dim); }
+  .players>.pboard:last-child .expand{ display:none; }  /* 이 자리 우측 하단은 건물 보관판 버튼이 쓴다 */
   .kbd-hint{ letter-spacing:0; text-transform:none; color:var(--dim); font-weight:400; margin-left:8px; }
   /* 펼친 보드: 토지 옆 빈자리를 자원 패널이 가득 채운다
      (아래는 토지 타일 바닥, 오른쪽은 건설 부지 오른쪽 끝까지) */
@@ -209,7 +260,7 @@
      토지 옆 영역을 가득 채우고, 내용이 넘치면 세로 기준으로 다음 열에 이어진다 */
   .preswrap{ flex:1; min-width:0; display:flex; flex-direction:column; }
   /* 높이 = 토지 그리드(타일 2줄 + 간격)와 동일 — 아래 끝이 토지 타일 바닥과 맞는다 */
-  .pres{ min-height:calc(59px * 92 / 70 * 2 + 4px); min-width:0; display:flex; flex-direction:column; flex-wrap:wrap; align-content:flex-start;
+  .pres{ min-height:calc(var(--lw,59px) * 92 / 70 * 2 + 4px); min-width:0; display:flex; flex-direction:column; flex-wrap:wrap; align-content:flex-start;
     gap:6px; column-gap:22px; font-size:12px;
     background:rgba(245,238,218,.55); border:1px solid var(--line); border-radius:3px; padding:9px 12px; }
   .pres{ flex-wrap:nowrap; flex-direction:column; gap:10px; align-items:stretch; }
@@ -217,11 +268,13 @@
   .pgroup.pg-goods{ border-top:1px solid var(--line); padding-top:9px; }
   .pg-title{ font-size:10.5px; letter-spacing:.22em; color:var(--gold); font-weight:700; margin-bottom:5px; }
   /* 자원: 2×2 — 주화·승점 / 일꾼 */
-  .pres-stats{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 18px; }
+  /* 2열이 기본이지만 폭이 모자라면 1열로 접힌다 — 고정 2열이면 이 패널의 최소 폭이 보드 전체를
+     못 줄어들게 붙잡아, 창이 좁을 때 건설 부지가 잘리는 원인이 된다 */
+  .pres-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(88px,1fr)); gap:8px 18px; }
   .prow{ display:flex; align-items:center; gap:8px; font-size:13px; }
   .prow b{ margin-left:auto; font-size:14.5px; }
   /* 상품: 가로 3개씩 2줄 */
-  .pres-goods{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px 14px; }
+  .pres-goods{ display:grid; grid-template-columns:repeat(auto-fit,minmax(76px,1fr)); gap:8px 14px; }
   .pgood{ display:flex; align-items:center; gap:7px; font-size:12.5px; white-space:nowrap; }
   .pgood b{ margin-left:auto; font-size:13.5px; }
   .pres-empty{ color:var(--dim); font-size:12px; }
@@ -246,12 +299,14 @@
   .phead .stats{ margin-left:auto; display:flex; gap:10px; font-size:12.5px; }
   .phead .stats b{ font-size:14px; }
   /* 토지: 6×2 그리드, 공개된 농장과 같은 비율 */
-  .grid12{ display:grid; grid-template-columns:repeat(6,59px); gap:4px; margin:4px 0; }
+  /* 타일 폭은 --lw(토지) / --bw(건설 부지). 기본값은 원래 크기이고, 남는 폭이 모자랄 때만
+     render()가 #rd-players에 더 작은 값을 얹는다 — 자세한 이유는 boardTileW() 참고 */
+  .grid12{ display:grid; grid-template-columns:repeat(6,var(--lw,59px)); gap:4px; margin:4px 0; }
   .cell{ position:relative; border:1px solid transparent; border-radius:2px; min-height:58px; background:rgba(245,238,218,.55); overflow:hidden; }
   .cell img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:var(--panel); }
   /* 토지 칸: 이미지(위) + 이름표(아래) 분리, 확대 없음. 공개된 농장과 같은 비율 */
   .cell.land{ display:flex; flex-direction:column; aspect-ratio:70/92; min-height:0; }
-  .cell.land .art{ position:relative; flex:1; min-height:50px; }
+  .cell.land .art{ position:relative; flex:1; min-height:30px; }  /* 타일이 줄어들 때 aspect-ratio를 이 값이 밀어내지 않게 낮게 */
   .cell.land .art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:none; }
   .cell.land .lbl{ position:static; border-top:1px solid #d9cfbc; background:rgba(251,247,238,.95); }
   .cell .lbl{ position:absolute; left:0; right:0; bottom:0; font-size:9.5px; font-weight:700; text-align:center; background:rgba(251,247,238,.85); padding:1px 0; line-height:1.25; }
@@ -273,9 +328,12 @@
 
   /* 건설 부지: 12칸이 항상 6×2 그리드로 보인다 (빈 칸 포함).
      타일은 건물 이미지 비율 그대로 핏하게 — 정사각형 강제 없음. 고급 건물은 세로형 원본이라 자연히 큼 */
-  .bgrid{ grid-template-columns:repeat(6,119px); grid-auto-rows:auto; gap:3px; }
-  /* 빈 칸도 건물 놓인 칸과 같은 높이(이미지 79 + 이름표 15) — 배치 전후 높이가 안 변하게 */
-  .bgrid .cell{ min-height:94px; display:flex; flex-direction:column; }
+  /* 6열 × 2행 고정 — 자리는 렌더가 직접 지정한다(고급 건물은 항상 1행부터 2행까지).
+     행을 2개로 못박아 어떤 조합에서도 3행이 생겨 보드가 아래로 늘어나지 않게 한다. */
+  .bgrid{ grid-template-columns:repeat(6,var(--bw,119px)); grid-template-rows:repeat(2,auto); gap:3px; }
+  /* 빈 칸도 건물 놓인 칸과 같은 높이(이미지 79 + 이름표 15) — 배치 전후 높이가 안 변하게.
+     타일이 줄어들면 이미지도 같이 줄어드니 높이도 같은 비율(94/119)로 따라간다 */
+  .bgrid .cell{ min-height:calc(var(--bw,119px) * 94 / 119); display:flex; flex-direction:column; }
   /* 고급 건물: 부지 2칸을 위아래로 차지 — 이미지는 그 안에서 세로 가운데 */
   .cell.b2{ grid-row:span 2; }
   .cell.b2 .bimg{ margin:auto 0; }
@@ -306,10 +364,13 @@
   @keyframes fxpop{ 0%{ scale:1.55; filter:brightness(1.5) drop-shadow(0 0 12px rgba(232,178,60,.95)); }
     55%{ scale:.96; filter:brightness(1.15) drop-shadow(0 0 6px rgba(232,178,60,.5)); }
     100%{ scale:1; filter:none; } }
-  .fx-pop{ animation:fxpop .95s ease; z-index:6; }
+  /* 배치 이펙트(일꾼·농장·건물)는 항상 한 박자 뒤에 시작한다 —
+     보드가 열리는 중이면 그게 끝나고 0.3초 뒤(--fx-step), 이미 열려 있으면 0.3초 뒤(--fx-gap).
+     backwards: 기다리는 동안 0% 키프레임(확대+금빛)으로 떠 있어 "여기를 보라"는 예고가 된다. */
+  .fx-pop{ animation:fxpop .95s ease var(--fx-gap) backwards; z-index:6; }
   @keyframes cardflash{ 0%{ box-shadow:0 0 0 3px rgba(217,127,34,.85), 0 0 20px rgba(217,127,34,.6); }
     100%{ box-shadow:none; } }
-  .cardflash{ animation:cardflash 1.3s ease; }
+  .cardflash{ animation:cardflash 1.3s ease var(--fx-gap) backwards; }
 
   /* 이벤트 토스트: 양피지 카드 + 플레이어 색 띠, 해당 패널 위에서 떠오르며 사라진다 */
   .toast{ position:fixed; transform:translateX(-50%); z-index:300; pointer-events:none;
@@ -323,13 +384,20 @@
   .toast b{ color:var(--accent-deep); }
   .toast.big{ font-size:16px; padding:12px 26px; border-left-width:5px; animation-duration:2.6s; }
   @keyframes toastup{ 0%{opacity:0; margin-top:10px;} 10%{opacity:1; margin-top:0;} 70%{opacity:1; margin-top:-14px;} 100%{opacity:0; margin-top:-38px;} }
-  /* 역할 선택 스플래시: 역할 카드 이미지가 중앙에 잠깐 크게 */
+  /* 역할 선택 스플래시: 고른 역할 카드가 화면 가운데에 부드럽게 떴다가 부드럽게 사라진다.
+     들어오고(0.32초) 나가는(0.42초) 구간을 길게 잡고 ease-in-out으로 — 예전엔 0.08초 만에
+     튀어나왔다가 훅 사라져서 딱딱해 보였다. 전체 시간은 JS의 ROLE_ANIM과 같아야 한다. */
   .rsplash{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:310; pointer-events:none;
-    text-align:center; animation:rsplash 1s ease forwards; }
+    text-align:center; animation:rsplash 1.4s cubic-bezier(.33,0,.2,1) forwards; }
   .rsplash img{ width:168px; border-radius:6px; box-shadow:0 16px 44px rgba(0,0,0,.5); display:block; margin:0 auto; }
   .rsplash .who{ margin-top:9px; font-weight:700; font-size:15px; color:#fff; background:var(--tc,#7a5c39);
     display:inline-block; padding:4px 16px; border-radius:3px; box-shadow:0 3px 10px rgba(0,0,0,.35); }
-  @keyframes rsplash{ 0%{opacity:0; scale:.85;} 8%{opacity:1; scale:1;} 86%{opacity:1; scale:1;} 100%{opacity:0; scale:.97;} }
+  @keyframes rsplash{
+    0%  { opacity:0; scale:.90; }
+    23% { opacity:1; scale:1; }     /* 0.32초에 걸쳐 스르르 뜨고 */
+    70% { opacity:1; scale:1; }     /* 잠시 머무른 뒤 */
+    100%{ opacity:0; scale:1.05; }  /* 0.42초에 걸쳐 스르르 사라진다 */
+  }
 
   /* log */
   .log{ margin-top:16px; background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:8px 12px; max-height:110px; overflow-y:auto; font-size:12px; line-height:1.7; color:#4b4237; }
@@ -353,7 +421,9 @@
   .shopb .band{ position:absolute; left:0; top:0; bottom:0; width:4px; }
   /* 스캔마다 미세하게 다른 이미지 비율을 강제로 통일 — 고급 건물(마지막 구역)만 원본 비율 유지 */
   .shopb img.card{ display:block; width:100%; height:105px; object-fit:cover; }
-  .zone:last-of-type .shopb img.card{ height:auto; object-fit:fill; }
+  /* 고급 건물만 원본 비율 유지 — 단, aspect-ratio로 "로드되기 전에도" 높이를 잡아둔다.
+     height:auto만 두면 이미지가 도착하는 순간 0 → 177px로 줄 높이가 튀어(팝업이 통째로 다시 앉는다) */
+  .zone:last-of-type .shopb img.card{ height:auto; aspect-ratio:391/439; object-fit:fill; }
   .shopb img.card ~ .imgless-only{ display:none; }  /* 이미지 로드 성공 시 이름 숨김(폴백 전용) */
   .zone{ display:flex; gap:8px; align-items:stretch; margin-top:5px; }
   .zone:first-of-type{ margin-top:0; }
@@ -364,6 +434,12 @@
 
   .overlay{ position:fixed; inset:0; background:rgba(51,41,30,.5); z-index:80; display:flex; align-items:center; justify-content:center; padding:20px; }
   .modal{ background:var(--panel); border:1px solid var(--line); max-width:720px; width:100%; max-height:86vh; overflow-y:auto; padding:26px 30px; border-radius:3px; }
+  /* 팝업은 툭 나타나지 않고 스르르 — 어둠막이 먼저 깔리고(.22s) 패널이 살짝 커지며 떠오른다.
+     보드 펼침이 끝난 뒤 --fx-gap 쉬고 이게 시작하므로, 움직임끼리 겹치지 않는다. */
+  @keyframes ovIn{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes modalIn{ from{ opacity:0; transform:translateY(10px) scale(.975); } to{ opacity:1; transform:none; } }
+  .overlay.pop{ animation:ovIn .22s ease-out; }
+  .overlay.pop .modal{ animation:modalIn .3s cubic-bezier(.2,.8,.3,1) .06s backwards; }
   /* 건물 보관소 팝업: 어둠막은 화면 전체, 패널은 (액션바 제외 영역의) 세로 가운데 */
   .overlay.shop-ov{ align-items:center; padding-top:16px; padding-bottom:88px; }
   .shop-modal{ max-width:1110px; padding:20px 24px; }
@@ -380,6 +456,24 @@
 </head>
 <body>
 <div id="app" class="wrap"></div>
+
+<script>
+/* 스크립트가 통째로 죽으면 화면에는 배경만 남는다 — 그 상태로 끝내지 않고 이유를 화면에 띄운다.
+   (브라우저가 저장소 접근을 막거나, 확장 프로그램이 스크립트를 건드리는 경우가 실제로 있었다)
+   본 스크립트보다 먼저 등록해야 본 스크립트의 사고도 잡을 수 있다. */
+window.addEventListener('error', function(e){
+  if(!e.message) return;                     // 이미지 로드 실패 등 리소스 오류는 각자 폴백이 있다
+  const app=document.getElementById('app');
+  if(!app || app.children.length) return;    // 화면이 이미 그려졌으면 건드리지 않는다
+  const where=String(e.filename||'').split('/').pop()+' '+e.lineno+'행';
+  app.innerHTML='<div class="setup"><h2>화면을 그리지 못했습니다</h2>'
+    +'<div class="lead">브라우저가 아래 오류로 게임 스크립트를 중단했습니다.</div>'
+    +'<pre style="white-space:pre-wrap;font-size:13px;color:var(--accent-deep);background:#f0e9d8;'
+    +'border:1px solid var(--line);padding:12px;border-radius:3px">'
+    +String(e.message).replace(/</g,'&lt;')+'\n'+where+'</pre>'
+    +'<div class="hint">이 파일을 <b>다른 브라우저</b>로 열거나, 브라우저의 <b>사이트 데이터(쿠키) 차단</b> 설정을 풀면 해결되는 경우가 많습니다.</div></div>';
+});
+</script>
 
 <script>
 /* ═══════════════════════════ 데이터 ═══════════════════════════ */
@@ -451,12 +545,18 @@ function imgTag(cat, nm, cls){
 /* ═══════════════════════════ 게임 상태 ═══════════════════════════ */
 let G = null;           // 게임 상태 (JSON 직렬화 가능)
 let uiSel = null;       // 임시 UI 선택 상태 (모집 배치 등)
+/* 저장 단계의 선택 상태는 G에 없는 뷰 상태다 — 저장 단계에서 새로고침해 게임을 복구하면
+   pending은 'storage'인데 uiSel은 null이라, 렌더가 uiSel.types를 읽다가 통째로 죽었다
+   (화면에 배경만 남는 증상). 그래서 읽는 쪽에서 없으면 만들어 쓴다. */
+function storeSel(){ if(!uiSel || !Array.isArray(uiSel.types)) uiSel={types:[], single:null}; return uiSel; }
 
 /* ── 이벤트 토스트 (뷰 전용 — 게임 상태와 무관, 헤드리스에선 무시) ── */
 /* 방금 배치된 것 강조: 액션한 플레이어 보드로 화면을 옮기고, 새 타일/일꾼에 팝 이펙트 */
 let fxMark=null;
 let cardFx=null;   // 사건이 일어난 사이드 카드 번쩍임
 const FX_HOLD=1500;  // 직전 행동의 이펙트를 이 시간만큼은 화면에 붙잡아둔다 (렌더 전환·큰 토스트 모두 공통 기준)
+const BOARD_ANIM=470;  // 개인 보드 펼침 애니메이션(CSS --board-anim = .42s)이 끝나는 데 걸리는 시간 + 여유
+const SHOP_DELAY=300;  // 보드가 다 펼쳐진 뒤 건물 보관판이 뜨기까지 쉬는 한 박자
 function cardFxCls(id){ return (cardFx && cardFx.sel===id && Date.now()-cardFx.t<1400) ? ' cardflash' : ''; }
 function markFxKeys(pi, keys){ const m={}; keys.forEach(k=>m[k]=1); fxMark={keys:m, t:Date.now(), pi}; uiBoardSel=pi; }
 function markFx(pi, key){ markFxKeys(pi, [key]); }
@@ -487,6 +587,8 @@ function toast(html, sel, big, color){
   }catch(e){}
 }
 /* 역할 선택: 역할 카드 이미지가 중앙에 잠깐 크게 떴다 사라진다 */
+/* 역할 선택 연출 — 고른 역할 카드가 화면 가운데에 부드럽게 떴다가 부드럽게 사라진다. */
+const ROLE_ANIM=1400;                     // 떴다 사라지기까지 전체 시간 (CSS @keyframes rsplash와 같은 값)
 function roleSplash(roleId, p){
   if(typeof document==='undefined'||!document.body||!document.createElement) return;
   try{
@@ -496,7 +598,7 @@ function roleSplash(roleId, p){
     d.innerHTML='<img src="img/역할_'+ROLES[roleId].nm+'.png" onerror="this.remove()">'
       +'<div class="who">'+esc(p.name)+' — '+ROLES[roleId].nm+'</div>';
     document.body.appendChild(d);
-    setTimeout(()=>{ try{d.remove();}catch(_){} }, 1050);
+    setTimeout(()=>{ try{d.remove();}catch(_){} }, ROLE_ANIM+50);
   }catch(e){}
 }
 
@@ -504,6 +606,7 @@ function roleSplash(roleId, p){
    G에 넣지 않는 순수 뷰 상태. 저장/되돌리기와 무관하며 새로고침하면 기본값으로 돌아간다. */
 let uiBoardSel = null;   // 펼쳐 볼 개인 보드. null = 현재 차례인 플레이어를 자동으로 따라감
 let uiShopOpen = null;   // 건물 보관판 팝업. null = 자동(내 건설 차례에 열림) / true = 열어둠 / false = 닫아둠
+let uiShopWasVisible = false;  // 직전 렌더에서 팝업이 떠 있었는가 — "새로 열린 순간"에만 등장 애니메이션을 준다
 let uiLastPend = '';     // pending 전환 감지용
 let uiHoldUntil = 0;     // 이 시각까지는 "당신 차례" 표시(역할 선택 가능 표시·액션바 등)를 숨긴다 — 직전 이펙트를 먼저 보여주기 위함
 let uiPrevShown = null;  // 직전 렌더에서 펼쳐져 있던 보드 — 바뀐 순간에만 넓어지는 애니메이션을 준다
@@ -523,6 +626,57 @@ function shopVisibleNow(){
 }
 function uiSelectBoard(i){ uiBoardSel=i; render(); }
 function uiToggleShop(){ uiShopOpen=!shopVisibleNow(); render(); }
+
+/* ── 소개 페이지에 끼워졌을 때(iframe) ──
+   소개 페이지의 "플레이" 탭은 이 파일을 iframe으로 띄우고 화면 전체를 내준다.
+   그래서 돌아갈 길은 여기서 만들어 줘야 한다 — 부모에게 "소개로 돌려보내 달라"고 알린다.
+   file:// 로 열면 부모/자식이 서로 다른 출처로 취급돼 직접 함수 호출이 막히므로 postMessage를 쓴다. */
+const EMBEDDED=(()=>{ try{ return window.self!==window.top; }catch(e){ return true; } })();
+
+/* 지금 화면이 그리고 있는 파일이 "언제 저장된 것인지" 보여준다.
+   브라우저가 예전 파일을 캐시해 두면 고친 내용이 반영이 안 되는데, 화면만 봐서는 알 수가 없다.
+   이 시각이 실제 저장 시각보다 옛날이면 강제 새로고침(⇧⌘R)이 필요하다는 뜻이다. */
+function fileStamp(){
+  const d=new Date(document.lastModified);
+  if(isNaN(d.getTime())) return '';
+  const z=n=>(n<10?'0':'')+n;
+  return z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes());
+}
+function stampHtml(){
+  const s=fileStamp();
+  return s?'<span class="ver" title="이 화면이 그리고 있는 게임 파일의 저장 시각입니다.\n실제 파일보다 옛날이면 브라우저가 예전 파일을 캐시하고 있는 것이니 ⇧⌘R(강제 새로고침) 하세요.">파일 '+s+'</span>':'';
+}
+function backBtnHtml(){ return EMBEDDED?'<button class="backbtn" onclick="uiBackToIntro()">← 소개로</button>':''; }
+// postMessage만 쓴다 — 부모 주소를 직접 건드리면 히스토리에 쓸데없는 항목이 쌓인다.
+// 메시지가 아예 막힌 환경이면 부모가 아래 pr1897:ready 신호를 못 받고 자기 버튼을 띄운다.
+function uiBackToIntro(){ try{ window.parent.postMessage('pr1897:back','*'); }catch(e){} }
+// 부모에게 "안에서 버튼을 그렸다"고 알린다 — 이 신호가 없으면 부모가 자기 쪽 버튼을 띄운다
+if(EMBEDDED){ try{ window.parent.postMessage('pr1897:ready','*'); }catch(e){} }
+
+/* ── 개인 보드 타일 폭 ──
+   한 줄에 [펼친 보드 1개 + 접힌 요약 카드 (인원-1)장]이 들어가야 한다.
+   펼친 보드가 원래 크기로 필요로 하는 폭은 건설 부지 6칸(119px×6 + 간격) = 729px + 패딩이라,
+   5인이면 접힌 카드가 아무리 좁아도 최대 창(main-col 1108px)에서조차 자리가 모자란다.
+   폭이 모자라면 flex가 펼친 보드를 눌러버리고, 안의 내용은 max-content라 안 줄어들어
+   건설 부지 오른쪽 칸이 그냥 잘려나갔다 (부지가 몇 칸 남았는지 셀 수 없게 된다).
+   → 잘라내는 대신 타일을 줄인다. 접힌 카드 몫을 먼저 떼고 남는 폭에 6칸을 맞춘다.
+   대부분의 경우 BW_MAX 그대로이고, 좁을 때만 조금씩 작아진다. */
+const CB_MIN=84;      // 접힌 요약 카드 최소 폭 — CSS .pboard.collapsed의 --cbmin 기본값과 같아야 한다
+const CB_GAP=8;       // .players의 gap
+const BW_MAX=119, BW_MIN=62;   // 건설 부지 타일 폭 상·하한 (하한은 "작아도 6칸 다 보이는 게 낫다"는 판단)
+function boardTileW(n){
+  const cont=document.getElementById('rd-players');
+  const w=cont?cont.clientWidth:0;
+  if(!w) return BW_MAX;
+  // 1000px 이하에서는 .players가 줄바꿈되어 펼친 보드가 한 줄을 통째로 쓴다 — 접힌 카드 몫을 뺄 필요가 없다
+  const reserve=(window.innerWidth<=1000)?0:(n-1)*(CB_MIN+CB_GAP);
+  const inner=w-reserve-31;             // 31 = 펼친 보드의 좌우 패딩·테두리
+  return Math.max(BW_MIN, Math.min(BW_MAX, Math.floor((inner-15)/6)));  // 15 = 칸 사이 gap 3px×5
+}
+// 창 크기가 바뀌면 다시 계산해야 한다 (타일 폭이 창 폭에 달려 있으므로)
+let rzT=0;
+window.addEventListener('resize', function(){ if(!G||!document.getElementById('rd-players')) return;
+  clearTimeout(rzT); rzT=setTimeout(render, 120); });
 
 document.addEventListener('keydown', function(e){
   if(!G||G.over) return;
@@ -1360,12 +1514,30 @@ function schedule(){
 }
 
 /* ═══════════════════════════ 저장 ═══════════════════════════ */
+/* localStorage는 "읽기만 해도" 예외가 날 수 있다 —
+   file:// 로 열면 사파리는 기본적으로, 크롬도 쿠키/사이트 데이터 차단 설정이면 SecurityError를 던진다.
+   예전에는 renderSetup()이 이걸 맨몸으로 읽다가 죽어서 화면이 통째로 안 그려졌다(배경만 보임).
+   그래서 저장소 접근은 전부 이 세 함수를 거친다. 막혀 있으면 메모리에 담아 게임은 그대로 돌아가고,
+   새로고침하면 사라진다는 것만 설정 화면에서 알려준다. */
+const memStore={};        // localStorage를 못 쓸 때의 대체 저장소 (탭을 닫으면 사라짐)
+let storageBlocked=false; // 한 번이라도 막힌 적이 있으면 true
+function lsGet(k){
+  if(k in memStore) return memStore[k];
+  try{ return localStorage.getItem(k); }catch(e){ storageBlocked=true; return null; }
+}
+function lsSet(k,v){
+  try{ localStorage.setItem(k,v); }catch(e){ storageBlocked=true; memStore[k]=v; }
+}
+function lsDel(k){
+  try{ localStorage.removeItem(k); }catch(e){ storageBlocked=true; }
+  delete memStore[k];
+}
 function save(){
-  try{ localStorage.setItem('pr1897_save', JSON.stringify(G)); }catch(e){}
+  lsSet('pr1897_save', JSON.stringify(G));
 }
 function loadSave(){
   try{
-    const s=localStorage.getItem('pr1897_save');
+    const s=lsGet('pr1897_save');
     if(!s) return false;
     G=JSON.parse(s);
     return true;
@@ -1434,7 +1606,7 @@ let setupSeats=[{name:'플레이어 1',ai:false},{name:'AI 가영',ai:true},{nam
 let setupN=4;
 function renderSetup(){
   rdReset();   // 설정 화면은 통짜 렌더 — 게임 스켈레톤·캐시를 비운다
-  const canResume=!!localStorage.getItem('pr1897_save');
+  const canResume=!!lsGet('pr1897_save');
   let seatRows='';
   for(let i=0;i<setupN;i++){
     const s=setupSeats[i];
@@ -1447,6 +1619,7 @@ function renderSetup(){
   }
   $app.innerHTML=
   '<div class="setup">'
+  +backBtnHtml()
   +'<h2>푸에르토리코 <span style="color:var(--accent);font-style:italic">1897</span></h2>'
   +'<div class="lead">기본 게임 · 2~5인 · 각 자리를 사람 또는 AI로 정할 수 있습니다.</div>'
   +'<div class="row"><label>인원수</label><select onchange="setupN=+this.value;renderSetup()">'
@@ -1457,6 +1630,8 @@ function renderSetup(){
   +'<button class="btn-primary" onclick="startNewGame()">게임 시작</button>'
   +(canResume?'<button class="btn-ghost" onclick="resumeGame()">이어서 하기</button>':'')
   +'</div>'
+  +(storageBlocked?'<div class="hint" style="color:var(--accent)">이 브라우저에서는 저장이 막혀 있어(파일을 직접 열었을 때 흔합니다) <b>새로고침하면 진행 중인 게임이 사라집니다</b>. 한 판은 그대로 즐길 수 있습니다.</div>':'')
+  +'<div class="hint">이 화면이 읽고 있는 게임 파일: <b>'+fileStamp()+'</b> 저장본 — 고친 내용이 안 보이면 <b>⇧⌘R</b>로 강제 새로고침하세요.</div>'
   +'<div class="hint">타일 이미지를 넣으려면 이 파일과 같은 폴더에 <b>img/</b> 폴더를 만들고<br>'
   +'<b>역할_개척자.png · 건물_소형과일공장.png · 농장_옥수수.png</b> 형식(띄어쓰기 없이)으로 저장하세요. 없으면 텍스트 타일로 표시됩니다.</div>'
   +'</div>';
@@ -1466,7 +1641,7 @@ function startNewGame(){
   newGame(setupSeats.slice(0,setupN).map(s=>({name:s.name||'플레이어', ai:s.ai})));
 }
 function resumeGame(){ if(loadSave()){ render(); schedule(); } }
-function confirmNew(){ if(confirm('현재 게임을 버리고 새 게임을 시작할까요?')){ localStorage.removeItem('pr1897_save'); G=null; renderSetup(); } }
+function confirmNew(){ if(confirm('현재 게임을 버리고 새 게임을 시작할까요?')){ lsDel('pr1897_save'); G=null; renderSetup(); } }
 
 /* 본 게임 렌더 */
 function render(){
@@ -1486,6 +1661,15 @@ function render(){
       uiShopOpen=null;
       if(isHumanTurn){
         uiBoardSel=null;
+        // 건설 차례: 내 보드가 다 펼쳐지고 한 박자(SHOP_DELAY) 쉰 뒤에 건물 보관판을 연다.
+        // (보드가 넓어지는 애니메이션과 팝업이 같이 뜨면 두 움직임이 겹쳐 어수선하게 보인다)
+        if(pd.type==='builder'){
+          const opening=(uiPrevShown!==null&&uiPrevShown!==curPi);  // 보드가 새로 펼쳐지는가
+          uiShopOpen=false;
+          setTimeout(()=>{
+            if(G&&G.pending===pd&&uiShopOpen===false){ uiShopOpen=null; render(); }  // 그새 직접 열었으면(true) 건드리지 않는다
+          }, (opening?BOARD_ANIM:0)+SHOP_DELAY);
+        }
         // 사람 차례 시작: 무엇을 해야 하는지 중앙 알림 (떴다 사라짐)
         const TURNMSG={pickRole:'역할 타일을 선택하세요',settler:'가져갈 농장을 고르세요',mayorPlace:'일꾼을 배치하세요',
           builder:'건설할 건물을 고르세요',craftBonus:'추가로 받을 상품을 고르세요',trader:'판매할 상품을 고르세요',
@@ -1627,18 +1811,23 @@ function render(){
     const acting=(uiBoardSel===null&&isCur&&ACTIONMSG[pd.type]);
     const tags=(G.governor===p.i?'<span class="gov-ic" title="주지사 — 이번 라운드 시작 플레이어"><svg viewBox="0 0 24 16"><path d="M2 14h20L20 4l-5 4.2L12 1 9 8.2 4 4z" fill="#e8c95c" stroke="#8a6a1f" stroke-width="1.2" stroke-linejoin="round"/></svg></span>':'')+(p.ai?'<span class="tag">AI</span>':'')+(acting?'<span class="tag acting">'+ACTIONMSG[pd.type]+'</span>':'');
     if(p.i!==shown){
-      // 요약 카드: 농장·건물은 이름 텍스트로, 육각 토큰은 상품(작물)에만 쓴다
+      // 좁은 카드에서는 이름이 먼저다 — AI 배지는 이름에 이미 "AI"가 들어 있으면 생략(자리만 먹는다)
+      const ctags=(G.governor===p.i?'<span class="gov-ic" title="주지사 — 이번 라운드 시작 플레이어"><svg viewBox="0 0 24 16"><path d="M2 14h20L20 4l-5 4.2L12 1 9 8.2 4 4z" fill="#e8c95c" stroke="#8a6a1f" stroke-width="1.2" stroke-linejoin="round"/></svg></span>':'')
+        +((p.ai&&!/^\s*AI/i.test(p.name))?'<span class="tag">AI</span>':'');
+      // 요약 카드: 좁은 스트립이라 농장·건물은 개수만 — 무엇을 가졌는지는 툴팁과 펼친 보드에서.
+      // (이름 목록을 그대로 두면 카드가 132px 아래로 못 내려가 펼친 보드의 건설 부지가 잘렸다)
       const farm={}; for(const l of p.land) farm[l.type]=(farm[l.type]||0)+1;
-      const farmList=Object.keys(farm).map(t=>'<div>'+PLANT_NM[t]+' ×'+farm[t]+'</div>').join('')||'<span class="dim">—</span>';
-      const bldList=p.buildings.map(b=>'<div class="'+(b.w>0?'':'un')+'"'+(b.w>0?'':' title="일꾼 미배치"')+'>'+BUILDINGS[b.id].nm+'</div>').join('')||'<div class="dim">—</div>';
-      const goodsRow=GTYPES.filter(t=>p.goods[t]>0).map(t=>'<span class="cg">'+goodChip(t)+'×'+p.goods[t]+'</span>').join('')||'<span class="dim">—</span>';
+      const farmTip=Object.keys(farm).map(t=>PLANT_NM[t]+' ×'+farm[t]).join(' · ')||'없음';
+      const bldTip=p.buildings.map(b=>BUILDINGS[b.id].nm+(b.w>0?'':'(일꾼 미배치)')).join(' · ')||'없음';
+      const goodsRow=GTYPES.filter(t=>p.goods[t]>0).map(t=>'<span class="cg">'+goodChip(t)+'×'+p.goods[t]+'</span>').join('')||'<span class="dim">상품 없음</span>';
       return '<div class="pboard collapsed'+(isChooser?' cur':'')+(boardJustSwitched&&p.i===prevShown?' board-out':'')+cardFxCls('pboard-'+p.i)+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+';--pc:'+PCOLOR[p.i]+'" onclick="uiSelectBoard('+p.i+')" title="클릭하면 펼칩니다">'
         +'<div class="pcontent">'
-        +'<div class="chead"><span class="pdot" style="background:'+PCOLOR[p.i]+'"></span>'+esc(p.name)+tags+'</div>'
-        +'<div class="cstat"><span class="cpair"><span class="tok-coin sm">$</span><b>'+p.coins+'</b></span><span class="cpair"><span class="tok-vp sm">VP</span><b>'+p.vp+'</b></span><span class="cpair"><span class="wtok smw"></span><b>'+totalWorkersOf(p)+'</b></span></div>'
-        +'<div class="csec">농장 '+p.land.length+'</div><div class="crow">'+farmList+'</div>'
-        +'<div class="csec">건물 '+p.buildings.length+'</div><div class="clist">'+bldList+'</div>'
-        +'<div class="csec">상품</div><div class="crow">'+goodsRow+'</div>'
+        +'<div class="chead"><span class="pdot" style="background:'+PCOLOR[p.i]+'"></span><span class="cnm" title="'+escAttr(p.name+(p.ai?' (AI)':''))+'">'+esc(p.name)+'</span></div>'
+        +(ctags?'<div class="ctags">'+ctags+'</div>':'')   // 주지사·AI 표시는 아랫줄로 — 좁은 카드에서 이름이 먼저다
+        +'<div class="cstat"><span class="cpair" title="주화"><span class="tok-coin sm">$</span><b>'+p.coins+'</b></span><span class="cpair" title="승점"><span class="tok-vp sm">VP</span><b>'+p.vp+'</b></span><span class="cpair" title="일꾼"><span class="wtok smw"></span><b>'+totalWorkersOf(p)+'</b></span></div>'
+        +'<div class="cmini"><span title="농장 — '+escAttr(farmTip)+'">농장 <b>'+p.land.length+'</b></span>'
+          +'<span title="건물 — '+escAttr(bldTip)+'">건물 <b>'+p.buildings.length+'</b></span></div>'
+        +'<div class="crow">'+goodsRow+'</div>'
         +'<div class="expand">펼치기 ▾</div>'
         +'</div>'
         +(p.i===G.n-1?fabShopHtml:'')
@@ -1658,11 +1847,22 @@ function render(){
           +'<div class="lbl">'+PLANT_NM[l.type]+'</div></div>';
       } else land+='<div class="cell land empty"></div>';
     }
-    // 건물
+    /* 건물 — 건설 부지는 6열 × 2행.
+       고급 건물은 부지 2칸을 "세로로" 쓰므로 반드시 1행에서 시작해야 두 층이 온전히 들어간다.
+       자동 배치에 맡기면 앞선 건물 개수에 따라 2행에서 시작하는 경우가 생겨, 3행이 만들어지며
+       보드가 아래로 늘어났다. → 자리를 직접 정한다:
+         · 고급 건물에게 오른쪽 끝 열을 한 열씩 통째로 준다 (항상 1~2행 = 2층)
+         · 일반 건물은 남은 열들만 행 우선으로 채운다
+       그래서 고급 건물이 새로 지어지면 일반 건물들의 위치가 왼쪽으로 밀린다 — 자리가 없으면
+       옮겨서라도 고급 건물을 2층으로 세운다는 뜻. 총 용량(12칸)은 그대로다. */
+    const bigs=[], smalls=[];
+    p.buildings.forEach(b=>((BUILDINGS[b.id].size===2)?bigs:smalls).push(b));
+    const smallCols=Math.max(0, 6-bigs.length);
+    const cellPos=(i)=>'grid-column:'+((i%smallCols)+1)+';grid-row:'+(Math.floor(i/smallCols)+1);
     let blds='';
     let used=0;
-    for(const b of p.buildings){
-      const B=BUILDINGS[b.id]; used+=(B.size||1);
+    const bldCell=(b, pos)=>{
+      const B=BUILDINGS[b.id];
       // 배치된 일꾼만 그린다 — 빈 자리는 타일에 인쇄된 원이 이미 보여준다.
       // 인쇄된 원 위치(실측): 1칸 건물 23% · 2칸 21%/45% · 3칸 20%/45%/70% (y 60%)
       // 고급 건물은 좌상단 비용 코인을 감싼 원이 일꾼 자리 (22%, 29%)
@@ -1677,13 +1877,17 @@ function render(){
         wk+='<span class="wtok'+fxCls('wkb-'+p.i+'-'+b.id+'-'+s)+'" style="left:'+x+'%;top:'+y+'%"></span>';
       }
       const clickable=isMayorMe;
-      blds+='<div class="cell'+(B.size===2?' b2':'')+(clickable?' clickable':'')+fxCls('bld-'+p.i+'-'+b.id)+'" '+(clickable?'onclick="uiToggleBld('+p.i+',\''+b.id+'\')"':'')
+      return '<div class="cell'+(B.size===2?' b2':'')+(clickable?' clickable':'')+fxCls('bld-'+p.i+'-'+b.id)+'" '
+        +'style="'+pos+'" '+(clickable?'onclick="uiToggleBld('+p.i+',\''+b.id+'\')"':'')
         +' title="'+escAttr(buildingTip(B)+(b.w<B.slots?'\n일꾼 미배치 — 효과가 발동하지 않습니다.':''))+'">'
         +'<div class="bimg">'+imgTag('건물',B.nm)+wk+'</div>'
         +imgTag('건물',B.nm,'zoom')
         +'<div class="lbl">'+B.nm+'</div></div>';
-    }
-    for(let i=used;i<12;i++) blds+='<div class="cell empty"></div>';
+    };
+    p.buildings.forEach(b=>{ used+=(BUILDINGS[b.id].size||1); });
+    smalls.forEach((b,i)=>{ blds+=bldCell(b, cellPos(i)); });
+    bigs.forEach((b,j)=>{ blds+=bldCell(b, 'grid-column:'+(smallCols+j+1)+';grid-row:1 / span 2'); });
+    for(let i=smalls.length;i<smallCols*2;i++) blds+='<div class="cell empty" style="'+cellPos(i)+'"></div>';
     // 우측 자원 패널
     // 자원(주화·승점·일꾼)은 타일 3칸, 상품은 2×2 타일 그리드로 구분
     // 자원: 3줄 세로(아이콘·이름 | 숫자) · 상품: 가로 2개씩 2줄
@@ -1730,7 +1934,7 @@ function render(){
   /* 종료 모달 */
   let modal='';
   if(G.over&&G.scores){
-    modal='<div class="overlay"><div class="modal">'
+    modal='<div class="overlay pop"><div class="modal">'   // 종료 모달은 한 번만 뜨므로 항상 등장 애니메이션
     +'<h2>최종 점수</h2>'
     +'<table><tr><th>플레이어</th><th>승점 칩</th><th>건물</th><th>고급 건물 보너스</th><th>합계</th></tr>'
     +G.scores.map((s,i)=>'<tr'+(i===0?' class="scorewin"':'')+'><td>'+esc(s.name)+(i===0?' 🏆':'')+'</td><td>'+s.chips+'</td><td>'+s.bvp+'</td>'
@@ -1744,8 +1948,13 @@ function render(){
 
   /* 건물 보관판 팝업 */
   let shopPop='';
-  if(shopVisibleNow()){
-    shopPop='<div class="overlay shop-ov" onclick="if(event.target===this)uiToggleShop()"><div class="modal shop-modal'+(builderActive?' buying':'')+'">'
+  const shopNow=shopVisibleNow();
+  // 등장 애니메이션은 "이번에 새로 열렸을 때"만 — 팝업이 떠 있는 동안 내용이 바뀌어 다시 그려질 때마다
+  // 스르르가 반복되면 오히려 산만하다 (setPart는 문자열이 바뀐 섹션을 통째로 갈아끼운다)
+  const shopJustOpened=shopNow&&!uiShopWasVisible;
+  uiShopWasVisible=shopNow;
+  if(shopNow){
+    shopPop='<div class="overlay shop-ov'+(shopJustOpened?' pop':'')+'" onclick="if(event.target===this)uiToggleShop()"><div class="modal shop-modal'+(builderActive?' buying':'')+'">'
       +'<div class="shop-modal-h"><h2>건물 보관소</h2><div style="display:flex;gap:8px">'
       +(builderActive?'<button class="btn-ghost" onclick="actBuild(\'skip\')">건설 넘기기</button>':'')
       +'<button class="btn-ghost" onclick="uiToggleShop()">닫기 ✕</button></div></div>'
@@ -1778,11 +1987,21 @@ function render(){
   }
 
   setPart('rd-hdr',
-    '<h1>푸에르토리코</h1><span class="sub">1897</span>'
+    backBtnHtml()
+    +'<h1>푸에르토리코</h1><span class="sub">1897</span>'
     +'<div class="meta"><span>라운드 <b>'+G.round+'</b></span><span>주지사 <b>'+esc(P(G.governor).name)+'</b></span>'
     +(G.phase?'<span>단계 <b>'+ROLES[G.phase.id].ph+'</b></span>':'')
+    +stampHtml()
     +'<button onclick="confirmNew()">새 게임</button></div>');
   setPart('rd-roles', rolesHtml);
+  /* 타일 폭 — 스켈레톤이 선 뒤에 재야 한다(컨테이너 실제 폭이 필요). 토지는 건설 부지와 같은 비율로 따라간다 */
+  const $pl=document.getElementById('rd-players');
+  if($pl){
+    const bw=boardTileW(G.n);
+    $pl.style.setProperty('--bw', bw+'px');
+    $pl.style.setProperty('--lw', Math.round(bw*59/119)+'px');
+    $pl.style.setProperty('--cbmin', CB_MIN+'px');
+  }
   setBoards(boardParts);
   setPart('rd-plants', plantsHtml);
   setPart('rd-ships', shipsHtml);
@@ -1853,15 +2072,16 @@ function renderActionBar(pd){
   }
   else if(pd.type==='storage'){
     const cap=pd.cap;
+    const sel=storeSel();
     const types=GTYPES.filter(t=>p.goods[t]>0);
     msg='저장 한도 초과 — 창고 저장 종류 <b>'+cap+'</b>개 + 낱개 1개를 고르세요.';
     for(const t of types){
-      const on=uiSel.types.includes(t);
+      const on=sel.types.includes(t);
       btns+='<button style="'+(on?'background:#4e8c46;border-color:#4e8c46':'')+'" onclick="uiStoreType(\''+t+'\')">'
         +(on?'✓ ':'')+PLANT_NM[t]+' 전부('+p.goods[t]+')</button>';
     }
     for(const t of types){
-      const on=uiSel.single===t;
+      const on=sel.single===t;
       btns+='<button style="'+(on?'background:#9a7b2f;border-color:#9a7b2f':'')+'" onclick="uiStoreSingle(\''+t+'\')">'
         +(on?'✓ ':'')+'낱개: '+PLANT_NM[t]+'</button>';
     }
@@ -1896,13 +2116,14 @@ function uiMayorDone(pi){
 }
 function uiStoreType(t){
   const cap=G.pending.cap;
-  const i=uiSel.types.indexOf(t);
-  if(i>=0) uiSel.types.splice(i,1);
-  else if(uiSel.types.length<cap) uiSel.types.push(t);
+  const sel=storeSel();
+  const i=sel.types.indexOf(t);
+  if(i>=0) sel.types.splice(i,1);
+  else if(sel.types.length<cap) sel.types.push(t);
   render();
 }
-function uiStoreSingle(t){ uiSel.single=(uiSel.single===t)?null:t; render(); }
-function uiStoreDone(){ actStorage(uiSel.types, uiSel.single); }
+function uiStoreSingle(t){ const sel=storeSel(); sel.single=(sel.single===t)?null:t; render(); }
+function uiStoreDone(){ const sel=storeSel(); actStorage(sel.types, sel.single); }
 
 /* ═══════════════════════════ 부팅 ═══════════════════════════ */
 (function(){
