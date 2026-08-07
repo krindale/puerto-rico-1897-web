@@ -164,8 +164,12 @@
 
   /* players — 좌우 배치: 펼친 보드 1개 + 요약 카드들이 한 줄. 스크롤 없이 한눈에 보이는 게 목표 */
   .players{ display:flex; gap:8px; align-items:stretch; overflow-x:hidden; }  /* 접힌 패널도 펼친 보드와 같은 높이. overflow-x: 전환 애니메이션 중 잠깐 폭 합이 넘쳐도 안 튀어나오게 */
-  /* 펼친 보드는 내용 폭에 맞게 — 억지로 늘리면 내부에 빈 공간이 생긴다 */
-  .pboard{ position:relative; background:rgba(246,240,222,.8); border:1px solid var(--line); border-radius:3px; padding:8px 10px; flex:0 1 auto; min-width:0; }
+  /* 폭은 전부 "확정된 px"이다 (render()가 --w-open / --cbw 를 계산해 얹는다).
+     예전에는 접힌 카드가 flex:1 1 0 으로 남는 폭을 나눠 가졌는데, 그러면 보드를 펼칠 때마다
+     남는 폭이 재분배되어 **관계없는 카드들의 폭까지 같이 변했다**. 지금은 어느 보드를 펼치든
+     펼친 폭·접힌 폭이 같은 값이라, 전환할 때 움직이는 건 열리는 판과 닫히는 판 둘뿐이다. */
+  .pboard{ position:relative; background:rgba(246,240,222,.8); border:1px solid var(--line); border-radius:3px; padding:8px 10px;
+    flex:0 0 var(--w-open, auto); min-width:0; }
   .pboard.cur{ box-shadow:inset 6px 0 0 var(--pc); }  /* 이번 역할을 고른 사람(선택 단계에는 고르는 중인 사람): 본인 색 띠가 두꺼워진다 */
   /* 실제 내용(.pcontent)은 항상 자기 내용 기준 고유 폭으로만 그려진다 — 바깥 .pboard(애니메이션 중인 폭)에
      맞춰 안쪽 flex(자원 패널 등)가 재계산되면서 갑자기 튀어나오듯 보이는 걸 막는다. 바깥은 그 위에서
@@ -175,31 +179,12 @@
      펼친 보드가 필요한 폭을 먼저 가져가고 남는 걸 접힌 카드들이 나눠 가지는 구조라,
      접힌 쪽이 유연해야 펼친 보드의 건설 부지가 안 잘린다. */
   .pboard.collapsed .pcontent{ width:auto; min-width:0; flex:1; display:flex; flex-direction:column; gap:2px; }
-  /* 펼침↔접힘 전환: 펼쳐지는 보드는 실제 flex 폭(flex-grow)이 자라면서 좌우 접힌 카드들을 밀어낸다.
-     접힌 카드가 애니메이션 도중 너무 좁아지면 글자가 줄바꿈되며 깨지므로, .pboard.collapsed에
-     최소 폭을 둬서 절대 그 밑으로는 안 눌리게 막는다 — 대신 잠깐 총 폭이 넘칠 수 있는데 그건
-     위 .players의 overflow-x:hidden이 가려준다. */
-  /* 폭이 flex-grow로 자라는데, 실제 폭은 g/(g+접힌카드수)라 g에 비례하지 않는다 —
-     g를 등속으로 올리면 앞부분에서 폭이 확 벌어지고 뒤로 갈수록 기어가서, 가감속이 없는 것처럼 보인다.
-     그래서 ① 중간 키프레임으로 g의 진행을 폭 기준에 맞게 펴 주고(앞을 느리게, 뒤를 촘촘하게)
-           ② 타이밍 함수도 ease-in-out 계열을 써서 시작·끝을 부드럽게 만든다. */
-  @keyframes boardGrow{
-    0%  { flex-grow:1;   flex-basis:0%; flex-shrink:1; }
-    25% { flex-grow:1.6; flex-basis:0%; flex-shrink:1; }
-    50% { flex-grow:2.6; flex-basis:0%; flex-shrink:1; }
-    75% { flex-grow:4.1; flex-basis:0%; flex-shrink:1; }
-    100%{ flex-grow:6;   flex-basis:0%; flex-shrink:1; }
-  }
-  @keyframes boardShrink{
-    0%  { flex-grow:6;   flex-basis:0%; flex-shrink:1; }
-    25% { flex-grow:4.1; flex-basis:0%; flex-shrink:1; }
-    50% { flex-grow:2.6; flex-basis:0%; flex-shrink:1; }
-    75% { flex-grow:1.6; flex-basis:0%; flex-shrink:1; }
-    100%{ flex-grow:1;   flex-basis:0%; flex-shrink:1; }
-  }
-  /* 슬라이드 중에만 보드를 창처럼 잘라낸다 — 슬라이드가 끝나는 순간 overflow를 풀어야
-     뒤이어 재생되는 타일·일꾼 팝(확대 1.55배)이 보드 경계에서 잘리지 않는다.
-     step-end라 0.3초 동안은 hidden으로 있다가 끝나는 순간 visible로 바뀌고, forwards로 그대로 유지된다. */
+  /* 펼침↔접힘 전환 — 폭이 px로 확정돼 있으므로 두 판의 flex-basis만 서로 맞바꾼다.
+     (예전에는 flex-grow를 애니메이션해서, 남는 폭을 나눠 갖던 다른 카드들까지 매 프레임 흔들렸다.)
+     A가 늘어나는 만큼 B가 정확히 줄어드니 한 줄의 총 폭은 내내 그대로 — 나머지 판은 미동도 없다.
+     px 보간이라 이징도 그냥 걸면 된다(키프레임 구간마다 이징이 걸리는 함정도 없다). */
+  @keyframes boardGrow{ from{ flex-basis:var(--cbw,118px); } to{ flex-basis:var(--w-open,100%); } }
+  @keyframes boardShrink{ from{ flex-basis:var(--w-open,100%); } to{ flex-basis:var(--cbw,118px); } }
   @keyframes unclip{ from{ overflow:hidden; } to{ overflow:visible; } }
   .pboard.board-in{ animation:boardGrow var(--board-anim) var(--board-ease), unclip var(--board-anim) step-end forwards; }
   .pboard.board-out{ animation:boardShrink var(--board-anim) var(--board-ease), unclip var(--board-anim) step-end forwards; }
@@ -220,21 +205,20 @@
      그리고 팝이 진행 중인 보드를 옆 보드보다 위로 올려 잘려 보이지 않게 한다. */
   .cell:has(.fx-pop), .cell.fx-pop{ overflow:visible; }
   .pboard:has(.fx-pop){ z-index:20; }
-  /* 요약 카드: 자리 순서대로 좌우 배치, 남는 폭을 나눠 가진다.
-     최소 폭(--cbmin)은 펼친 보드의 건설 부지 6칸과 경쟁하는 값이라 좁게 잡았다 —
-     5인이면 이 카드가 4장이라 132px씩 쓰면 펼친 보드가 200px 넘게 모자라 부지가 잘렸다.
-     그래서 농장·건물 "이름 목록"은 빼고 개수만 남긴다 (목록은 카드 툴팁과 펼친 보드에서 본다).
-     JS의 CB_MIN과 같은 값이어야 한다 — 타일 폭 계산이 이 값을 전제로 남는 폭을 잰다. */
-  .pboard.collapsed{ flex:1 1 0; min-width:var(--cbmin,84px); display:flex; flex-direction:column; gap:2px; padding:6px 7px; cursor:pointer; }
+  /* 요약 카드: 자리 순서대로 좌우 배치. 폭은 render()가 정한 --cbw 로 고정 —
+     어느 보드를 펼치든 같은 값이라 전환할 때 다른 카드가 흔들리지 않는다.
+     기본값은 CB_MIN(농장·건물 이름이 들어가는 최소 폭)이고, 타일이 상한에 걸려 폭이 남으면
+     남는 만큼을 접힌 카드들이 똑같이 나눠 갖는다(그 값도 전환과 무관하게 일정하다). */
+  .pboard.collapsed{ flex:0 0 var(--cbw,118px); display:flex; flex-direction:column; gap:2px; padding:6px 8px; cursor:pointer; }
   .pboard.collapsed:hover{ background:#f3ecdb; }
   .pboard.collapsed .chead{ flex-wrap:nowrap; gap:4px; font-size:13px; }
   .cnm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
   .ctags{ display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
   .ctags .tag{ font-size:9.5px; padding:1px 4px; }
   .ctags .gov-ic{ width:18px; height:12px; }
-  /* 농장·건물은 개수만 — 무엇을 가졌는지는 title 툴팁 */
-  .cmini{ font-size:11.5px; color:var(--dim); display:flex; flex-wrap:wrap; gap:2px 8px; }
-  .cmini b{ color:var(--ink); font-size:12.5px; }
+  .csec{ font-size:10.5px; letter-spacing:.15em; color:var(--gold); font-weight:700; margin-top:2px; }
+  .clist{ font-size:11.5px; line-height:1.35; color:#4b4237; }
+  .clist .un{ color:var(--dim); }   /* 일꾼 미배치 건물 */
   .pdot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; flex-shrink:0; }
   .chead{ display:flex; gap:5px; align-items:center; font-weight:700; font-size:14px; flex-wrap:wrap; }
   /* 주화·승점·일꾼 — 카드가 좁으면 알아서 다음 줄로 접힌다 (고정 2열이면 좁을 때 카드 밖으로 넘친다) */
@@ -288,7 +272,14 @@
     clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
     display:flex; align-items:center; justify-content:center; font-size:7.5px; font-weight:800; letter-spacing:.04em; color:#4b4b45; }
   .pres .wtok{ width:20px; height:20px; flex-shrink:0; }
-  @media (max-width:1000px){ .players{ flex-wrap:wrap; } .pboard.collapsed{ flex:1 1 45%; } }
+  /* 1000px 이하: 한 줄에 다 못 들어가므로 줄바꿈 배치. 폭은 CSS가 정하고 전환 애니메이션은 끈다
+     (고정 px 폭을 전제로 한 애니메이션이라 이 레이아웃에서는 맞지 않는다) */
+  @media (max-width:1000px){
+    .players{ flex-wrap:wrap; }
+    .pboard{ flex:1 1 100%; }
+    .pboard.collapsed{ flex:1 1 45%; }
+    .pboard.board-in, .pboard.board-out{ animation:none; overflow:visible; }
+  }
   .phead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
   .phead .nm{ font-weight:700; font-size:15px; }
   .gov-ic{ display:inline-flex; width:22px; height:15px; flex-shrink:0; }
@@ -300,7 +291,7 @@
   .phead .stats b{ font-size:14px; }
   /* 토지: 6×2 그리드, 공개된 농장과 같은 비율 */
   /* 타일 폭은 --lw(토지) / --bw(건설 부지). 기본값은 원래 크기이고, 남는 폭이 모자랄 때만
-     render()가 #rd-players에 더 작은 값을 얹는다 — 자세한 이유는 boardTileW() 참고 */
+     render()가 #rd-players에 더 작은 값을 얹는다 — 자세한 이유는 boardMetrics() 참고 */
   .grid12{ display:grid; grid-template-columns:repeat(6,var(--lw,59px)); gap:4px; margin:4px 0; }
   .cell{ position:relative; border:1px solid transparent; border-radius:2px; min-height:58px; background:rgba(245,238,218,.55); overflow:hidden; }
   .cell img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:var(--panel); }
@@ -661,17 +652,25 @@ if(EMBEDDED){ try{ window.parent.postMessage('pr1897:ready','*'); }catch(e){} }
    건설 부지 오른쪽 칸이 그냥 잘려나갔다 (부지가 몇 칸 남았는지 셀 수 없게 된다).
    → 잘라내는 대신 타일을 줄인다. 접힌 카드 몫을 먼저 떼고 남는 폭에 6칸을 맞춘다.
    대부분의 경우 BW_MAX 그대로이고, 좁을 때만 조금씩 작아진다. */
-const CB_MIN=84;      // 접힌 요약 카드 최소 폭 — CSS .pboard.collapsed의 --cbmin 기본값과 같아야 한다
+const CB_MIN=118;     // 접힌 요약 카드 최소 폭 — 농장·건물 이름이 들어가야 한다. CSS --cbmin 기본값과 같을 것
 const CB_GAP=8;       // .players의 gap
 const BW_MAX=119, BW_MIN=62;   // 건설 부지 타일 폭 상·하한 (하한은 "작아도 6칸 다 보이는 게 낫다"는 판단)
-function boardTileW(n){
+const BOARD_PAD=31, BGRID_GAP=15;   // 펼친 보드 좌우 패딩·테두리 / 건설 부지 칸 사이 gap 3px×5
+/* 한 줄의 폭 배분을 통째로 계산한다 —
+   펼친 폭(openW)과 접힌 폭(cbw)이 "어느 보드를 펼치든 같은 값"이어야
+   보드를 전환할 때 관계없는 카드들이 흔들리지 않는다. */
+function boardMetrics(n){
   const cont=document.getElementById('rd-players');
   const w=cont?cont.clientWidth:0;
-  if(!w) return BW_MAX;
-  // 1000px 이하에서는 .players가 줄바꿈되어 펼친 보드가 한 줄을 통째로 쓴다 — 접힌 카드 몫을 뺄 필요가 없다
-  const reserve=(window.innerWidth<=1000)?0:(n-1)*(CB_MIN+CB_GAP);
-  const inner=w-reserve-31;             // 31 = 펼친 보드의 좌우 패딩·테두리
-  return Math.max(BW_MIN, Math.min(BW_MAX, Math.floor((inner-15)/6)));  // 15 = 칸 사이 gap 3px×5
+  // 1000px 이하에서는 .players가 줄바꿈돼 폭을 CSS가 알아서 정한다 — 고정 폭을 얹지 않는다
+  if(!w||window.innerWidth<=1000) return null;
+  const avail=w-(n-1)*(CB_MIN+CB_GAP);                                  // 펼친 보드가 쓸 수 있는 폭
+  const bw=Math.max(BW_MIN, Math.min(BW_MAX, Math.floor((avail-BOARD_PAD-BGRID_GAP)/6)));
+  const contentW=6*bw+BGRID_GAP+BOARD_PAD;                              // 그 타일 폭일 때 보드 내용 폭
+  const openW=Math.min(avail, contentW);                                // 내용보다 넓게 늘리지 않는다
+  const slack=Math.max(0, avail-openW);                                 // 타일이 상한(BW_MAX)에 걸려 남는 폭
+  const cbw=CB_MIN+Math.floor(slack/(n-1));                             // 남는 폭은 접힌 카드들이 똑같이 나눠 갖는다
+  return {bw, lw:Math.round(bw*59/119), openW, cbw};
 }
 // 창 크기가 바뀌면 다시 계산해야 한다 (타일 폭이 창 폭에 달려 있으므로)
 let rzT=0;
@@ -1814,20 +1813,21 @@ function render(){
       // 좁은 카드에서는 이름이 먼저다 — AI 배지는 이름에 이미 "AI"가 들어 있으면 생략(자리만 먹는다)
       const ctags=(G.governor===p.i?'<span class="gov-ic" title="주지사 — 이번 라운드 시작 플레이어"><svg viewBox="0 0 24 16"><path d="M2 14h20L20 4l-5 4.2L12 1 9 8.2 4 4z" fill="#e8c95c" stroke="#8a6a1f" stroke-width="1.2" stroke-linejoin="round"/></svg></span>':'')
         +((p.ai&&!/^\s*AI/i.test(p.name))?'<span class="tag">AI</span>':'');
-      // 요약 카드: 좁은 스트립이라 농장·건물은 개수만 — 무엇을 가졌는지는 툴팁과 펼친 보드에서.
-      // (이름 목록을 그대로 두면 카드가 132px 아래로 못 내려가 펼친 보드의 건설 부지가 잘렸다)
+      // 요약 카드: 주화·승점 한 줄 / 일꾼 한 줄, 그 아래 농장·건물·상품을 "무엇을 가졌는지"까지 보여준다.
+      // (카드 폭이 모자라면 펼친 보드의 타일이 대신 줄어든다 — boardMetrics 참고)
       const farm={}; for(const l of p.land) farm[l.type]=(farm[l.type]||0)+1;
-      const farmTip=Object.keys(farm).map(t=>PLANT_NM[t]+' ×'+farm[t]).join(' · ')||'없음';
-      const bldTip=p.buildings.map(b=>BUILDINGS[b.id].nm+(b.w>0?'':'(일꾼 미배치)')).join(' · ')||'없음';
-      const goodsRow=GTYPES.filter(t=>p.goods[t]>0).map(t=>'<span class="cg">'+goodChip(t)+'×'+p.goods[t]+'</span>').join('')||'<span class="dim">상품 없음</span>';
+      const farmList=Object.keys(farm).map(t=>'<div>'+PLANT_NM[t]+' ×'+farm[t]+'</div>').join('')||'<span class="dim">—</span>';
+      const bldList=p.buildings.map(b=>'<div class="'+(b.w>0?'':'un')+'"'+(b.w>0?'':' title="일꾼 미배치"')+'>'+BUILDINGS[b.id].nm+'</div>').join('')||'<div class="dim">—</div>';
+      const goodsRow=GTYPES.filter(t=>p.goods[t]>0).map(t=>'<span class="cg">'+goodChip(t)+'×'+p.goods[t]+'</span>').join('')||'<span class="dim">—</span>';
       return '<div class="pboard collapsed'+(isChooser?' cur':'')+(boardJustSwitched&&p.i===prevShown?' board-out':'')+cardFxCls('pboard-'+p.i)+'" data-pi="'+p.i+'" style="border-left:4px solid '+PCOLOR[p.i]+';--pc:'+PCOLOR[p.i]+'" onclick="uiSelectBoard('+p.i+')" title="클릭하면 펼칩니다">'
         +'<div class="pcontent">'
         +'<div class="chead"><span class="pdot" style="background:'+PCOLOR[p.i]+'"></span><span class="cnm" title="'+escAttr(p.name+(p.ai?' (AI)':''))+'">'+esc(p.name)+'</span></div>'
         +(ctags?'<div class="ctags">'+ctags+'</div>':'')   // 주지사·AI 표시는 아랫줄로 — 좁은 카드에서 이름이 먼저다
-        +'<div class="cstat"><span class="cpair" title="주화"><span class="tok-coin sm">$</span><b>'+p.coins+'</b></span><span class="cpair" title="승점"><span class="tok-vp sm">VP</span><b>'+p.vp+'</b></span><span class="cpair" title="일꾼"><span class="wtok smw"></span><b>'+totalWorkersOf(p)+'</b></span></div>'
-        +'<div class="cmini"><span title="농장 — '+escAttr(farmTip)+'">농장 <b>'+p.land.length+'</b></span>'
-          +'<span title="건물 — '+escAttr(bldTip)+'">건물 <b>'+p.buildings.length+'</b></span></div>'
-        +'<div class="crow">'+goodsRow+'</div>'
+        +'<div class="cstat"><span class="cpair" title="주화"><span class="tok-coin sm">$</span><b>'+p.coins+'</b></span><span class="cpair" title="승점"><span class="tok-vp sm">VP</span><b>'+p.vp+'</b></span></div>'
+        +'<div class="cstat"><span class="cpair" title="일꾼"><span class="wtok smw"></span><b>'+totalWorkersOf(p)+'</b></span></div>'
+        +'<div class="csec">농장 '+p.land.length+'</div><div class="crow">'+farmList+'</div>'
+        +'<div class="csec">건물 '+p.buildings.length+'</div><div class="clist">'+bldList+'</div>'
+        +'<div class="csec">상품</div><div class="crow">'+goodsRow+'</div>'
         +'<div class="expand">펼치기 ▾</div>'
         +'</div>'
         +(p.i===G.n-1?fabShopHtml:'')
@@ -1994,13 +1994,18 @@ function render(){
     +stampHtml()
     +'<button onclick="confirmNew()">새 게임</button></div>');
   setPart('rd-roles', rolesHtml);
-  /* 타일 폭 — 스켈레톤이 선 뒤에 재야 한다(컨테이너 실제 폭이 필요). 토지는 건설 부지와 같은 비율로 따라간다 */
+  /* 폭 배분 — 스켈레톤이 선 뒤에 재야 한다(컨테이너 실제 폭이 필요).
+     타일(--bw/--lw)과 판 폭(--w-open/--cbw)을 한 번에 확정해 얹는다. */
   const $pl=document.getElementById('rd-players');
   if($pl){
-    const bw=boardTileW(G.n);
-    $pl.style.setProperty('--bw', bw+'px');
-    $pl.style.setProperty('--lw', Math.round(bw*59/119)+'px');
-    $pl.style.setProperty('--cbmin', CB_MIN+'px');
+    const m=boardMetrics(G.n);
+    ['--bw','--lw','--w-open','--cbw'].forEach(k=>$pl.style.removeProperty(k));
+    if(m){
+      $pl.style.setProperty('--bw', m.bw+'px');
+      $pl.style.setProperty('--lw', m.lw+'px');
+      $pl.style.setProperty('--w-open', m.openW+'px');
+      $pl.style.setProperty('--cbw', m.cbw+'px');
+    }
   }
   setBoards(boardParts);
   setPart('rd-plants', plantsHtml);
