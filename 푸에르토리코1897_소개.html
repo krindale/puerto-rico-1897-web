@@ -258,6 +258,29 @@
     border:1px solid var(--line); border-radius:3px; background:var(--panel); color:var(--ink); box-shadow:0 3px 12px rgba(0,0,0,.25); }
   body.playing.needs-back #playBack{ display:block; }
   .play-alt{ padding:10px 56px; font-size:12.5px; color:var(--dim); background:var(--band); border-bottom:1px solid var(--line); }
+
+  /* ═══ 게임 입장 전환 화면 ═══
+     소개(문서) → 게임(앱)으로 하드 컷되지 않게, 게임과 같은 양피지 톤의 막이 먼저 덮이고
+     로고·스피너를 보여준 뒤 게임이 준비되면(pr1897:ready) 스르르 걷힌다.
+     배경색 두 개는 게임 본체의 --panel/--bg와 같은 값 — 걷히는 순간 색이 이어져야 한다. */
+  #playEnter{ position:fixed; inset:0; z-index:80; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px; background:radial-gradient(ellipse at 50% 42%, #f5eeda 0%, #eadfc4 72%);
+    opacity:0; transition:opacity .5s ease; pointer-events:none; }
+  #playEnter.in{ opacity:1; }
+  #playEnter .pe-eyebrow{ font-size:12px; letter-spacing:.4em; color:var(--dim2); text-transform:uppercase; }
+  #playEnter .pe-title{ font-family:'Cormorant Garamond',Georgia,serif; font-weight:700; letter-spacing:.02em;
+    font-size:clamp(42px,7vw,66px); line-height:1.05; color:var(--ink); text-align:center; }
+  #playEnter .pe-title .yr{ color:var(--accent); font-size:.55em; letter-spacing:.14em; margin-left:10px; }
+  #playEnter .pe-spin{ margin-top:14px; width:32px; height:32px; border-radius:50%;
+    border:3px solid #cfbd98; border-top-color:var(--accent); animation:peSpin .85s linear infinite; }
+  @keyframes peSpin{ to{ transform:rotate(1turn); } }
+  #playEnter .pe-msg{ font-size:12.5px; letter-spacing:.16em; color:var(--dim); }
+
+  /* 상단 내비의 "플레이"는 눈에 띄는 입장 버튼으로 (쇼케이스의 CTA 패턴) */
+  nav button[data-tab="play"]{ border:1px solid var(--accent); color:var(--accent); font-weight:700; border-radius:3px; }
+  nav button[data-tab="play"]:hover{ background:var(--accent); color:#fff; }
+  nav button[data-tab="play"].on{ background:var(--accent); color:#fff; }
+  nav button[data-tab="play"].on:hover{ background:var(--accent); }
   footer{ padding:24px 56px; border-top:1px solid var(--line); background:var(--band); font-size:12px; color:var(--dim2); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
 </style>
 </head>
@@ -280,9 +303,9 @@
       확립하려 합니다. 일꾼을 고용해 이 섬의 귀중한 자원을 상품으로 바꾸고, 팔고, 실어 보내며 —
       가장 부유한 농장 경영인의 자리에 오르십시오.</p>
       <div class="cta-row">
-        <button class="btn-primary" onclick="go('how')">게임 하는 방법 보기 →</button>
+        <button class="btn-primary" onclick="go('play')">▶ 지금 플레이하기</button>
+        <button class="btn-ghost" onclick="go('how')">게임 하는 방법 보기</button>
         <button class="btn-ghost" onclick="go('goods')">상품과 교역</button>
-        <button class="btn-ghost" onclick="go('play')">바로 플레이</button>
       </div>
     </div>
   </div>
@@ -579,6 +602,14 @@
 </main>
 <button id="playBack" onclick="go('intro')">← 소개로 돌아가기</button>
 
+<!-- 게임 입장 전환 막 — go('play')가 띄우고, 게임의 ready 신호(또는 타임아웃)가 걷는다 -->
+<div id="playEnter" hidden>
+  <div class="pe-eyebrow">Strategy Board Game</div>
+  <div class="pe-title">PUERTO RICO<span class="yr">1897</span></div>
+  <div class="pe-spin" aria-hidden="true"></div>
+  <div class="pe-msg">게임을 준비하는 중…</div>
+</div>
+
 <footer class="pad">
   <span>푸에르토리코 1897 · 한국어 규칙 안내</span>
   <span>팬이 만든 비공식 페이지입니다.</span>
@@ -843,6 +874,32 @@ document.getElementById('flowTabs').innerHTML = FLOW.map((f,i)=>
   +'<div class="fn">'+f.n+'</div><div class="ft">'+esc(f.title)+'</div></button>').join('');
 
 /* ═══════════════ 탭 전환 ═══════════════ */
+/* 게임 입장 전환 막 — 문서에서 게임으로 하드 컷되지 않게 잠깐 덮었다 걷는다.
+   너무 빨리 걷히면 깜빡임으로 보여서 최소 노출 시간을 지키고,
+   게임의 ready 신호가 안 오는 환경(메시지 차단)에서도 타임아웃으로 반드시 걷는다. */
+let enterShownAt=0, enterHideT=null, enterFailT=null;
+function enterShow(){
+  const ov=document.getElementById('playEnter');
+  clearTimeout(enterHideT); clearTimeout(enterFailT);
+  ov.hidden=false; enterShownAt=Date.now();
+  requestAnimationFrame(()=>ov.classList.add('in'));
+  enterFailT=setTimeout(enterHide, 3500);   // ready 신호가 영영 안 와도 걷는다
+}
+function enterHide(){
+  const ov=document.getElementById('playEnter');
+  if(ov.hidden) return;
+  clearTimeout(enterHideT); clearTimeout(enterFailT);
+  const wait=Math.max(0, 900-(Date.now()-enterShownAt));   // 최소 0.9초는 보여준다
+  enterHideT=setTimeout(()=>{
+    ov.classList.remove('in');                             // opacity 트랜지션으로 스르르
+    setTimeout(()=>{ ov.hidden=true; }, 520);
+  }, wait);
+}
+function enterCancel(){
+  const ov=document.getElementById('playEnter');
+  clearTimeout(enterHideT); clearTimeout(enterFailT);
+  ov.classList.remove('in'); ov.hidden=true;
+}
 function go(id){
   document.querySelectorAll('.tab-page').forEach(el=>el.classList.toggle('on', el.id==='tab-'+id));
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on', b.dataset.tab===id));
@@ -850,17 +907,21 @@ function go(id){
   // 플레이 탭은 화면 전체를 게임에 내준다 (헤더·푸터·안내줄을 감춘다)
   document.body.classList.toggle('playing', id==='play');
   if(id==='play'){
+    enterShow();
     const f=document.getElementById('playFrame');
     // ?v= — 브라우저가 예전 게임 파일을 캐시해 두고 그걸 다시 띄우는 걸 막는다 (로컬 파일이라 캐시 이득은 없다)
     if(!f.src) f.src='푸에르토리코1897_게임.html?v='+Date.now();
+    else enterHide();   // 이미 로드된 게임으로 돌아가는 경우 — 잠깐 덮었다 바로 걷는다
     // 게임이 자기 헤더에 "← 소개로"를 그렸다고 알려오지 않으면(=메시지가 막힌 환경) 이쪽 버튼을 띄운다
     setTimeout(()=>document.body.classList.toggle('needs-back', !playReady), 1500);
+  } else {
+    enterCancel();   // 플레이를 떠나면 입장 막도 즉시 치운다
   }
   window.scrollTo(0,0);
 }
 let playReady=false;
 window.addEventListener('message', function(e){
-  if(e.data==='pr1897:ready'){ playReady=true; document.body.classList.remove('needs-back'); }
+  if(e.data==='pr1897:ready'){ playReady=true; document.body.classList.remove('needs-back'); enterHide(); }
   else if(e.data==='pr1897:back'){ go('intro'); }
 });
 

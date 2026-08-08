@@ -39,16 +39,35 @@
   .hdr .sub{ color:var(--accent); font-family:'Cormorant Garamond',serif; font-size:17px; font-style:italic; }
   .hdr .meta{ margin-left:auto; display:flex; gap:14px; font-size:12.5px; color:var(--dim); align-items:baseline; }
   .hdr .meta b{ color:var(--ink); }
+  /* ? 도움말 버튼 — 언제든 요약 규칙을 볼 수 있다.
+     .hdr button 공통 규칙(패딩·각진 모서리)이 이기지 않도록 선택자를 더 구체적으로 쓴다.
+     색은 헤더의 다른 요소들과 같은 차분한 톤(선 색 테두리 + 보조 텍스트 색) */
+  .hdr button.helpbtn{ border:2px solid var(--dim); background:transparent; color:var(--dim); font-weight:700;
+    width:27px; height:27px; padding:0; border-radius:50%; font-size:14px; line-height:1; align-self:center; }
+  .hdr button.helpbtn:hover{ background:#e2d7c2; color:var(--ink); border-color:var(--ink); }
+  /* 요약 규칙 팝업 — 액션 패널보다 위에 뜬다 (게임 중 아무 때나 참조) */
+  .overlay.help-ov{ z-index:95; }
+  .help-modal{ max-width:760px; }
+  .help-modal h3{ font-size:14px; color:var(--gold); letter-spacing:.08em; margin:16px 0 7px; }
+  .help-modal h3:first-of-type{ margin-top:4px; }
+  .help-modal p, .help-modal li{ font-size:13.5px; line-height:1.75; color:var(--ink); }
+  .help-modal ul{ padding-left:18px; }
+  .help-modal table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .help-modal td, .help-modal th{ border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top; }
+  .help-modal th{ background:#f0e9d8; white-space:nowrap; }
+  .help-modal td:first-child{ white-space:nowrap; font-weight:700; }
+  .help-modal .hm-dim{ color:var(--dim); font-size:12px; }
   .hdr button{ border:1px solid var(--line); background:transparent; padding:5px 10px; font-size:12px; border-radius:2px; }
   .hdr button:hover{ background:#e2d7c2; }
   .hdr button:disabled{ opacity:.35; cursor:default; }
   .hdr button:disabled:hover{ background:transparent; }
   .hdr .ver{ font-size:11px; color:var(--dim); opacity:.75; }
   /* 소개 페이지 안에 끼워져(iframe) 열렸을 때만 나오는 "소개로" 버튼.
-     혼자 열었을 때는 돌아갈 곳이 없으므로 아예 안 그린다 (renderSetup·rd-hdr 양쪽) */
-  .backbtn{ border:1px solid var(--line); background:transparent; padding:5px 10px; font-size:12px;
-    border-radius:2px; color:var(--dim); white-space:nowrap; align-self:center; }
-  .backbtn:hover{ background:#e2d7c2; color:var(--ink); }
+     혼자 열었을 때는 돌아갈 곳이 없으므로 아예 안 그린다 (renderSetup·rd-hdr 양쪽)
+     테두리 없는 텍스트 링크 스타일 — .hdr button 공통 규칙보다 구체적으로 선언해 네모 상자를 지운다 */
+  .backbtn, .hdr button.backbtn{ border:none; background:transparent; padding:5px 8px 5px 0; font-size:14.5px;
+    font-weight:600; border-radius:0; color:var(--dim); white-space:nowrap; align-self:center; }
+  .backbtn:hover, .hdr button.backbtn:hover{ background:transparent; color:var(--ink); }
   .setup .backbtn{ margin-bottom:18px; }
 
   /* ── setup ── */
@@ -838,6 +857,42 @@ function uiTogglePanel(){ uiPanelOpen=!panelVisibleNow(); render(); }
 /* 선적 패널의 2단계 선택: ① 상품을 고르면 ② 실을 수 있는 배가 버튼이 된다 (뷰 상태 — 새로고침하면 초기화) */
 let uiShipSel = null;
 function uiSelectShipGood(t){ uiShipSel=(uiShipSel===t)?null:t; render(); }
+/* ? 도움말 — 언제든 볼 수 있는 요약 규칙 팝업 (뷰 상태) */
+let uiHelpOpen=false;
+function uiToggleHelp(){ uiHelpOpen=!uiHelpOpen; render(); }
+function renderHelpPop(){
+  if(!uiHelpOpen) return '';
+  const roleRows=[
+    ['개척자','공개된 농장 1개를 토지 칸에 놓는다','농장 대신 채석장을 가져올 수 있음'],
+    ['모집관','인력 시장의 일꾼을 나눠 갖고, 내 일꾼 전체를 자유롭게 재배치','공급처에서 일꾼 1개 추가'],
+    ['건축가','건물 1개를 건설 (점유된 채석장만큼 할인)','건설 비용 −1주화'],
+    ['생산자','점유된 농장·공장 짝만큼 상품 생산 (옥수수는 농장만)','생산한 것 중 1개 추가'],
+    ['상인','상점(4칸)에 상품 1개 판매 — 같은 종류 중복 불가','판매가 +1주화'],
+    ['선장','실을 수 있으면 반드시 선적 — 배마다 한 종류, 1개=1점','첫 선적 +1점'],
+    ['탐험가','아무 행동 없음','은행에서 1주화'],
+  ].map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('');
+  return '<div class="overlay help-ov pop" onclick="if(event.target===this)uiToggleHelp()"><div class="modal help-modal">'
+    +'<div class="shop-modal-h"><h2>요약 규칙</h2><button class="btn-ghost" onclick="uiToggleHelp()">닫기 ✕</button></div>'
+    +'<h3>목표</h3>'
+    +'<p>승점을 가장 많이 모으면 승리. 승점 = <b>선적</b>(상품 1개=1점) + <b>건물 승점</b> + <b>점유된 고급 건물 보너스</b>. 동점이면 주화+상품 합계.</p>'
+    +'<h3>라운드 흐름</h3>'
+    +'<p>주지사부터 시계 방향으로 역할을 하나씩 고릅니다. 고른 역할의 행동은 <b>전원이</b> 하지만, <b>특별 혜택은 고른 사람만</b> 받습니다. '
+    +'아무도 안 고른 역할엔 1주화가 쌓여 다음 라운드에 더 매력적이 됩니다.</p>'
+    +'<h3>역할 7종</h3>'
+    +'<table><tr><th>역할</th><th>전원 행동</th><th>선택자 혜택</th></tr>'+roleRows+'</table>'
+    +'<h3>꼭 기억할 것</h3>'
+    +'<ul>'
+    +'<li><b>점유</b> — 타일 위 원형 칸에 일꾼이 있어야 그 타일이 일합니다. 예외: 건물 승점은 비어 있어도 계산.</li>'
+    +'<li><b>생산 짝</b> — 과일·설탕·담배·커피는 점유된 <b>농장 + 공장 일꾼</b>이 짝을 이룬 만큼만 생산. 옥수수는 농장만.</li>'
+    +'<li><b>선적</b> — 배마다 한 종류, 다른 배와 같은 종류 불가, 가장 많이 실리는 배에 전부. 단계 끝에 상품은 1개만 저장(+창고).</li>'
+    +'<li><b>채석장</b> — 건설 할인. 건물 구역(1~4)에 따라 할인 한도가 다릅니다.</li>'
+    +'</ul>'
+    +'<h3>게임 종료</h3>'
+    +'<p>다음 중 하나면 그 라운드 끝에 종료: ① 인력 시장을 다 못 채움 ② 누군가 건설 부지 12칸을 다 채움 ③ 승점 칩 소진.</p>'
+    +'<p class="hm-dim">더 자세한 규칙은 소개 페이지의 "게임 하는 방법" 탭에 있습니다.</p>'
+    +'</div></div>';
+}
+
 /* 선적·판매 패널의 액션 이펙트 — 방금 행동으로 바뀐 요소(카드·칸·내역 줄)에만 애니메이션 클래스를 붙인다.
    fxMark(보드용)와 같은 원리지만 보드 전환(uiBoardSel)을 건드리지 않는 패널 전용 마커. */
 let panelFx=null;
@@ -910,6 +965,8 @@ document.addEventListener('keydown', function(e){
   if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
     uiBoardSel=(shownBoard()+(e.key==='ArrowRight'?1:G.n-1))%G.n;
     e.preventDefault(); render();
+  } else if(e.key==='Escape'&&uiHelpOpen){
+    uiHelpOpen=false; render();
   } else if(e.key==='Escape'&&shopVisibleNow()){
     uiShopOpen=false; render();
   } else if(e.key==='Escape'&&panelVisibleNow()){
@@ -2302,7 +2359,7 @@ function render(){
         +'<div class="log" id="logbox"></div>'
       +'</div>'
     +'</div>'
-    +'<div id="rd-bar"></div><div id="rd-modal"></div><div id="rd-panel"></div><div id="rd-shop"></div>';
+    +'<div id="rd-bar"></div><div id="rd-modal"></div><div id="rd-panel"></div><div id="rd-shop"></div><div id="rd-help"></div>';
   }
 
   setPart('rd-hdr',
@@ -2311,6 +2368,7 @@ function render(){
     +'<div class="meta"><span>라운드 <b>'+G.round+'</b></span><span>주지사 <b>'+esc(P(G.governor).name)+'</b></span>'
     +(G.phase?'<span>단계 <b>'+ROLES[G.phase.id].ph+'</b></span>':'')
     +stampHtml()
+    +'<button class="helpbtn" onclick="uiToggleHelp()" title="요약 규칙 — 언제든 볼 수 있습니다">?</button>'
     +'<button onclick="confirmNew()">새 게임</button></div>');
   setPart('rd-roles', rolesHtml);
   /* 폭 배분 — 스켈레톤이 선 뒤에 재야 한다(컨테이너 실제 폭이 필요).
@@ -2342,6 +2400,7 @@ function render(){
   setPart('rd-modal', modal);
   setPart('rd-panel', panelPop);
   setPart('rd-shop', shopPop);
+  setPart('rd-help', renderHelpPop());
   /* 로그: 내용이 바뀐 렌더에서만 바닥으로 스크롤 */
   if(setPart('logbox', G.log.slice(-120).map(l=>'<div>'+l+'</div>').join(''))){
     const lb=document.getElementById('logbox'); if(lb) lb.scrollTop=lb.scrollHeight;
