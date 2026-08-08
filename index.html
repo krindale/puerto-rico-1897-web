@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>푸에르토리코 1897 — 게임 안내</title>
+<link rel="stylesheet" href="css/intro.css">
+</head>
+<body>
+
+<header class="topbar pad">
+  <button class="logo" onclick="go('intro')" aria-label="처음으로">
+    <span class="en">PUERTO RICO</span><span class="yr">1897</span>
+  </button>
+  <nav id="nav"></nav>
+</header>
+
+<!-- ═══════════════ 게임 소개 ═══════════════ -->
+<main class="tab-page" id="tab-intro">
+  <div class="intro-hero pad">
+    <div class="wrap">
+      <div class="eyebrow">전략 보드게임 &nbsp;·&nbsp; 2~5인 &nbsp;·&nbsp; 90–150분</div>
+      <h1>푸에르토리코<br><span class="yr">1897</span></h1>
+      <p>1897년, 식민지 시대가 종말을 고했습니다. 근대화의 물결 속에서 푸에르토리코는 독자적인 지위를
+      확립하려 합니다. 일꾼을 고용해 이 섬의 귀중한 자원을 상품으로 바꾸고, 팔고, 실어 보내며 —
+      가장 부유한 농장 경영인의 자리에 오르십시오.</p>
+      <div class="cta-row">
+        <button class="btn-primary" onclick="go('play')">▶ 지금 플레이하기</button>
+        <button class="btn-ghost" onclick="go('how')">게임 하는 방법 보기</button>
+        <button class="btn-ghost" onclick="go('goods')">상품과 교역</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:64px">
+    <div class="wrap stat-grid">
+      <div><div class="n">7</div><div class="d">역할 · 매 라운드 하나씩</div></div>
+      <div><div class="n">5</div><div class="d">상품 · 옥수수부터 커피까지</div></div>
+      <div><div class="n">12</div><div class="d">토지 칸 &amp; 건설 부지</div></div>
+      <div><div class="n">0</div><div class="d">주사위 · 운의 개입 없음</div></div>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:64px; padding-bottom:84px">
+    <div class="wrap">
+      <div class="sec-row" style="padding-top:0">
+        <div class="kicker" style="padding-top:10px">01 / 목표</div>
+        <div>
+          <h2 style="font-size:36px">전원 지역을 발전시켜<br>승점을 가장 많이 얻는 사람이 이깁니다.</h2>
+          <p style="max-width:720px; font-size:15.5px; line-height:1.95; color:var(--body)">농장을 개척하고,
+          일꾼을 모으고, 건물을 세워 상품을 만듭니다. 만든 상품은 상점에 팔아 <strong>주화</strong>가 되고,
+          수송선에 실어 보내면 <strong>승점</strong>이 됩니다. 게임이 끝날 때 승점이 가장 많은 사람이 승리합니다.</p>
+        </div>
+      </div>
+
+      <div class="sec-row">
+        <div class="kicker" style="padding-top:10px">02 / 이 게임의 맛</div>
+        <div>
+          <h2>운은 거의 없습니다. 대신 남의 수를 읽습니다.</h2>
+          <div class="trio">
+            <div>
+              <div class="num">I</div>
+              <h3>내 역할을 남도 씁니다</h3>
+              <p>역할을 고른 사람만 특별 혜택을 받지만, 행동 자체는 전원이 함께 합니다.
+              내게 좋은 수가 남에게 더 좋을 수도 있습니다.</p>
+            </div>
+            <div>
+              <div class="num">II</div>
+              <h3>돈과 점수가 갈라집니다</h3>
+              <p>같은 상품이라도 팔면 주화, 실으면 승점. 어느 쪽으로 기울일지가
+              매 판 다른 전략을 만듭니다.</p>
+            </div>
+            <div>
+              <div class="num">III</div>
+              <h3>엔진을 조립합니다</h3>
+              <p>농장 · 일꾼 · 공장 · 배. 넷이 맞물려야 상품이 흐릅니다.
+              하나만 빠져도 엔진은 헛돕니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-row">
+        <div class="kicker" style="padding-top:10px">03 / 개인판</div>
+        <div>
+          <h2>모든 것이 놓이는 자리</h2>
+          <div class="duo">
+            <div class="card" style="padding:24px 26px">
+              <div class="kicker" style="letter-spacing:.2em; margin-bottom:11px">토지 칸 12</div>
+              <p style="font-size:14px; line-height:1.85; color:var(--body)">농장과 채석장이 놓입니다. 한번 놓은 타일은 치울 수 없습니다.</p>
+            </div>
+            <div class="card" style="padding:24px 26px">
+              <div class="kicker" style="letter-spacing:.2em; margin-bottom:11px">건설 부지 12</div>
+              <p style="font-size:14px; line-height:1.85; color:var(--body)">건물이 놓입니다. 고급 건물은 위아래로 이어진 2칸을 씁니다.</p>
+            </div>
+          </div>
+          <div class="callout" style="margin-top:20px">
+            <strong>점유(占有)</strong> — 이 게임의 거의 모든 규칙이 걸려 있는 한 단어.
+            농장·채석장·건물 위의 원형 칸에 일꾼이 최소 1개 올라가 있어야 그 타일이 일을 합니다.
+            예외는 승점 — 건물의 승점은 비어 있어도 계산됩니다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════ 게임 하는 방법 ═══════════════ -->
+<main class="tab-page" id="tab-how">
+  <div class="hero pad">
+    <div class="wrap">
+      <div class="eyebrow">How to play</div>
+      <h1>게임 하는 방법</h1>
+      <p>주지사부터 시계 방향으로 역할을 하나씩 고릅니다. 모두가 하나씩 고르면 한 라운드가 끝납니다.</p>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:56px; padding-bottom:84px">
+    <div class="wrap">
+      <div class="kicker" style="margin-bottom:20px">01 / 한 라운드의 흐름</div>
+      <div class="card" style="padding:32px 34px">
+        <div class="flow-tabs" id="flowTabs"></div>
+        <div class="flow-bar"><div id="flowBar"></div></div>
+        <div class="flow-body">
+          <div>
+            <h3 id="flowTitle"></h3>
+            <p class="desc" id="flowDesc"></p>
+            <div class="note" id="flowNote"></div>
+          </div>
+          <div class="seats">
+            <div class="t">테이블 · 4인 예시</div>
+            <div id="flowSeats"></div>
+          </div>
+        </div>
+        <div class="flow-ctl">
+          <button onclick="flowPrev()">이전</button>
+          <button onclick="flowNext()">다음</button>
+          <button class="play" id="flowPlay" onclick="flowToggle()">▶ 자동 재생</button>
+        </div>
+      </div>
+
+      <div class="kicker" style="margin:64px 0 16px">02 / 일곱 개의 역할</div>
+      <h2 style="font-size:34px; font-weight:700; margin-bottom:10px">고르는 사람만 혜택을, 행동은 모두가</h2>
+      <p style="max-width:680px; font-size:15px; line-height:1.85; color:var(--body); margin-bottom:28px">
+        타일을 눌러 상세 규칙을 펼쳐 보세요. 아무도 고르지 않은 역할에는 라운드마다 1주화가 쌓입니다.</p>
+      <div class="roles" id="roles"></div>
+
+      <div class="callout" style="margin-top:36px">
+        <strong>역할은 반드시 하나 골라야 합니다.</strong> 하지만 그 행동을 꼭 수행할 필요는 없습니다 —
+        딱 하나, <strong>선장</strong>만은 실을 수 있으면 반드시 실어야 합니다.
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════ 상품과 교역 ═══════════════ -->
+<main class="tab-page" id="tab-goods">
+  <div class="hero pad">
+    <div class="wrap">
+      <div class="eyebrow">Goods &amp; Trade</div>
+      <h1>상품과 교역</h1>
+      <p>옥수수를 뺀 네 상품은 <strong>점유된 농장</strong>과 <strong>점유된 생산 건물</strong>이 모두 있어야
+      만들어집니다. 생산량은 둘 중 <strong>적은 쪽</strong>에 맞춰집니다.</p>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:56px; padding-bottom:84px">
+    <div class="wrap">
+      <div class="kicker" style="margin-bottom:20px">01 / 생산 체인</div>
+      <div class="chain">
+        <div class="step">
+          <div class="k">1 · 개척</div>
+          <h3>농장을 얻는다</h3>
+          <p>토지 칸에 농장 타일을 놓습니다. 커피 농장은 8개뿐, 과일 농장은 12개.</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="step">
+          <div class="k">2 · 모집 + 건설</div>
+          <h3>일꾼과 공장을 붙인다</h3>
+          <p>농장과 공장 모두에 일꾼이 올라가야 합니다. 옥수수만 공장이 필요 없습니다.</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="step dark">
+          <div class="k">3 · 생산</div>
+          <h3>상품이 나온다</h3>
+          <p>점유된 농장 수와 공장의 일꾼 수 중 <strong style="color:var(--bg)">적은 쪽</strong>만큼 생산됩니다.</p>
+        </div>
+      </div>
+
+      <table class="goods">
+        <thead><tr><th>상품</th><th>필요한 농장</th><th>필요한 생산 건물</th><th>상점 판매가</th><th>비고</th></tr></thead>
+        <tbody id="goodsRows"></tbody>
+      </table>
+
+      <div class="kicker" style="margin:64px 0 20px">02 / 팔 것인가, 실을 것인가</div>
+      <div class="sellship">
+        <div>
+          <div class="k">상인 · 거래 단계</div>
+          <h3>상품을 팔아 주화로</h3>
+          <div class="li">
+            <div>상점 타일에는 최대 4개, <strong>종류별로 1개씩만</strong> 놓입니다.</div>
+            <div>상인은 판매가에 1주화를 더 받습니다. 소형 상가 +1, 대형 상가 +2.</div>
+            <div>거래 단계가 끝날 때 4칸이 꽉 찼다면 전부 치웁니다. 한 칸이라도 비면 그대로 남아 다음 판매를 막습니다.</div>
+          </div>
+        </div>
+        <div>
+          <div class="k">선장 · 선적 단계</div>
+          <h3>상품을 실어 승점으로</h3>
+          <div class="li">
+            <div>수송선 1척에는 <strong>한 종류</strong>만, 다른 배에 이미 실린 종류는 실을 수 없습니다.</div>
+            <div>실을 수 있다면 <strong>반드시</strong> 실어야 하고, 가장 많이 실리는 배를 골라야 합니다.</div>
+            <div>상품 1개당 1승점. 선장은 첫 선적에 1점을 더 받습니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:24px">
+        <strong>선적 단계가 끝나면 상품이 썩습니다.</strong> 창고가 없으면 손에 남길 수 있는 상품은 단 1개.
+        소형 창고는 아무 1종류를 개수 무관하게, 대형 창고는 2종류를 더 지켜 줍니다.
+        나머지는 아무 보상 없이 공급처로 돌아갑니다.
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════ 건물 ═══════════════ -->
+<main class="tab-page" id="tab-buildings">
+  <div class="hero pad">
+    <div class="wrap">
+      <div class="eyebrow">Buildings</div>
+      <h1>건물</h1>
+      <p>각 건물 옆의 <span class="latin" style="font-size:18px; font-weight:600; color:var(--accent)">$</span>
+      표시가 건설 비용(주화)입니다. 점유된 채석장 1개마다 1주화가 깎이되, 보관판의 위쪽 줄일수록
+      적용 한도가 낮습니다(위에서부터 최대 1·2·3·4개).</p>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:56px; padding-bottom:84px">
+    <div class="wrap">
+      <div class="kicker" style="margin-bottom:16px">01 / 채석장</div>
+      <div class="quarry">
+        <div class="main">
+          <h3>돌을 캐면 건물이 싸집니다</h3>
+          <p>채석장은 상품을 만들지 않는 유일한 토지 타일입니다. 대신 <strong>점유된 채석장 1개마다
+          건설 비용이 1주화씩</strong> 깎입니다. 개척자를 고른 사람이 특별 혜택으로 가져오거나,
+          점유된 건설막이 있으면 농장 대신 가져올 수 있습니다. 총 8개뿐이라 다 떨어지면 더 이상 나오지 않습니다.</p>
+          <div class="li">
+            <div>· 일꾼이 올라가 있어야 할인이 적용됩니다. 빈 채석장은 아무 일도 하지 않습니다.</div>
+            <div>· 건축가의 특별 혜택(−1주화)과 함께 쌓아 쓸 수 있습니다.</div>
+            <div>· 개척자를 고르고 점유된 건설막까지 있어도, 한 번에 채석장은 1개만 가져옵니다.</div>
+          </div>
+        </div>
+        <div class="limits">
+          <div class="k">할인 한도 · 보관판의 줄에 따라</div>
+          <div id="quarryRows"></div>
+          <p class="ex">예) 점유된 채석장 3개를 가진 사람은 건설막 1주화, 영업소 3주화, 항구 5주화, 시청 7주화에 짓습니다.</p>
+        </div>
+      </div>
+
+      <div class="kicker" style="margin-bottom:16px">02 / 생산 건물</div>
+      <div class="bgrid c3" id="prodGrid"></div>
+
+      <div class="kicker" style="margin-bottom:16px">03 / 일반 상업 건물 · 12종</div>
+      <div class="bgrid c2" id="commonGrid"></div>
+
+      <div class="kicker" style="margin-bottom:16px">04 / 고급 건물 · 5종 · 부지 2칸 · 기본 4승점</div>
+      <div class="bgrid c5" id="luxGrid"></div>
+      <p style="margin-top:15px; font-size:13px; color:var(--dim); line-height:1.75">
+        고급 건물의 4승점은 비어 있어도 받지만, 위의 추가 승점은 <strong>점유된 경우에만</strong> 계산합니다.</p>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════ 종료와 점수 ═══════════════ -->
+<main class="tab-page" id="tab-end">
+  <div class="hero pad">
+    <div class="wrap">
+      <div class="eyebrow">End &amp; Scoring</div>
+      <h1>종료와 점수</h1>
+      <p>아래 세 조건 중 하나만 충족되면, 그 라운드가 끝날 때 게임이 종료됩니다.</p>
+    </div>
+  </div>
+
+  <div class="pad" style="padding-top:56px; padding-bottom:90px">
+    <div class="wrap">
+      <div class="endgrid" id="endGrid"></div>
+
+      <div class="kicker" style="margin-bottom:16px">최종 점수 합산</div>
+      <div class="scorebox">
+        <div id="scoreRows"></div>
+        <div class="tie">
+          <span class="serif" style="font-size:20px; font-weight:700">동점이라면</span>
+          <span style="font-size:13.5px; color:var(--body)">주화와 상품의 합이 많은 쪽이 승리합니다(상품 1개 = 1주화).</span>
+        </div>
+      </div>
+
+      <div class="tipgrid">
+        <div>
+          <h3>처음 하는 사람에게</h3>
+          <div class="li">
+            <div>· 옥수수는 팔아도 돈이 안 되지만, 공장 없이 바로 생산되어 배에 실립니다. 초반 승점의 지름길입니다.</div>
+            <div>· 역할을 고를 때는 "내가 얼마나 이득인가"보다 "남이 얼마나 이득인가"를 먼저 보세요.</div>
+            <div>· 건물의 승점은 점유와 무관합니다. 막판에 비싼 건물을 사두는 것도 전략입니다.</div>
+          </div>
+        </div>
+        <div>
+          <h3>확장 4종</h3>
+          <div class="li">
+            <div>· <strong>새로운 건물</strong> — 일반 24개, 고급 2개 추가(초록 이름).</div>
+            <div>· <strong>시민</strong> — 건물 15개와 빨간 시민 토큰 20개.</div>
+            <div>· <strong>밀수꾼</strong> — 여덟 번째 역할. 수송선 습격 · 상점 약탈 · 포획 · 역할 납치.</div>
+            <div>· <strong>축제</strong> — 축제 목표판을 추가합니다.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════ 플레이 ═══════════════ -->
+<main class="tab-page" id="tab-play">
+  <div class="play-alt pad">게임이 보이지 않으면 <a href="game.html" target="_blank" rel="noopener">새 창에서 열기</a></div>
+  <iframe id="playFrame" title="푸에르토리코 1897 플레이"></iframe>
+</main>
+<button id="playBack" onclick="go('intro')">← 소개로 돌아가기</button>
+
+<!-- 게임 입장 전환 막 — go('play')가 띄우고, 게임의 ready 신호(또는 타임아웃)가 걷는다 -->
+<div id="playEnter" hidden>
+  <div class="pe-eyebrow">Strategy Board Game</div>
+  <div class="pe-title">PUERTO RICO<span class="yr">1897</span></div>
+  <div class="pe-spin" aria-hidden="true"></div>
+  <div class="pe-msg">게임을 준비하는 중…</div>
+</div>
+
+<footer class="pad">
+  <span>푸에르토리코 1897 · 한국어 규칙 안내</span>
+  <span>팬이 만든 비공식 페이지입니다.</span>
+</footer>
+
+<!-- 페이지 스크립트 — 탭 전환·콘텐츠 그리기 전부. 일반 <script>로 유지한다 (file:// 실행 보장) -->
+<script src="js/intro.js"></script>
+</body>
+</html>
