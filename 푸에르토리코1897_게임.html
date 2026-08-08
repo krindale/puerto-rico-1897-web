@@ -443,6 +443,99 @@
   .modal th{ background:#f0e9d8; }
   .scorewin{ color:var(--accent); font-weight:700; }
   .hint{ font-size:12px; color:var(--dim); margin-top:6px; line-height:1.6; }
+
+  /* ── 중앙 액션 패널 — 내 차례의 선택지를 건물 보관소처럼 화면 가운데에 모아 보여준다 ── */
+  .act-modal{ max-width:800px; padding:20px 24px; }
+  .act-modal.wide{ max-width:1150px; }
+  .ap-sub{ color:var(--dim); font-size:13px; margin-left:14px; margin-right:auto; }
+  .ap-roles{ display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start; }
+  .ap-rolecell{ width:128px; display:flex; flex-direction:column; gap:5px; }
+  .ap-rolecell .role{ width:100%; }
+  .ap-rolename{ font-size:12.5px; font-weight:700; }
+  .ap-rolename .dim{ color:var(--dim); font-weight:400; }
+  .ap-roledesc{ font-size:11px; line-height:1.5; color:var(--dim); }
+  .ap-rolecoin{ font-size:11.5px; font-weight:700; color:var(--accent-deep); }
+  .ap-msg{ font-size:14px; margin-bottom:12px; line-height:1.6; }
+  .ap-msg b{ color:var(--accent-deep); }
+  .ap-sec{ margin-top:14px; }
+  .ap-sec-h{ font-size:11.5px; font-weight:700; color:var(--dim); letter-spacing:.06em; margin-bottom:7px; }
+  .ap-tiles{ display:flex; gap:10px; flex-wrap:wrap; }
+  .ap-tiles .plant{ width:88px; }
+  .ap-tiles .plant .lbl{ font-size:12px; padding:4px 0; }
+  .ap-tiles .plant .note{ font-size:10.5px; color:var(--dim); padding:0 2px 3px; background:rgba(251,247,238,.95); }
+  .ap-btns{ display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .ap-opts{ display:flex; gap:8px; flex-wrap:wrap; }
+  .ap-opt{ display:flex; align-items:center; gap:8px; border:1px solid var(--line); background:var(--panel);
+    padding:10px 14px; font-size:14px; border-radius:2px; cursor:pointer; text-align:left; }
+  .ap-opt:hover{ background:#efe6d0; }
+  .ap-opt.hot{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); font-weight:700; }
+  .ap-opt.hot:hover{ background:#f3e3d8; }
+  .ap-opt.on{ background:var(--accent); border-color:var(--accent); color:#f7f2e8; }
+  .ap-opt.no{ opacity:.6; cursor:default; }
+  .ap-opt.no:hover{ background:var(--panel); }
+  .ap-opt .why{ color:var(--accent-deep); font-size:12px; margin-left:auto; }
+  .ap-opt .gain{ color:var(--accent-deep); font-weight:700; margin-left:auto; }
+  .ap-opt.on .gain,.ap-opt.on .why{ color:#f7f2e8; }
+  .ap-stat{ font-size:15px; display:flex; align-items:center; gap:18px; margin:6px 0 2px; }
+  .ap-stat b{ font-size:26px; color:var(--accent-deep); }
+  .ap-ships{ display:flex; gap:8px; flex-wrap:wrap; }
+  .ap-ships.vert{ flex-direction:column; flex-wrap:nowrap; }
+  /* 수송선 카드 — [이름·상태 한 줄] + [적재 칸 시각화 한 줄]. 왼쪽 상품 버튼과 같은 높이 리듬 */
+  .ap-ship{ border:1px solid var(--line); padding:10px 14px; border-radius:2px; font-size:14px; width:100%;
+    background:var(--panel); display:flex; flex-direction:column; gap:7px; font-family:inherit; text-align:left; color:var(--ink); }
+  .ap-ship .hd{ display:flex; align-items:center; gap:7px; }
+  .ap-ship .free,.ap-ship .cnt{ color:var(--dim); font-size:12.5px; }
+  .ap-ship.pick{ cursor:pointer; border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .ap-ship.pick:hover{ background:#f3e3d8; }
+  .ap-ship.dim{ opacity:.55; }
+  .ap-ship .why{ color:var(--accent-deep); font-size:11.5px; margin-left:auto; }
+  .ap-ship .gain{ color:var(--accent-deep); font-weight:700; margin-left:auto; font-size:13px; }
+  .ap-shipslots{ display:flex; gap:3px; flex-wrap:wrap; }
+  .ap-shipslot{ width:17px; height:20px; border:1px dashed var(--line); border-radius:2px; position:relative; background:rgba(251,247,238,.7); }
+  .ap-shipslot .goodchip{ position:absolute; inset:1px; width:auto; height:auto; }
+  .ap-shipslot.pv{ border:1.5px solid var(--accent); }         /* 지금 선택한 상품이 실릴 자리 미리보기 */
+  .ap-shipslot.pv .goodchip{ opacity:.55; }
+  /* 선적 패널: 좌(내 상품) / 우(수송선) 1:1 2단.
+     컬럼 헤더는 카드 콘텐츠보다 한 단계 위 레벨 — 굵은 제목 + 구분선, 좌우 같은 높이라 카드 시작선이 나란하다 */
+  .ap-cols{ display:flex; gap:24px; align-items:flex-start; margin-top:4px; }
+  .ap-cols .ap-col{ flex:1 1 0; min-width:0; }
+  .ap-col-h{ font-size:14.5px; font-weight:700; padding-bottom:8px; margin-bottom:10px;
+    border-bottom:1px solid var(--line); white-space:nowrap; }
+  .ap-opts.vert{ flex-direction:column; align-items:stretch; }
+  @media (max-width:1000px){
+    .ap-cols{ flex-direction:column; }
+    .ap-cols .ap-col{ width:100%; }
+  }
+  .ap-slots{ display:flex; gap:8px; }
+  .ap-slot{ width:40px; height:40px; border:1px dashed var(--line); border-radius:2px;
+    display:flex; align-items:center; justify-content:center; background:rgba(251,247,238,.6); }
+  .ap-slot .goodchip{ width:24px; height:28px; }
+  .ap-hist{ margin-top:16px; border-top:1px dashed var(--line); padding-top:10px; }
+  .ap-hist .hrow{ font-size:13px; padding:2.5px 0; display:flex; gap:7px; align-items:center; }
+  .ap-hist .hrow .goodchip{ width:15px; height:17px; }
+  .ap-hist .hrow .dim{ color:var(--dim); }
+  .ap-prod{ margin-bottom:6px; }
+  .ap-prod .hrow{ font-size:14px; padding:3px 0; display:flex; gap:7px; align-items:center; }
+  /* 생산 결과 패널 — 토스트 대신 전원 요약을 한 장으로 (클릭하면 닫힘) */
+  .prodflash{ position:fixed; left:50%; top:36%; transform:translate(-50%,-50%); z-index:300;
+    background:var(--panel); border:1px solid var(--line); border-left:5px solid var(--gold);
+    box-shadow:0 10px 34px rgba(51,41,30,.4); padding:16px 24px; border-radius:3px; min-width:280px;
+    cursor:pointer; animation:modalIn .3s cubic-bezier(.2,.8,.3,1) backwards; }
+  .prodflash .pf-h{ font-weight:700; font-size:16px; margin-bottom:9px; }
+  .prodflash .pf-row{ display:flex; align-items:center; gap:7px; padding:3.5px 0; font-size:14px; }
+  .prodflash .pf-row b{ color:var(--accent-deep); }
+  .prodflash .pf-nm{ font-weight:700; min-width:92px; }
+  .prodflash .pf-none{ color:var(--dim); }
+  .prodflash .pf-hint{ font-size:11px; color:var(--dim); margin-top:8px; }
+  .prodflash .pf-div{ border-top:1px dashed var(--line); margin:9px 0; }
+  /* 역할 선택 패널 하단 — 각 플레이어 요약 (접힌 카드와 같은 정보) */
+  .ap-pstrip{ display:flex; gap:10px; margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; align-items:stretch; }
+  .ap-pcard{ flex:1 1 0; min-width:0; border:1px solid var(--line); border-radius:2px; background:rgba(251,247,238,.6); padding:9px 11px; font-size:12px; line-height:1.55; }
+  .ap-pcard .nm{ font-weight:700; display:flex; align-items:center; gap:5px; margin-bottom:3px; }
+  .ap-pcard .row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .ap-pcard .row .goodchip{ width:14px; height:16px; }
+  .ap-pcard .sec{ color:var(--dim); font-size:10.5px; font-weight:700; letter-spacing:.05em; margin-top:5px; }
+  @media (max-width:1000px){ .ap-pstrip{ flex-wrap:wrap; } .ap-pstrip .ap-pcard{ flex:1 1 45%; } }
 </style>
 </head>
 <body>
@@ -545,7 +638,7 @@ function storeSel(){ if(!uiSel || !Array.isArray(uiSel.types)) uiSel={types:[], 
 /* 방금 배치된 것 강조: 액션한 플레이어 보드로 화면을 옮기고, 새 타일/일꾼에 팝 이펙트 */
 let fxMark=null;
 let cardFx=null;   // 사건이 일어난 사이드 카드 번쩍임
-const FX_HOLD=1500;  // 직전 행동의 이펙트를 이 시간만큼은 화면에 붙잡아둔다 (렌더 전환·큰 토스트 모두 공통 기준)
+const FX_HOLD=600;  // 직전 행동의 이펙트를 이 시간만큼은 화면에 붙잡아둔다 (렌더 전환·큰 토스트 모두 공통 기준)
 const BOARD_ANIM=470;  // 개인 보드 펼침 애니메이션(CSS --board-anim = .42s)이 끝나는 데 걸리는 시간 + 여유
 const SHOP_DELAY=300;  // 보드가 다 펼쳐진 뒤 건물 보관판이 뜨기까지 쉬는 한 박자
 function cardFxCls(id){ return (cardFx && cardFx.sel===id && Date.now()-cardFx.t<1400) ? ' cardflash' : ''; }
@@ -577,6 +670,35 @@ function toast(html, sel, big, color){
     setTimeout(()=>{ try{t.remove();}catch(_){} toastLive[key]=Math.max(0,(toastLive[key]||1)-1); }, big?2600:2400);
   }catch(e){}
 }
+/* 단계 결과 패널 — 단계가 끝날 때 전원의 결과를 한 장으로 화면 가운데에 (클릭하면 닫힘, 잠시 후 자동으로 사라짐) */
+function phaseFlash(title, html){
+  if(typeof document==='undefined'||!document.body||!document.createElement) return;
+  // 직전 행동의 이펙트가 아직 붙잡혀 있으면 그만큼 미뤘다가 띄운다 (큰 토스트와 같은 규칙)
+  if(fxMark && Date.now()-fxMark.t<FX_HOLD){
+    setTimeout(()=>phaseFlash(title, html), FX_HOLD-(Date.now()-fxMark.t));
+    return;
+  }
+  try{
+    const d=document.createElement('div');
+    d.className='prodflash';
+    d.innerHTML='<div class="pf-h">'+title+'</div>'+html+'<div class="pf-hint">클릭하면 닫힙니다</div>';
+    d.onclick=()=>{ try{d.remove();}catch(_){} };
+    document.body.appendChild(d);
+    setTimeout(()=>{ try{d.remove();}catch(_){} }, 5000);
+  }catch(e){}
+}
+function prodFlash(rows){
+  phaseFlash('🌾 생산 결과', rows.map(r=>{
+    const p=P(r.pi); const kinds=Object.keys(r.got);
+    return '<div class="pf-row"><span class="pf-nm" style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+'</span>'
+      +(kinds.length
+        ? kinds.map(t=>goodChip(t)+'<b>×'+r.got[t]+'</b>').join('')
+          +(r.fact?'<span class="pf-none">공업소 +'+r.fact+'주화</span>':'')
+        : '<span class="pf-none">생산 없음</span>')
+      +'</div>';
+  }).join(''));
+}
+
 /* 역할 선택: 역할 카드 이미지가 중앙에 잠깐 크게 떴다 사라진다 */
 /* 역할 선택 연출 — 고른 역할 카드가 화면 가운데에 부드럽게 떴다가 부드럽게 사라진다. */
 const ROLE_ANIM=1400;                     // 떴다 사라지기까지 전체 시간 (CSS @keyframes rsplash와 같은 값)
@@ -617,6 +739,24 @@ function shopVisibleNow(){
 }
 function uiSelectBoard(i){ uiBoardSel=i; render(); }
 function uiToggleShop(){ uiShopOpen=!shopVisibleNow(); render(); }
+
+/* ── 중앙 액션 패널 ──
+   내 차례의 선택지(개척·모집·생산 보너스·판매·선적·저장)를 건물 보관소처럼 가운데 팝업으로 보여준다.
+   건설은 기존 건물 보관소 팝업이 그 역할이므로 여기서 다루지 않는다. */
+let uiPanelOpen = null;        // null = 자동(내 차례에 열림) / true = 열어둠 / false = 닫아둠
+let uiPanelWasVisible = false; // 등장 애니메이션은 "새로 열린 순간"에만
+const PANEL_TYPES = { pickRole:1, settler:1, mayorPlace:1, craftBonus:1, trader:1, captain:1, storage:1 };
+function panelVisibleNow(){
+  if(!G||G.over) return false;
+  const pd=humanPend();
+  if(!pd || !PANEL_TYPES[pd.type]) return false;
+  if(uiPanelOpen!==null) return uiPanelOpen;
+  return true;
+}
+function uiTogglePanel(){ uiPanelOpen=!panelVisibleNow(); render(); }
+/* 선적 패널의 2단계 선택: ① 상품을 고르면 ② 실을 수 있는 배가 버튼이 된다 (뷰 상태 — 새로고침하면 초기화) */
+let uiShipSel = null;
+function uiSelectShipGood(t){ uiShipSel=(uiShipSel===t)?null:t; render(); }
 
 /* ── 소개 페이지에 끼워졌을 때(iframe) ──
    소개 페이지의 "플레이" 탭은 이 파일을 iframe으로 띄우고 화면 전체를 내준다.
@@ -686,6 +826,8 @@ document.addEventListener('keydown', function(e){
     e.preventDefault(); render();
   } else if(e.key==='Escape'&&shopVisibleNow()){
     uiShopOpen=false; render();
+  } else if(e.key==='Escape'&&panelVisibleNow()){
+    uiPanelOpen=false; render();
   }
 });
 
@@ -836,7 +978,8 @@ function endRound(){
 /* ═══════════════════════════ 단계 공통 흐름 ═══════════════════════════ */
 /* phase state: G.phase = {id, chooser, queue:[pi...], qi, ...phase별 필드} */
 function startPhase(roleId, chooser){
-  const base={id:roleId, chooser, queue:order(chooser), qi:0};
+  // hist: 이번 단계에 누가 무엇을 했는지 — 중앙 액션 패널의 "이번 단계 진행" 표시용 (직렬화 가능)
+  const base={id:roleId, chooser, queue:order(chooser), qi:0, hist:[]};
   if(roleId==='prospector'||roleId==='prospector2'){
     P(chooser).coins++; log(pname(P(chooser))+' — 탐험가 혜택으로 1주화 획득');
     G.phase=null; nextChooser(); return;
@@ -875,6 +1018,7 @@ function settlerPlace(p, type, fromDeck){
     if(takeWorkerSupplyFirst()){ p.land[p.land.length-1].w=1; log(pname(p)+' — 병원 기능으로 일꾼 1개를 새 타일에 배치'); }
   }
 }
+function phaseHist(entry){ const F=G.phase; if(F) (F.hist||(F.hist=[])).push(entry); }
 function actSettler(action, arg){
   const pd=G.pending; const p=P(pd.player);
   if(action==='deck'){ // 대규모 농장
@@ -882,6 +1026,7 @@ function actSettler(action, arg){
     if(!S.deck.length && S.discard.length) S.deck=shuffle(S.discard.splice(0));
     if(S.deck.length){
       const t=S.deck.pop(); settlerPlace(p,t,true); pd.haciendaUsed=true;
+      phaseHist({pi:p.i, kind:'deck', t});
       log(pname(p)+' — 대규모 농장 기능으로 더미에서 <b>'+PLANT_NM[t]+'</b> 농장을 배치');
     } else pd.haciendaUsed=true;
     if(p.land.length>=12){ finishSettlerTurn(); return; }
@@ -890,15 +1035,17 @@ function actSettler(action, arg){
   if(action==='display'){
     const t=G.supply.display.splice(arg,1)[0];
     settlerPlace(p,t,false);
+    phaseHist({pi:p.i, kind:'farm', t});
     log(pname(p)+' — <b>'+PLANT_NM[t]+'</b> 농장을 개척');
     finishSettlerTurn(); return;
   }
   if(action==='quarry'){
     G.supply.quarries--; settlerPlace(p,'quarry',false);
+    phaseHist({pi:p.i, kind:'quarry'});
     log(pname(p)+' — <b>채석장</b>을 개척');
     finishSettlerTurn(); return;
   }
-  if(action==='skip'){ log(pname(p)+' — 개척을 생략'); toast(pname(p)+' — 개척 생략', 'pboard-'+p.i, false, PCOLOR[p.i]); finishSettlerTurn(); return; }
+  if(action==='skip'){ phaseHist({pi:p.i, kind:'skip'}); log(pname(p)+' — 개척을 생략'); toast(pname(p)+' — 개척 생략', 'pboard-'+p.i, false, PCOLOR[p.i]); finishSettlerTurn(); return; }
 }
 function finishSettlerTurn(){ G.pending=null; G.phase.qi++; settlerNext(); }
 
@@ -1105,7 +1252,7 @@ function productionOf(p){
   return out;
 }
 function craftsmanRun(base){
-  const producedBy={};
+  const producedBy={}; const factBonus={};
   for(const pi of base.queue){
     const p=P(pi); const want=productionOf(p); const got={};
     for(const t of GTYPES){
@@ -1117,20 +1264,23 @@ function craftsmanRun(base){
     const kinds=Object.keys(got);
     if(kinds.length){
       log(pname(p)+' — 생산: '+kinds.map(t=>PLANT_NM[t]+' '+got[t]).join(', '));
-      toast('<span>'+pname(p)+' — 생산</span>'+kinds.map(t=>goodChip(t)+'<b>×'+got[t]+'</b>').join(''), '#card-supply', false, PCOLOR[p.i]);
       if(occB(p,'b_fact')&&kinds.length>=2){
         const bonus=[0,0,1,2,3,5][kinds.length];
-        p.coins+=bonus; log(pname(p)+' — 공업소 보너스 +'+bonus+'주화');
+        p.coins+=bonus; factBonus[pi]=bonus; log(pname(p)+' — 공업소 보너스 +'+bonus+'주화');
       }
     } else log(pname(p)+' — 생산할 수 있는 상품이 없습니다.');
   }
-  const cp=P(base.chooser); const mine=producedBy[base.chooser];
+  // 전원 생산 요약 — 누가 무엇을 얼마나 생산했는지 한 장으로 (개별 토스트 대신)
+  const prodRows=base.queue.map(pi=>({pi, got:producedBy[pi]||{}, fact:factBonus[pi]||0}));
+  const mine=producedBy[base.chooser];
   const avail=Object.keys(mine||{}).filter(t=>G.supply.goods[t]>0);
   if(avail.length){
-    G.phase={...base, bonusOptions:avail};
+    G.phase={...base, bonusOptions:avail, prod:prodRows};
     G.pending={type:'craftBonus', player:base.chooser};
+    // 선택자가 사람이면 액션 패널이 요약을 함께 보여주므로 별도 패널은 띄우지 않는다
+    if(P(base.chooser).ai) prodFlash(prodRows);
     schedule();
-  } else { G.phase=null; nextChooser(); }
+  } else { prodFlash(prodRows); G.phase=null; nextChooser(); }
 }
 function actCraftBonus(t){
   const p=P(G.pending.player);
@@ -1149,7 +1299,19 @@ function sellableTypes(p){
 function traderNext(){
   const F=G.phase;
   if(F.qi>=F.queue.length){
-    if(G.supply.market.length>=4){
+    // 단계 요약 — 누가 무엇을 팔아 얼마를 벌었는지 + 상점 최종 상황 (비우기 전 상태로 그린다)
+    const rows=G.players.map(p=>{
+      const h=(F.hist||[]).find(x=>x.pi===p.i&&x.kind==='sell');
+      return '<div class="pf-row"><span class="pf-nm" style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+'</span>'
+        +(h?goodChip(h.t)+'<span>'+PLANT_NM[h.t]+' 판매</span><b>+'+h.coins+'주화</b>':'<span class="pf-none">판매 없음</span>')+'</div>';
+    }).join('');
+    const full=G.supply.market.length>=4;
+    const mktRow='<div class="pf-row"><span class="pf-nm">상점</span>'
+      +(G.supply.market.length?G.supply.market.map(t=>goodChip(t)).join('')
+        +(full?'<span class="pf-none">가득 차 비워짐</span>':'<span class="pf-none">'+G.supply.market.length+'/4 유지</span>')
+        :'<span class="pf-none">비어 있음</span>')+'</div>';
+    phaseFlash('💰 판매 결과', rows+'<div class="pf-div"></div>'+mktRow);
+    if(full){
       for(const t of G.supply.market) G.supply.goods[t]++;
       G.supply.market=[];
       log('상점이 가득 차 상품을 모두 공급처로 치웠습니다.');
@@ -1158,7 +1320,7 @@ function traderNext(){
   }
   const pi=F.queue[F.qi]; const p=P(pi);
   const opts=sellableTypes(p);
-  if(!opts.length){ log(pname(p)+' — 판매할 수 있는 상품이 없어 생략합니다.'); F.qi++; traderNext(); return; }
+  if(!opts.length){ phaseHist({pi, kind:'skip', forced:true}); log(pname(p)+' — 판매할 수 있는 상품이 없어 생략합니다.'); F.qi++; traderNext(); return; }
   G.pending={type:'trader', player:pi};
   schedule();
 }
@@ -1170,9 +1332,10 @@ function saleCoins(p,t,isChooser){
 }
 function actTrade(t){
   const pd=G.pending; const p=P(pd.player); const isC=(pd.player===G.phase.chooser);
-  if(t==='skip'){ log(pname(p)+' — 판매를 생략'); toast(pname(p)+' — 판매 생략', 'pboard-'+p.i, false, PCOLOR[p.i]); G.pending=null; G.phase.qi++; traderNext(); return; }
+  if(t==='skip'){ phaseHist({pi:p.i, kind:'skip'}); log(pname(p)+' — 판매를 생략'); toast(pname(p)+' — 판매 생략', 'pboard-'+p.i, false, PCOLOR[p.i]); G.pending=null; G.phase.qi++; traderNext(); return; }
   const c=saleCoins(p,t,isC);
   p.goods[t]--; G.supply.market.push(t); p.coins+=c;
+  phaseHist({pi:p.i, kind:'sell', t, coins:c});
   log(pname(p)+' — <b>'+PLANT_NM[t]+'</b> 판매 (+'+c+'주화)');
   toast(goodChip(t)+'<span>'+pname(p)+' — '+PLANT_NM[t]+' 판매 → <b>+'+c+'주화</b></span>', '#card-market', false, PCOLOR[p.i]);
   G.pending=null; G.phase.qi++; traderNext();
@@ -1216,17 +1379,23 @@ function captainNext(){
   }
   schedule();
 }
-function captainShipVP(p,pi,amount){
+/* 선적 시 얻을 승점 — 패널 미리보기용(변형 없음)과 실제 적용용을 분리 */
+function captainVPPreview(p,pi,amount){
   const F=G.phase;
   let vp=amount;
   if(occB(p,'b_harb')) vp+=1;
   if(pi===F.chooser && !F.firstShip[pi]) vp+=1;
-  F.firstShip[pi]=true;
+  return vp;
+}
+function captainShipVP(p,pi,amount){
+  const vp=captainVPPreview(p,pi,amount);
+  G.phase.firstShip[pi]=true;
   return vp;
 }
 function actCaptain(action,arg){
   const F=G.phase; const pd=G.pending; const pi=pd.player; const p=P(pi);
   if(action==='pass'){
+    phaseHist({pi:p.i, kind:'skip'});
     log(pname(p)+' — 조선소를 사용하지 않고 넘깁니다.');
     toast(pname(p)+' — 선적 넘김', 'pboard-'+p.i, false, PCOLOR[p.i]);
     G.pending=null; F.passes++; F.cur=(F.cur+1)%G.n; captainNext(); return;
@@ -1237,6 +1406,7 @@ function actCaptain(action,arg){
     F.wharfUsed[pi]=true;
     const vp=captainShipVP(p,pi,amt);
     giveVP(p,vp);
+    phaseHist({pi:p.i, kind:'ship', t, amt, vp, wharf:true});
     log(pname(p)+' — 조선소(가상의 수송선)로 <b>'+PLANT_NM[t]+' '+amt+'개</b> 선적 (+'+vp+'점)');
     toast(goodChip(t)+'<span>'+pname(p)+' — '+PLANT_NM[t]+' <b>'+amt+'개</b> 선적 → <b>+'+vp+'점</b></span>', '#card-ships', false, PCOLOR[p.i]);
   } else {
@@ -1244,6 +1414,7 @@ function actCaptain(action,arg){
     s.type=o.type; s.count+=o.load; p.goods[o.type]-=o.load;
     const vp=captainShipVP(p,pi,o.load);
     giveVP(p,vp);
+    phaseHist({pi:p.i, kind:'ship', t:o.type, amt:o.load, vp, ship:s.size});
     log(pname(p)+' — '+s.size+'칸 수송선에 <b>'+PLANT_NM[o.type]+' '+o.load+'개</b> 선적 (+'+vp+'점)');
     toast(goodChip(o.type)+'<span>'+pname(p)+' — '+PLANT_NM[o.type]+' <b>'+o.load+'개</b> 선적 → <b>+'+vp+'점</b></span>', '#card-ships', false, PCOLOR[p.i]);
   }
@@ -1298,6 +1469,27 @@ function actStorage(keepTypes, single){
   G.pending=null; G.phase.sqi++; storageNext();
 }
 function captainEnd(){
+  const F=G.phase;
+  // 단계 요약 — 누가 얼마나 선적해 몇 점을 얻었는지 + 수송선 최종 상황 (비우기 전 상태로 그린다)
+  const tally={};
+  (F&&F.hist||[]).forEach(h=>{
+    if(h.kind!=='ship') return;
+    const t=tally[h.pi]||(tally[h.pi]={amt:0,vp:0});
+    t.amt+=h.amt; t.vp+=h.vp;
+  });
+  const rows=G.players.map(p=>{
+    const t=tally[p.i];
+    return '<div class="pf-row"><span class="pf-nm" style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+'</span>'
+      +(t?'<span>'+t.amt+'개 선적</span><b>+'+t.vp+'점</b>':'<span class="pf-none">선적 없음</span>')+'</div>';
+  }).join('');
+  const shipRows=G.supply.ships.map(s=>{
+    const full=s.type&&s.count>=s.size;
+    return '<div class="pf-row"><span class="pf-nm">'+s.size+'칸 수송선</span>'
+      +(s.type?goodChip(s.type)+'<b>'+s.count+'/'+s.size+'</b>'+(full?'<span class="pf-none">가득 차 비워짐</span>':'<span class="pf-none">유지</span>')
+        :'<span class="pf-none">비어 있음</span>')
+      +'</div>';
+  }).join('');
+  phaseFlash('⚓ 선적 결과', rows+'<div class="pf-div"></div>'+shipRows);
   for(const s of G.supply.ships){
     if(s.count>=s.size && s.type){
       G.supply.goods[s.type]+=s.count;
@@ -1508,7 +1700,7 @@ function schedule(){
   const p=(pd.player!==undefined)?P(pd.player):null;
   if(p && p.ai){
     clearTimeout(aiTimer);
-    aiTimer=setTimeout(()=>{ try{ aiDecide(); }catch(e){ console.error(e); log('⚠️ AI 오류: '+e.message); render(); } }, 2500);
+    aiTimer=setTimeout(()=>{ try{ aiDecide(); }catch(e){ console.error(e); log('⚠️ AI 오류: '+e.message); render(); } }, 1500);
   }
 }
 
@@ -1658,6 +1850,8 @@ function render(){
     const showingOther=fxMark&&fxMark.pi!==curPi&&(Date.now()-fxMark.t)<FX_HOLD;
     const applyTurnStart=()=>{
       uiShopOpen=null;
+      uiPanelOpen=null;   // 액션 패널도 자동 모드로 — 내 차례의 새 결정마다 다시 열린다
+      uiShipSel=null;     // 선적 2단계 선택도 결정이 바뀌면 처음부터
       if(isHumanTurn){
         uiBoardSel=null;
         // 건설 차례: 내 보드가 다 펼쳐지고 한 박자(SHOP_DELAY) 쉰 뒤에 건물 보관판을 연다.
@@ -1678,6 +1872,7 @@ function render(){
     };
     if(isHumanTurn&&showingOther){
       uiShopOpen=false; // 팝업이 자동으로 먼저 뜨지 않게 잠깐 붙잡아둔다
+      uiPanelOpen=false;
       const wait=FX_HOLD-(Date.now()-fxMark.t);
       uiHoldUntil=Date.now()+wait;   // 그동안 역할 선택 표시·액션바 등 "당신 차례" 티도 숨긴다
       setTimeout(()=>{ if(G&&G.pending===pd){ uiHoldUntil=0; applyTurnStart(); render(); } }, wait);
@@ -1962,6 +2157,13 @@ function render(){
       +'</div></div>';
   }
 
+  /* 중앙 액션 패널 — 내 차례의 선택지 (개척·모집·생산 보너스·판매·선적·저장) */
+  let panelPop='';
+  const panelNow=!holding&&panelVisibleNow();
+  const panelJustOpened=panelNow&&!uiPanelWasVisible;
+  uiPanelWasVisible=panelNow;
+  if(panelNow) panelPop=renderActionPanel(pd, panelJustOpened);
+
   /* ── 조립: 스켈레톤은 한 번만 세우고, 이후에는 달라진 섹션만 갈아끼운다 ── */
   if(!rdSkeleton){
     rdSkeleton=true; rdCache={}; rdBoards=[];
@@ -1983,7 +2185,7 @@ function render(){
         +'<div class="log" id="logbox"></div>'
       +'</div>'
     +'</div>'
-    +'<div id="rd-bar"></div><div id="rd-modal"></div><div id="rd-shop"></div>';
+    +'<div id="rd-bar"></div><div id="rd-modal"></div><div id="rd-panel"></div><div id="rd-shop"></div>';
   }
 
   setPart('rd-hdr',
@@ -2021,6 +2223,7 @@ function render(){
   setCls('card-supply','card'+cardFxCls('#card-supply'));
   setPart('rd-bar', bar);
   setPart('rd-modal', modal);
+  setPart('rd-panel', panelPop);
   setPart('rd-shop', shopPop);
   /* 로그: 내용이 바뀐 렌더에서만 바닥으로 스크롤 */
   if(setPart('logbox', G.log.slice(-120).map(l=>'<div>'+l+'</div>').join(''))){
@@ -2028,12 +2231,255 @@ function render(){
   }
 }
 
+/* ── 중앙 액션 패널 렌더 ──
+   내 차례의 선택지를 화면 가운데에 모아 보여준다. 모든 버튼은 기존 actXxx/uiXxx 진입점만 호출한다.
+   G.phase.hist(이번 단계 진행 내역)로 "봇들이 방금 무엇을 했는지"도 함께 보여준다. */
+function panelHistHtml(F){
+  const rows=(F&&F.hist||[]).map(h=>{
+    const q=P(h.pi);
+    const nm='<b style="color:'+PCOLOR[q.i]+'">'+esc(q.name)+'</b>';
+    if(h.kind==='skip') return '<div class="hrow">'+nm+'<span class="dim">— 생략</span></div>';
+    if(h.kind==='farm')   return '<div class="hrow">'+nm+'<span>— '+PLANT_NM[h.t]+' 농장 개척</span></div>';
+    if(h.kind==='deck')   return '<div class="hrow">'+nm+'<span>— 대규모 농장: 더미에서 '+PLANT_NM[h.t]+'</span></div>';
+    if(h.kind==='quarry') return '<div class="hrow">'+nm+'<span>— 채석장 개척</span></div>';
+    if(h.kind==='sell')   return '<div class="hrow">'+nm+goodChip(h.t)+'<span>'+PLANT_NM[h.t]+' 판매</span><b>+'+h.coins+'주화</b></div>';
+    if(h.kind==='ship')   return '<div class="hrow">'+nm+goodChip(h.t)+'<span>'+PLANT_NM[h.t]+' '+h.amt+'개 '+(h.wharf?'(조선소)':'('+h.ship+'칸 배)')+'</span><b>+'+h.vp+'점</b></div>';
+    return '';
+  }).join('');
+  return rows?'<div class="ap-hist"><div class="ap-sec-h">이번 단계 진행</div>'+rows+'</div>':'';
+}
+function prodRowsHtml(rows){
+  return '<div class="ap-prod">'+rows.map(r=>{
+    const q=P(r.pi); const kinds=Object.keys(r.got);
+    return '<div class="hrow"><b style="color:'+PCOLOR[q.i]+'">'+esc(q.name)+'</b>'
+      +(kinds.length
+        ? kinds.map(t=>goodChip(t)+'<b>×'+r.got[t]+'</b>').join('')
+          +(r.fact?'<span class="dim">공업소 +'+r.fact+'주화</span>':'')
+        : '<span class="dim">생산 없음</span>')
+      +'</div>';
+  }).join('')+'</div>';
+}
+function renderActionPanel(pd, justOpened){
+  const p=P(pd.player); const F=G.phase;
+  let title='', body='';
+  if(pd.type==='pickRole'){
+    title='역할 선택';
+    const cells=G.roles.map((r,i)=>{
+      const R=ROLES[r.id];
+      const open=(r.takenBy===null);
+      const tile='<div class="role'+(open?' pickable':' taken')+'" '+(open?'onclick="pickRole('+pd.player+','+i+')"':'')+'>'
+        +imgTag('역할',R.nm,'img')
+        +'<div class="rolefb">'+R.rn+' '+R.nm+'<br><span>'+R.ph+'</span></div>'
+        +(r.coins>0?'<div class="coin">'+r.coins+'</div>':'')
+        +(r.takenBy!==null?'<div class="took" style="background:'+PCOLOR[r.takenBy]+'">'+esc(P(r.takenBy).name)+'</div>':'')
+        +'</div>';
+      return '<div class="ap-rolecell">'+tile
+        +'<div class="ap-rolename">'+R.nm+'<span class="dim"> · '+R.ph+'</span></div>'
+        +'<div class="ap-roledesc">'+esc(R.desc).replace(/\n/g,'<br>')+'</div>'
+        +(r.coins>0?'<div class="ap-rolecoin">+ 타일 위 주화 '+r.coins+'개</div>':'')
+        +'</div>';
+    }).join('');
+    // 하단: 각 플레이어 요약 — 접힌 카드와 같은 정보 (주화·승점·일꾼 / 농장 / 건물 / 상품)
+    const pcards=G.players.map(q=>{
+      const farm={}; for(const l of q.land) farm[l.type]=(farm[l.type]||0)+1;
+      const farms=Object.keys(farm).map(t=>PLANT_NM[t]+'×'+farm[t]).join(' · ')||'—';
+      const blds=q.buildings.map(b=>BUILDINGS[b.id].nm).join(' · ')||'—';
+      const goods=GTYPES.filter(t=>q.goods[t]>0).map(t=>goodChip(t)+'×'+q.goods[t]).join(' ')||'—';
+      return '<div class="ap-pcard" style="border-left:3px solid '+PCOLOR[q.i]+'">'
+        +'<div class="nm" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)+(G.governor===q.i?' 👑':'')+(q.i===pd.player?' (나)':'')+'</div>'
+        +'<div class="row">💰'+q.coins+' · ⭐'+q.vp+'점 · 일꾼 '+totalWorkersOf(q)+'</div>'
+        +'<div class="sec">농장 '+q.land.length+'</div><div class="row">'+farms+'</div>'
+        +'<div class="sec">건물 '+q.buildings.length+'</div><div class="row">'+blds+'</div>'
+        +'<div class="sec">상품</div><div class="row">'+goods+'</div>'
+        +'</div>';
+    }).join('');
+    body='<div class="ap-msg">수행할 역할을 클릭하세요. 모두가 그 행동을 하지만, <b>특별 혜택은 선택한 사람만</b> 얻습니다.</div>'
+      +'<div class="ap-roles">'+cells+'</div>'
+      +'<div class="ap-pstrip">'+pcards+'</div>';
+  }
+  else if(pd.type==='settler'){
+    title='개척 — 타일 가져오기';
+    const isC=(F.chooser===pd.player);
+    const canQ=settlerCanQuarry(pd.player);
+    // 채석장은 항상 맨 왼쪽, 농장과의 간격은 일반 간격(10px)의 3배(gap 10 + margin 20 = 30).
+    // 타일은 전부 [그림+이름] 동일 구조 — 높이가 어긋나지 않게 부가 설명은 타일 밖(ap-msg)에 쓴다.
+    let tiles='';
+    if(canQ){
+      tiles+='<div class="plant pickable" style="margin-right:20px" onclick="actSettler(\'quarry\')">'
+        +'<div class="art" style="background:#8a857a33">'+imgTag('농장','채석장')+'</div>'
+        +'<div class="lbl">채석장</div></div>';
+    }
+    tiles+=G.supply.display.map((t,i)=>{
+      const g=GOODS[t];
+      return '<div class="plant pickable" onclick="actSettler(\'display\','+i+')">'
+        +'<div class="art" style="background:'+(g?g.color:'#888')+'22">'+imgTag('농장',PLANT_NM[t])+'</div>'
+        +'<div class="lbl">'+PLANT_NM[t]+'</div></div>';
+    }).join('');
+    body='<div class="ap-msg">가져갈 타일을 클릭하세요. 내 토지 <b>'+p.land.length+'/12</b>칸'
+      +(canQ?'<br>맨 왼쪽 <b>채석장</b>은 '+(isC?'개척자 혜택':'건설막 효과')+'으로 가져갈 수 있고, 건물 지을 때 비용을 깎아줍니다.':'')
+      +'</div>'
+      +'<div class="ap-tiles">'+(tiles||'<span class="dim">가져갈 수 있는 타일이 없습니다.</span>')+'</div>'
+      +'<div class="ap-btns">'
+      +(!pd.haciendaUsed && occB(p,'b_hac') && (G.supply.deck.length||G.supply.discard.length) && p.land.length<12
+        ?'<button class="ap-opt" onclick="actSettler(\'deck\')">🌱 대규모 농장 — 뒷면 더미에서 1개 추가 배치</button>':'')
+      +'<button class="ap-opt" onclick="actSettler(\'skip\')">이번엔 안 가져가기</button>'
+      +'</div>'
+      +panelHistHtml(F);
+  }
+  else if(pd.type==='mayorPlace'){
+    title='모집 — 일꾼 배치';
+    const empty=emptyCirclesOf(p);
+    body='<div class="ap-stat"><span>배치할 일꾼 <b>'+p.stored+'</b>개</span><span>빈 원형 칸 <b>'+empty+'</b>곳</span></div>'
+      +'<div class="ap-msg">보드의 농장·건물 타일을 클릭해 일꾼을 배치하거나 회수할 수 있습니다.<br>'
+      +'빈 원형 칸이 남아 있으면 일꾼을 반드시 배치해야 합니다.</div>'
+      +'<div class="ap-btns">'
+      +'<button class="ap-opt" onclick="uiMayorAuto('+p.i+')">자동 배치</button>'
+      +'<button class="ap-opt" onclick="uiTogglePanel()">보드에서 직접 배치</button>'
+      +'<button class="ap-opt hot" onclick="uiMayorDone('+p.i+')">배치 완료</button>'
+      +'</div>';
+  }
+  else if(pd.type==='craftBonus'){
+    title='생산 결과 — 생산자 혜택';
+    body=(F.prod?prodRowsHtml(F.prod):'')
+      +'<div class="ap-msg" style="margin-top:10px">생산자 혜택 — 방금 생산한 것 중 <b>1개</b>를 추가로 받습니다.</div>'
+      +'<div class="ap-opts">'
+      +F.bonusOptions.map(t=>'<button class="ap-opt hot" onclick="actCraftBonus(\''+t+'\')">'+goodChip(t)+PLANT_NM[t]+' 받기</button>').join('')
+      +'</div>';
+  }
+  else if(pd.type==='trader'){
+    title='상점 — 상품 판매';
+    const M=G.supply.market; const isC=(pd.player===F.chooser);
+    const slots='<div class="ap-slots">'
+      +M.map(t=>'<div class="ap-slot">'+goodChip(t)+'</div>').join('')
+      +Array(4-M.length).fill('<div class="ap-slot"></div>').join('')
+      +'</div>';
+    const sellable=sellableTypes(p);
+    const opts=GTYPES.filter(t=>p.goods[t]>0).map(t=>{
+      if(sellable.includes(t))
+        return '<button class="ap-opt hot" onclick="actTrade(\''+t+'\')">'+goodChip(t)+PLANT_NM[t]+' ×'+p.goods[t]
+          +' <span class="gain">+'+saleCoins(p,t,isC)+'주화</span></button>';
+      const why=(M.length>=4)?'상점 가득':'같은 종류가 이미 상점에';
+      return '<div class="ap-opt no">'+goodChip(t)+PLANT_NM[t]+' ×'+p.goods[t]+' <span class="why">'+why+'</span></div>';
+    }).join('');
+    body='<div class="ap-sec"><div class="ap-sec-h">상점 (최대 4칸 · 가득 차면 비워짐)</div>'+slots+'</div>'
+      +'<div class="ap-sec"><div class="ap-sec-h">내 상품 — 판매할 것을 클릭 (1개만 판매)</div>'
+      +'<div class="ap-opts">'+(opts||'<span class="dim">보유 상품이 없습니다.</span>')+'</div></div>'
+      +'<div class="ap-btns"><button class="ap-opt" onclick="actTrade(\'skip\')">판매 안 함</button></div>'
+      +panelHistHtml(F);
+  }
+  else if(pd.type==='captain'){
+    title='선적';
+    // ① 왼쪽 — 내 상품: 클릭해서 선적할 상품을 고른다 (배로든 조선소로든 실을 수 있는 것만 클릭 가능)
+    const shippable=t=>pd.opts.some(o=>o.type===t)||(pd.wharfOK&&p.goods[t]>0);
+    // 이전 결정의 선택이 남아 있으면(같은 pendKey로 차례가 돌아온 경우) 무효화
+    const selT=(uiShipSel&&p.goods[uiShipSel]>0&&shippable(uiShipSel))?uiShipSel:null;
+    const bestLoad=t=>{
+      const loads=pd.opts.filter(o=>o.type===t).map(o=>o.load);
+      let m=loads.length?Math.max(...loads):0;
+      if(pd.wharfOK) m=Math.max(m,p.goods[t]);
+      return m;
+    };
+    const goodsBtns=GTYPES.filter(t=>p.goods[t]>0).map(t=>{
+      if(shippable(t))
+        return '<button class="ap-opt'+(selT===t?' on':' hot')+'" onclick="uiSelectShipGood(\''+t+'\')">'
+          +goodChip(t)+PLANT_NM[t]+' ×'+p.goods[t]+(selT===t?' ✓':'')
+          +'<span class="gain">최대 '+bestLoad(t)+'개 선적</span></button>';
+      const sOfT=G.supply.ships.find(s=>s.type===t);
+      const why=sOfT?'실린 배가 가득 참':'놓을 수 있는 배 없음';
+      return '<div class="ap-opt no">'+goodChip(t)+PLANT_NM[t]+' ×'+p.goods[t]+' <span class="why">'+why+'</span></div>';
+    }).join('');
+    // ② 오른쪽 — 수송선: 상품을 고르면 실을 수 있는 배가 버튼이 되고, 안 되는 배는 이유를 보여준다.
+    // 카드마다 적재 칸을 그대로 그려서(실린 칸 = 상품 토큰, 실릴 칸 = 강조 미리보기) 상태를 한눈에 보여준다.
+    const slotsOf=(s,pvLoad)=>{
+      let out='';
+      for(let i=0;i<s.size;i++){
+        if(i<s.count) out+='<span class="ap-shipslot">'+goodChip(s.type)+'</span>';
+        else if(pvLoad&&i<s.count+pvLoad) out+='<span class="ap-shipslot pv">'+goodChip(selT)+'</span>';
+        else out+='<span class="ap-shipslot"></span>';
+      }
+      return '<div class="ap-shipslots">'+out+'</div>';
+    };
+    const ships=G.supply.ships.map((s,si)=>{
+      const name='<b>'+s.size+'칸 수송선</b>'
+        +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+' '+s.count+'/'+s.size+'</span>':'<span class="free">비어 있음</span>');
+      if(!selT) return '<div class="ap-ship"><div class="hd">'+name+'</div>'+slotsOf(s)+'</div>';
+      const oi=pd.opts.findIndex(o=>o.type===selT&&o.ship===si);
+      if(oi>=0){
+        const o=pd.opts[oi]; const vp=captainVPPreview(p,pd.player,o.load);
+        return '<button class="ap-ship pick" onclick="actCaptain(\'ship\','+oi+')">'
+          +'<div class="hd">'+name+'<span class="gain">'+o.load+'개 싣기 → +'+vp+'점</span></div>'
+          +slotsOf(s,o.load)+'</button>';
+      }
+      let why;
+      if(s.type&&s.type!==selT) why='다른 상품 전용';
+      else if(s.count>=s.size) why='가득 참';
+      else if(!s.type&&G.supply.ships.some(o2=>o2!==s&&o2.type===selT)) why='이미 다른 배에 실림';
+      else why='더 많이 실을 수 있는 배가 있음';   // 규칙: 가장 많이 실리는 배를 골라야 한다
+      return '<div class="ap-ship dim"><div class="hd">'+name+'<span class="why">'+why+'</span></div>'+slotsOf(s)+'</div>';
+    }).join('');
+    // 조선소도 "배" 하나로 취급 — 상품을 고르면 선택지가 된다
+    let wharfCard='';
+    if(pd.wharfOK){
+      if(selT){
+        const amt=p.goods[selT]; const vp=captainVPPreview(p,pd.player,amt);
+        const pv='<div class="ap-shipslots">'+Array(amt).fill('<span class="ap-shipslot pv">'+goodChip(selT)+'</span>').join('')+'</div>';
+        wharfCard='<button class="ap-ship pick" onclick="actCaptain(\'wharf\',\''+selT+'\')">'
+          +'<div class="hd"><b>조선소</b><span class="cnt">가상의 수송선</span><span class="gain">'+amt+'개 전부 → +'+vp+'점</span></div>'
+          +pv+'</button>';
+      } else {
+        wharfCard='<div class="ap-ship"><div class="hd"><b>조선소</b><span class="free">가상의 수송선 · 단계당 1회 · 칸 무제한</span></div></div>';
+      }
+    }
+    body='<div class="ap-msg">'+(pd.mayPass
+        ?'선적할 수 있는 배가 없습니다. 조선소를 쓰거나 넘길 수 있습니다.'
+        :'<b>선적은 의무입니다.</b> ① 왼쪽에서 <b>상품</b>을 고르고 ② 오른쪽에서 <b>실을 배</b>를 고르세요. 실은 개수만큼 승점을 얻습니다.')
+      +'<br><span class="dim">배마다 한 종류만 실리며, 이미 다른 배에 실린 종류는 실을 수 없습니다.</span></div>'
+      +'<div class="ap-cols">'
+      +'<div class="ap-col"><div class="ap-col-h">① 내 상품</div>'
+        +'<div class="ap-opts vert">'+(goodsBtns||'<span class="dim">보유 상품이 없습니다.</span>')+'</div>'
+      +'</div>'
+      +'<div class="ap-col"><div class="ap-col-h">② 수송선</div>'
+        +'<div class="ap-ships vert">'+ships+wharfCard+'</div>'
+      +'</div>'
+      +'</div>'
+      +(pd.mayPass?'<div class="ap-btns"><button class="ap-opt" onclick="actCaptain(\'pass\')">넘기기</button></div>':'')
+      +panelHistHtml(F);
+  }
+  else if(pd.type==='storage'){
+    title='상품 저장';
+    const cap=pd.cap; const sel=storeSel();
+    const types=GTYPES.filter(t=>p.goods[t]>0);
+    // 현재 선택으로 반납하게 될 상품 미리보기
+    const drops=[];
+    for(const t of types){
+      const keep=sel.types.includes(t)?p.goods[t]:(sel.single===t?1:0);
+      if(p.goods[t]-keep>0) drops.push(PLANT_NM[t]+' '+(p.goods[t]-keep));
+    }
+    body='<div class="ap-msg">저장 한도를 넘는 상품은 공급처로 반납됩니다.<br>'
+      +'창고로 <b>'+cap+'종류</b>를 통째로 + 그 외 <b>낱개 1개</b>를 저장할 수 있습니다.</div>'
+      +(cap>0?'<div class="ap-sec"><div class="ap-sec-h">창고 저장 — 종류 전부 ('+sel.types.length+'/'+cap+')</div><div class="ap-opts">'
+        +types.map(t=>'<button class="ap-opt'+(sel.types.includes(t)?' on':'')+'" onclick="uiStoreType(\''+t+'\')">'
+          +goodChip(t)+PLANT_NM[t]+' 전부('+p.goods[t]+')</button>').join('')+'</div></div>':'')
+      +'<div class="ap-sec"><div class="ap-sec-h">낱개 저장 — 1개</div><div class="ap-opts">'
+      +types.map(t=>'<button class="ap-opt'+(sel.single===t?' on':'')+'" onclick="uiStoreSingle(\''+t+'\')">'
+        +goodChip(t)+PLANT_NM[t]+' 1개</button>').join('')+'</div></div>'
+      +'<div class="ap-msg" style="margin-top:12px">'+(drops.length?'반납될 상품: <b>'+drops.join(', ')+'</b>':'모든 상품이 저장됩니다.')+'</div>'
+      +'<div class="ap-btns"><button class="ap-opt hot" onclick="uiStoreDone()">확정</button></div>';
+  }
+  return '<div class="overlay panel-ov'+(justOpened?' pop':'')+'" onclick="if(event.target===this)uiTogglePanel()">'
+    +'<div class="modal act-modal'+(pd.type==='pickRole'?' wide':'')+'">'
+    +'<div class="shop-modal-h"><h2>'+title+'</h2><span class="ap-sub" style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+' 차례</span>'
+    +'<button class="btn-ghost" onclick="uiTogglePanel()">닫기 ✕</button></div>'
+    +body
+    +'</div></div>';
+}
+
 function renderActionBar(pd){
   const p=P(pd.player);
   const who='<span class="who">'+esc(p.name)+'</span>';
   let msg='', btns='';
   if(pd.type==='pickRole'){
-    msg='역할 타일을 선택하세요. (위 역할 카드를 클릭)';
+    msg='역할 타일을 선택하세요.';
   }
   else if(pd.type==='settler'){
     msg='공개된 농장을 클릭해 가져가세요.';
@@ -2092,6 +2538,8 @@ function renderActionBar(pd){
     }
     btns+='<button class="hot" onclick="uiStoreDone()">확정</button>';
   }
+  // 중앙 액션 패널이 있는 단계는 어디서든 다시 열 수 있게 토글 버튼을 함께 둔다
+  if(PANEL_TYPES[pd.type]) btns='<button onclick="uiTogglePanel()">'+(panelVisibleNow()?'패널 닫기':'선택 패널 열기')+'</button>'+btns;
   return '<div class="actionbar"><div class="inner">'+who+'<span class="msg">'+msg+'</span><div class="btns">'+btns+'</div></div></div>';
 }
 
