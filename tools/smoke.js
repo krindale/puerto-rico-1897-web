@@ -47,7 +47,11 @@ global.setTimeout = (fn, ms) => realSetTimeout(fn, Math.min(ms || 0, 1) );
 /* ── game.html의 <script src> 순서 그대로 로드 ── */
 const html = fs.readFileSync(path.join(ROOT, 'game.html'), 'utf8');
 const order = [...html.matchAll(/<script src="(js\/[^"]+)"/g)].map(m => m[1]);
-if (order.length !== 11) { console.error('script 태그 수가 예상(11)과 다름:', order); process.exit(1); }
+/* js/ 의 게임 파일(intro.js는 소개 페이지 전용)이 빠짐없이 game.html에 로드되는지 —
+   파일을 만들고 script 태그를 잊는 실수를 잡는다 */
+const expect = fs.readdirSync(path.join(ROOT, 'js')).filter(f => f.endsWith('.js') && f !== 'intro.js').map(f => 'js/' + f);
+const missing = expect.filter(f => !order.includes(f));
+if (missing.length) { console.error('game.html에 로드되지 않는 js 파일:', missing.join(', ')); process.exit(1); }
 /* 파일별로 따로 실행 — 브라우저가 <script>를 하나씩 실행하는 것과 같은 조건.
    vm.runInThisContext는 스크립트 간 전역 let/const 바인딩을 공유한다. */
 for (const f of order) {
