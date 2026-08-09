@@ -295,8 +295,7 @@ function renderLobby(){
       :'<span class="ic-ink">'+aosIcon('user',15,'currentColor')+'</span>'));
     const name=isMe
       ?'<span class="aos-seatname"><input class="aos-nameinline" id="aos-name-in" type="text" value="'+escAttr(s.name||NET.myName)+'" maxlength="12" onchange="uiNetRename(this.value)">'
-        +'<span class="aos-accent sm">(나)</span><span class="pencil">'+aosIcon('pencil',12)+'</span>'
-        +'<button class="aos-roundbtn" onclick="uiNetRandomName()" title="다른 이름 뽑기">'+aosIcon('refresh',12)+'</button></span>'
+        +'<span class="aos-accent sm">(나)</span><span class="pencil">'+aosIcon('pencil',12)+'</span></span>'
       :'<span class="aos-seatname"><span class="nm'+((s.clientId||s.kind==='ai')?'':' dim')+'">'+(s.name?esc(s.name):'친구를 기다리는 자리')+'</span></span>';
     const hostBadge=isHostSeat?'<span class="aos-badge host">'+icStar(11)+' 호스트</span>':'';
     let stat='', swap='';
