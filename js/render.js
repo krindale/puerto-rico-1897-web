@@ -59,7 +59,9 @@ function buildingTip(B){
 }
 
 /* ── 설정 화면 (aos_showcase 스타일: 히어로 + 좌 비주얼 / 우 설정 카드) ── */
-let setupName='선장';
+/* 기본 이름도 1897 카리브 정서로 — 접속할 때마다 농장주 이름 하나를 뽑아 준다 */
+const PR_NAMES=['페드로','이사벨라','알론소','루시아','라몬','카탈리나'];
+let setupName=PR_NAMES[Math.floor(Math.random()*PR_NAMES.length)];
 let setupN=4;
 let setupKinds=['me','ai','ai','ai','ai'];   // 좌석 0=나 고정, 1~4는 'ai'|'human'(친구·같은 기기)
 function uiSetupCount(n){ setupN=n; renderSetup(); }
@@ -331,10 +333,10 @@ function uiNetCopyCode(btn){
 }
 function startNewGame(){
   const seats=[{name:(setupName||'플레이어').trim(), ai:false}];
-  let ai=0, fr=2;
+  let ai=0, fr=0;
   for(let i=1;i<setupN;i++){
-    if(setupKinds[i]==='human') seats.push({name:'플레이어 '+fr++, ai:false});
-    else seats.push({name:['AI 가영','AI 나정','AI 도준','AI 민수'][ai++%4], ai:true});
+    if(setupKinds[i]==='human') seats.push({name:PR_NAMES.filter(n=>n!==setupName)[fr++%5], ai:false});
+    else seats.push({name:NET_AI_NAMES[ai++%4], ai:true});
   }
   newGame(seats);
 }
