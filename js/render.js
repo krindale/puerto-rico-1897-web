@@ -145,9 +145,10 @@ function aosSeatFormRows(online){
         +'<span class="aos-accent">(나'+(online?' · 호스트':'')+')</span></div>';
     } else {
       const isAi=curSetupKinds()[i]==='ai';
+      // 봇으로 바꾸면 그 자리의 테마 이름이 바로 보인다 — 게임 생성도 같은 공식(NET_AI_NAMES[(i-1)%4])을 쓴다
       rows+='<div class="aos-seatform"><span class="aos-seatlabel">자리 '+(i+1)+'</span>'
         +'<button class="aos-chip'+(isAi?' bot':'')+'" onclick="uiSetupToggle('+i+')" title="눌러서 전환">'
-        +(isAi?aosIcon('bot',14):aosIcon('user',14,'currentColor'))+' '+(isAi?'BOT':(online?'친구 자리':'사람 (한 기기)'))+'</button></div>';
+        +(isAi?aosIcon('bot',14)+' '+NET_AI_NAMES[(i-1)%4]+' (BOT)':aosIcon('user',14,'currentColor')+' '+(online?'친구 자리':'사람 (한 기기)'))+'</button></div>';
     }
   }
   return '<div class="aos-seatforms">'+rows+'</div>';
@@ -339,7 +340,7 @@ function startNewGame(){
   let ai=0, fr=0;
   for(let i=1;i<setupN;i++){
     if(setupKinds[i]==='human') seats.push({name:PR_NAMES.filter(n=>n!==setupName)[fr++%5], ai:false});
-    else seats.push({name:NET_AI_NAMES[ai++%4], ai:true});
+    else seats.push({name:NET_AI_NAMES[(i-1)%4], ai:true});   // 폼에서 보여준 그 이름 그대로
   }
   newGame(seats);
 }

@@ -50,11 +50,11 @@ async function netCreateRoom(myName, n, seatKinds, isPublic, title){
   try{
     await netAuth();
     const cid=netClientId();
-    let ai=0;
     const seats=[{seat:0, name:myName, kind:'human', clientId:cid, uid:NET.uid}];
     for(let i=1;i<n;i++){
       const isAi=seatKinds[i]==='ai';
-      seats.push({seat:i, name:isAi?NET_AI_NAMES[ai++%4]:'', kind:isAi?'ai':'human', clientId:null});
+      // 폼 미리보기와 같은 공식 — 화면에서 본 봇 이름이 그대로 방에 들어간다
+      seats.push({seat:i, name:isAi?NET_AI_NAMES[(i-1)%4]:'', kind:isAi?'ai':'human', clientId:null});
     }
     const sb=netClient();
     let row=null;
