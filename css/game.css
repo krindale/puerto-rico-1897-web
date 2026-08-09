@@ -113,7 +113,6 @@
   .rolefb{ padding:10px; font-weight:700; font-size:14px; min-height:110px; }
   .rolefb span{ font-weight:400; font-size:11px; color:var(--dim); }
   .role .took{ position:absolute; left:0; right:0; bottom:0; background:rgba(51,41,30,.85); color:#f3ede1; font-size:10.5px; font-weight:700; text-align:center; padding:3px 0; z-index:3; }
-  .role.cur{ outline:3px solid var(--ink); }
   /* 호버 확대: 레이아웃을 건드리지 않는 복제 이미지 방식.
      원본 크기와 무관하게 고정 폭으로 확대 (작은 원본도 같은 크기로 보이게) */
   img.zoom{ display:none; }
@@ -568,6 +567,8 @@
   /* 단계 종료 배너 — 결과 화면임을 확실히 구분 */
   .ap-endbanner{ border:1px solid var(--accent); border-left:5px solid var(--accent); background:#f3e3d8;
     padding:10px 14px; font-weight:700; font-size:15px; border-radius:2px; margin-top:14px; }
+  /* 결과 보고 하단 바 안에 들어갈 때 — 확인 버튼과 같은 줄, 같은 높이 (세로 절약) */
+  .ap-endbanner.inrow{ margin-top:0; padding:9px 13px; font-size:14px; flex:1 1 240px; min-width:0; }
   /* 공급처 재고 줄 (생산 패널 우측) */
   .ap-supline{ display:flex; align-items:center; justify-content:space-between; border:1px solid var(--line);
     border-radius:2px; background:var(--panel); padding:8px 12px; font-size:13px; }
@@ -588,6 +589,10 @@
      컬럼 헤더는 카드 콘텐츠보다 한 단계 위 레벨 — 굵은 제목 + 구분선, 좌우 같은 높이라 카드 시작선이 나란하다 */
   .ap-cols{ display:flex; gap:24px; align-items:flex-start; margin-top:4px; }
   .ap-cols .ap-col{ flex:1 1 0; min-width:0; }
+  /* 생산 단계만 좌:우 = 2.2:1 — 우측 "공급처 재고"는 5줄 고정이라 절반을 쓸 이유가 없고,
+     좌측이 좁으면 5인에서 상품 칩이 줄바꿈돼 카드가 두 줄이 되고 패널에 스크롤이 생긴다.
+     (세로로 접히는 1000px 이하에서는 flex-grow가 높이에 영향을 주지 않으므로 그대로 둔다) */
+  .ap-cols.craft .ap-col:first-child{ flex-grow:2.2; }
   .ap-col-h{ font-size:14.5px; font-weight:700; padding-bottom:8px; margin-bottom:10px;
     border-bottom:1px solid var(--line); white-space:nowrap; }
   .ap-opts.vert{ flex-direction:column; align-items:stretch; }
@@ -623,9 +628,13 @@
   .pf-div{ border-top:1px dashed var(--line); margin:9px 0; }
   /* 단독 결과 보고는 짧다 — 작은 창 */
   .act-modal.report{ max-width:480px; }
-  .act-modal.report .ap-btns{ justify-content:flex-end; }
+  /* align-items:center는 여기서만 — 개척·모집 패널의 선택지 줄(.ap-btns)은 stretch로 버튼 높이를 맞춰야 한다
+     (긴 버튼이 두 줄로 접히면 옆의 짧은 버튼이 세로 가운데로 뜬다) */
+  .act-modal.report .ap-btns{ justify-content:flex-end; align-items:center; }
   /* stage 보고(선적·판매·생산 결과): 진행 패널과 같은 폭·높이·레이아웃, 확인 버튼은 아래에 고정 */
-  .act-modal.report.stage{ max-width:800px; }
+  /* 결과 보고는 인원수만큼 세로로 길어진다 — .act-modal.stage의 고정 높이(620px)에 갇혀 스크롤이 생기던 것을
+     "620px는 최소치, 화면의 84%까지는 늘어난다"로 바꾼다. 그래도 모자라면 #ap-bodyc가 스크롤(최후 수단). */
+  .act-modal.report.stage{ max-width:800px; height:auto; min-height:min(620px,84vh); max-height:84vh; }
   .act-modal.report.stage .ap-btns{ margin-top:auto; }
   /* 역할 선택 패널 하단 — 각 플레이어 요약 (접힌 카드와 같은 정보) */
   .ap-pstrip{ display:flex; gap:10px; margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; align-items:stretch; }
@@ -807,6 +816,8 @@
   /* 결과 확인 현황 (온라인) — 누가 눌렀고 누구를 기다리는지 */
   .ap-acks{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin-top:12px;
     padding-top:10px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--dim); }
+  /* 결과 보고에서는 확인 버튼과 한 줄로 — 구분선·여백을 빼고 왼쪽에 붙인다 (세로 절약) */
+  .ap-btns .ap-acks{ margin:0; padding:0; border-top:none; margin-right:auto; flex:1 1 auto; min-width:0; }
   .ap-acks .ok{ font-weight:700; color:var(--act); }
   .ap-acks .waiting{ color:var(--accent-deep); }
   /* ═══ 연결 끊김 안내 ═══ */

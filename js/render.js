@@ -220,8 +220,13 @@ function aosFrame(cardHtml){
 function renderSetup(){
   rdReset();
   /* 채팅 위젯은 body에 직접 붙어 있어 $app 교체로는 안 지워진다 —
-     온라인에서 빠져나온 뒤(netLeave) 설정 화면에 버튼만 남던 문제. 들어오는 모든 경로를 여기서 막는다. */
-  if(typeof netChatRender==='function') netChatRender();
+     온라인에서 빠져나온 뒤(netLeave) 설정 화면에 버튼만 남던 문제.
+     netChatRender()에 맡기지 않고 여기서 직접 지운다 — 그쪽은 NET 상태에 따라 분기가 갈려
+     "설정 화면에는 무조건 없다"를 보장하지 못한다. 대기실로 갈 때는 renderLobby가 다시 그린다. */
+  const oldChat=document.getElementById('pr-chat');
+  if(oldChat&&oldChat.remove) oldChat.remove();
+  // net.js는 render.js보다 뒤에 로드된다 — 그쪽이 평가되지 않았을 때 여기서 죽으면 설정 화면이 통째로 안 그려진다
+  if(typeof uiChatOpen!=='undefined') uiChatOpen=false;
   const netOK=typeof netConfigured==='function'&&netConfigured();
   if(netOK&&typeof NET!=='undefined'&&NET.on){ renderLobby(); return; }
   const canResume=!!lsGet('pr1897_save');
@@ -478,11 +483,12 @@ function render(){
   const holding=Date.now()<uiHoldUntil;
 
   /* 역할 타일 */
-  const phaseRole=G.phase?G.phase.id:null;
   const rolesHtml=G.roles.map((r,i)=>{
     const R=ROLES[r.id];
     const pickable=(!holding&&pd.type==='pickRole'&&isLocalHuman(curPi)&&r.takenBy===null);
-    const cls='role'+(r.takenBy!==null?' taken':'')+(pickable?' pickable':'')+(phaseRole===r.id&&r.takenBy!==null?' cur':'');
+    /* 진행 중인 역할에 검은 테두리(.role.cur)를 두르던 표시는 제거 — 누가 골랐는지는 아래 이름 띠(.took)로 충분하고
+       어두운 타일에서 지저분했다 (사용자 결정). CSS의 .role.cur 규칙도 같이 지웠다. */
+    const cls='role'+(r.takenBy!==null?' taken':'')+(pickable?' pickable':'');
     const tip=R.rn+'. '+R.nm+' — '+R.ph+'\n'+R.desc+(r.coins>0?'\n올려둔 주화 '+r.coins+'개를 함께 가져갑니다.':'');
     return '<div class="'+cls+'" '+(pickable?'onclick="pickRole('+curPi+','+i+')"':'')+' title="'+escAttr(tip)+'">'
       +imgTag('역할',R.nm,'img')
@@ -806,8 +812,13 @@ function render(){
       sub:'<span class="ap-sub">'+(iAcked?'다른 플레이어를 기다리는 중…':'결과를 확인하세요')+'</span>',
       btn:(iAcked?'':'<button class="btn-ghost" onclick="actReportDone()">확인 ✓</button>'),
       cls:' report'+(pd.stage?' stage':''),
-      body:pd.html+ackFoot
-        +'<div class="ap-btns"><button class="ap-opt'+(iAcked?' no':' hot')+'"'
+      // 하단 한 줄에 [단계 종료 배너][확인 현황][확인 버튼]을 모은다 —
+      // 각각 따로 쌓으면 5인 결과 보고에서 세로를 100px 가까이 더 먹어 스크롤이 생겼다
+      body:pd.html
+        +'<div class="ap-btns">'
+        +(pd.banner?'<div class="ap-endbanner inrow">'+pd.banner+'</div>':'')
+        +ackFoot
+        +'<button class="ap-opt'+(iAcked?' no':' hot')+'"'
         +(iAcked?'':' onclick="actReportDone()"')+'>'+btnLabel+'</button></div>' };
   } else if(panelNow) apParts=renderActionPanel(pd);
 
