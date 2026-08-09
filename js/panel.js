@@ -227,7 +227,7 @@ function renderActionPanel(pd){
     const ships=G.supply.ships.map((s,si)=>{
       const shipFx=pfxCls('ship-'+si,'pfx-card');
       const name='<b>'+s.size+'칸 수송선</b>'
-        +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+' '+s.count+'/'+s.size+'</span>':'<span class="free">비어 있음</span>');
+        +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+'</span>':'<span class="free">비어 있음</span>');
       if(!selT) return '<div class="ap-ship'+shipFx+'"><div class="hd">'+name+'</div>'+slotsOf(s,si)+'</div>';
       const oi=pd.opts.findIndex(o=>o.type===selT&&o.ship===si);
       if(oi>=0){
@@ -310,7 +310,7 @@ function renderActionPanel(pd){
     }).join('');
     const shipCards=G.supply.ships.map(s=>
       '<div class="ap-ship"><div class="hd"><b>'+s.size+'칸 수송선</b>'
-      +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+' '+s.count+'/'+s.size+'</span>':'<span class="free">비어 있음</span>')
+      +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+'</span>':'<span class="free">비어 있음</span>')
       +'</div>'+shipSlotsHtml(s)+'</div>').join('');
     body='<div class="ap-msg">'+(myTurn
         ?'선적이 끝났습니다. 저장 한도를 넘는 상품을 정리하세요.'
@@ -352,7 +352,7 @@ function renderActionPanel(pd){
       const right=(pd.id==='captain')
         ?'<div class="ap-ships vert">'+G.supply.ships.map((s,si)=>
             '<div class="ap-ship'+pfxCls('ship-'+si,'pfx-card')+'"><div class="hd"><b>'+s.size+'칸 수송선</b>'
-            +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+' '+s.count+'/'+s.size+'</span>':'<span class="free">비어 있음</span>')
+            +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+'</span>':'<span class="free">비어 있음</span>')
             +'</div>'+slotsOf(s,si)+'</div>').join('')+'</div>'
         :'<div class="ap-slots">'
           +G.supply.market.map((t,i)=>'<div class="ap-slot'+pfxCls('mktslot-'+i,'pfx-pop')+'">'+goodChip(t)+'</div>').join('')

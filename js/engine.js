@@ -575,7 +575,7 @@ function captainFinish(){
   const shipCards=G.supply.ships.map(s=>{
     const full=s.type&&s.count>=s.size;
     return '<div class="ap-ship"><div class="hd"><b>'+s.size+'칸 수송선</b>'
-      +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+' '+s.count+'/'+s.size+'</span>':'<span class="free">비어 있음</span>')
+      +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+'</span>':'<span class="free">비어 있음</span>')
       +(full?'<span class="why">가득 차 비워짐</span>':(s.type?'<span class="cnt">유지</span>':''))
       +'</div>'+shipSlotsHtml(s)+'</div>';
   }).join('');

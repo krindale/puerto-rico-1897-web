@@ -59,13 +59,7 @@ function buildingTip(B){
 }
 
 /* ── 설정 화면 (aos_showcase 스타일: 히어로 + 좌 비주얼 / 우 설정 카드) ── */
-/* 기본 이름도 1897 카리브 정서로 — 접속할 때마다 농장주 이름 하나를 뽑아 주고,
-   이름 옆 🔄 버튼으로 다시 뽑을 수 있다. 봇 이름(미겔·카르멘·디에고·로시타)과는 겹치지 않는 풀. */
-const PR_NAMES=['페드로','이사벨라','알론소','루시아','라몬','카탈리나','후안','엘레나','마테오','소피아',
-  '안드레스','마리아나','가브리엘','발렌티나','산티아고','카밀라','레오나르도','비올레타','에르난도','셀레스테',
-  '파블로','아드리아나','니콜라스','마르셀라','세바스티안','플로렌시아','알레한드로','그라시엘라','펠리페','에스페란사'];
-function prRandomName(not){ let n; do{ n=PR_NAMES[Math.floor(Math.random()*PR_NAMES.length)]; }while(n===not); return n; }
-let setupName=PR_NAMES[Math.floor(Math.random()*PR_NAMES.length)];
+let setupName=prRandomName();   // 열 때마다 무작위 (저장된 설정이 있으면 setupLoad가 덮어쓴다)
 let setupN=4;
 /* 좌석 0=나 고정. 탭별 기본이 다르다 — 로컬은 봇과 혼자, 온라인은 친구 초대가 기본 (사용자 결정) */
 let setupKinds=['me','ai','ai','ai','ai'];            // 로컬 탭
@@ -73,6 +67,10 @@ let setupKindsOn=['me','human','human','human','human'];  // 온라인 탭
 function curSetupKinds(){ return setupMode==='online'?setupKindsOn:setupKinds; }
 function uiSetupCount(n){ setupN=n; renderSetup(); }
 function uiSetupRandomName(){ setupName=prRandomName(setupName); renderSetup(); }
+function uiPubRefresh(btn){
+  if(btn){ btn.classList.add('spin'); setTimeout(()=>btn.classList.remove('spin'), 800); }
+  pubPoll();   // 즉시 한 번 갱신 + 8초 주기 재시작
+}
 function uiNetRandomName(){ uiNetRename(prRandomName(NET.myName)); }
 function uiSetupToggle(i){ const k=curSetupKinds(); k[i]=(k[i]==='ai')?'human':'ai'; renderSetup(); }
 /* ═══ 설정·대기실 — aos_showcase의 설정 카드(GamePageClient) + OnlineLobby를 그대로 이식 ═══
@@ -86,6 +84,30 @@ function uiSetupMode(m){
   setupMode=m; renderSetup();
 }
 function uiSetupPublic(){ setupPublic=!setupPublic; renderSetup(); }
+/* 설정 화면 입력값 보존 — 새로고침해도 고르던 탭·인원·좌석 구성이 그대로 남는다.
+   게임 상태(G)와는 무관한 뷰 값이라 별도 키에 둔다. */
+function setupSave(){
+  try{ lsSet('pr1897_setup', JSON.stringify({
+    mode:setupMode, name:setupName, n:setupN,
+    kinds:setupKinds, kindsOn:setupKindsOn, pub:setupPublic, title:setupTitle
+  })); }catch(e){}
+}
+function setupLoad(){
+  try{
+    const o=JSON.parse(lsGet('pr1897_setup')||'null');
+    if(!o) return;
+    if(o.mode==='local'||o.mode==='online') setupMode=o.mode;
+    if(typeof o.name==='string'&&o.name.trim()) setupName=o.name.trim().slice(0,12);
+    if([2,3,4,5].indexOf(o.n)>=0) setupN=o.n;
+    if(Array.isArray(o.kinds)&&o.kinds.length>=5) setupKinds=o.kinds.slice(0,5);
+    if(Array.isArray(o.kindsOn)&&o.kindsOn.length>=5) setupKindsOn=o.kindsOn.slice(0,5);
+    if(typeof o.pub==='boolean') setupPublic=o.pub;
+    if(typeof o.title==='string') setupTitle=o.title.slice(0,20);
+  }catch(e){}
+}
+/* 이름·방 제목 입력은 renderSetup을 거치지 않으므로 값 반영과 함께 직접 저장한다 */
+function uiSetupName(v){ setupName=String(v||'').slice(0,12); setupSave(); }
+function uiSetupTitle(v){ setupTitle=String(v||'').slice(0,20); setupSave(); }
 /* 공개방 목록 8초 폴링 — 온라인 폼이 보이는 동안만 (쇼케이스와 같은 주기) */
 let pubT=0;
 function pubPoll(){
@@ -147,10 +169,14 @@ function aosSeatFormRows(online){
   let rows='';
   for(let i=0;i<setupN;i++){
     if(i===0){
+      // 온라인 탭은 위 "내 이름" 필드가 이미 있으므로 텍스트로만 — 입력 중복 방지 (스크린샷 검증)
       rows+='<div class="aos-seatform">'+icCrown(16)
-        +'<input class="aos-input name" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" placeholder="이름">'
-        +'<button class="aos-btns icon sm" onclick="uiSetupRandomName()" title="다른 이름 뽑기">'+aosIcon('refresh',13)+'</button>'
-        +'<span class="aos-accent">(나'+(online?' · 호스트':'')+')</span></div>';
+        +(online
+          ?'<span class="nm">'+esc((setupName||'').trim()||'플레이어')+'</span><span class="aos-accent">(나 · 호스트)</span>'
+          :'<input class="aos-input name" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="uiSetupName(this.value)" placeholder="이름">'
+            +'<button class="aos-btns icon sm" onclick="uiSetupRandomName()" title="다른 이름 뽑기">'+aosIcon('refresh',13)+'</button>'
+            +'<span class="aos-accent">(나)</span>')
+        +'</div>';
     } else {
       const isAi=curSetupKinds()[i]==='ai';
       // "자리 N" 대신 실제 이름을 보여준다 — 봇은 테마 봇 이름(생성 공식과 동일),
@@ -202,7 +228,7 @@ function renderSetup(){
     body=
       '<div class="aos-label">'+icCrown(16)+' 내 이름'
       +'<button class="aos-iconbtn" onclick="uiSetupRandomName()" title="다른 이름 뽑기">'+aosIcon('refresh',13)+'</button></div>'
-      +'<input class="aos-input" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" placeholder="이름">'
+      +'<input class="aos-input" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="uiSetupName(this.value)" placeholder="이름">'
       +'<div class="aos-box">'
         +'<div class="aos-box-h"><span>방 만들기</span>'
           /* 공개/비공개 스위치 — 공개가 기본 (공개방 목록에 노출) */
@@ -212,7 +238,7 @@ function renderSetup(){
         +'</div>'
         +(setupPublic
           ?'<input class="aos-input" style="margin-bottom:12px" type="text" maxlength="20" value="'+escAttr(setupTitle)+'" '
-            +'placeholder="방 제목 (기본: '+escAttr((setupName||'호스트').trim())+'의 방)" onchange="setupTitle=this.value">'
+            +'placeholder="방 제목 (기본: '+escAttr((setupName||'호스트').trim())+'의 방)" onchange="uiSetupTitle(this.value)">'
           :'')
         +aosPills()
         +aosSeatFormRows(true)
@@ -229,7 +255,8 @@ function renderSetup(){
         +'<div class="aos-errslot">'+(typeof NET!=='undefined'&&NET.err?'<p>'+esc(NET.err)+'</p>':'')+'</div>'
       +'</div>'
       +'<div class="aos-box">'
-        +'<div class="aos-box-h"><span>공개방</span></div>'
+        +'<div class="aos-box-h"><span>공개방</span>'
+        +'<button class="aos-iconbtn" onclick="uiPubRefresh(this)" title="목록 새로고침">'+aosIcon('refresh',14)+'</button></div>'
         +'<div id="aos-publist">'+pubListHtml()+'</div>'
       +'</div>'
       +(netSess?'<button class="aos-textbtn" onclick="uiNetResume()">진행하던 온라인 게임 이어서 하기 ('+esc(netSess.code)+')</button>':'');
@@ -257,6 +284,7 @@ function renderSetup(){
     +(netOK?aosTabs(online):'')
     +body
   );
+  setupSave();                    // 지금 화면의 선택을 보존 (새로고침 복원용)
   if(online&&netOK) pubPoll();   // 공개방 목록 8초 폴링 시작 (온라인 폼이 보이는 동안만)
 }
 function uiNetCreate(){
@@ -340,6 +368,11 @@ function renderLobby(){
     +'<button class="aos-textbtn" onclick="uiNetLeave()">'+aosIcon('logout',13)+' 방 나가기</button>'
     +(NET.err?'<div class="aos-errslot"><p>'+esc(NET.err)+'</p></div>':'')
   );
+  // 대기실에서도 끊김 안내(호스트 이탈·재연결)를 같은 모양으로 띄운다
+  if(typeof netStatusHtml==='function'){
+    const st=netStatusHtml();
+    if(st){ const d=document.createElement('div'); d.innerHTML=st; document.body.appendChild(d.firstElementChild); }
+  }
   netChatRender();
   restoreInputs();
 }
@@ -352,11 +385,20 @@ function uiNetCopyCode(btn){
   }catch(e){}
 }
 function startNewGame(){
-  const seats=[{name:(setupName||'플레이어').trim(), ai:false}];
-  let ai=0, fr=0;
+  // 이름이 겹치면 로그·보드에서 누가 누군지 알 수 없다 — 배정하며 중복을 피한다
+  const used=[];
+  const my=uniqueName((setupName||'플레이어').trim(), used); used.push(my);
+  const seats=[{name:my, ai:false}];
+  let fr=0;
   for(let i=1;i<setupN;i++){
-    if(setupKinds[i]==='human'){ const pool=PR_NAMES.filter(n=>n!==setupName); seats.push({name:pool[fr++%pool.length], ai:false}); }
-    else seats.push({name:NET_AI_NAMES[(i-1)%4], ai:true});   // 폼에서 보여준 그 이름 그대로
+    if(setupKinds[i]==='human'){
+      const pool=PR_NAMES.filter(n=>used.indexOf(n)<0);
+      const nm=uniqueName(pool.length?pool[fr++%pool.length]:'플레이어 '+(i+1), used);
+      used.push(nm); seats.push({name:nm, ai:false});
+    } else {
+      const nm=uniqueName(NET_AI_NAMES[(i-1)%4], used);   // 폼에서 보여준 그 이름 (겹치면 번호)
+      used.push(nm); seats.push({name:nm, ai:true});
+    }
   }
   newGame(seats);
 }
@@ -409,6 +451,14 @@ function render(){
           builder:'건설할 건물을 고르세요',craftBonus:'추가로 받을 상품을 고르세요',trader:'판매할 상품을 고르세요',
           captain:'상품을 선적하세요',storage:'저장할 상품을 고르세요'};
         if(TURNMSG[pd.type]) toast('<b style="color:'+PCOLOR[curPi]+'">'+esc(P(curPi).name)+'</b> 차례 — '+TURNMSG[pd.type], null, true, PCOLOR[curPi]);
+      }
+      else if(curPi!==null&&!P(curPi).ai){
+        // 원격 사람 차례(온라인): 보드가 직전 행동자에 묶여 있지 않게 자동 모드로 되돌린다 —
+        // 봇은 자기 행동의 markFx가, 내 차례는 위 분기가 보드를 가져가는데 원격 사람만
+        // 아무도 안 가져가서 그 사람 보드가 접힌 채 남았다. 직전 이펙트가 살아 있으면 기다렸다가.
+        const myKey=pendKey;
+        const wait=(fxMark&&Date.now()-fxMark.t<FX_HOLD)?FX_HOLD-(Date.now()-fxMark.t):0;
+        setTimeout(()=>{ if(uiLastPend===myKey){ uiBoardSel=null; render(); } }, wait);
       }
     };
     if(isHumanTurn&&showingOther){
@@ -537,7 +587,8 @@ function render(){
     builder:'건설 중',craftBonus:'상품 선택 중',trader:'판매 중',captain:'선적 중',storage:'저장 중'};
   // 건물 보관소 버튼: 가장 우측(마지막 자리) 개인 보드의 우측 하단에 붙인다
   // stopPropagation: 이 버튼은 접힌 개인 보드(클릭=펼치기) 안에 있어서, 막지 않으면 보드까지 같이 펼쳐진다
-  const fabShopHtml='<button class="fab-shop" onclick="event.stopPropagation();uiToggleShop()" title="건물 보관소 열기/닫기 (Esc로 닫기)">🏘️<span>건물</span></button>';
+  // 건설 버튼은 보드 안이 아니라 화면 우측(사이드 패널 오른쪽 끝)에 고정 — 채팅 버튼과 같은 열
+  const fabShopHtml='<button class="fab-shop" onclick="uiToggleShop()" title="건물 보관소 열기/닫기 (Esc로 닫기)">건물</button>';
   // 두꺼운 색 띠(.cur)는 "이번 역할을 고른 사람"에게 — 역할 선택 중일 때는 고르는 중인 사람에게
   const chooserPi=G.phase?G.phase.chooser:curPi;
   const boardParts=G.players.map(p=>{
@@ -581,7 +632,7 @@ function render(){
         +'<div class="csec">상품</div><div class="crow">'+goodsRow+'</div>'
         +'<div class="expand">펼치기 ▾</div>'
         +'</div>'
-        +(p.i===G.n-1?fabShopHtml:'')
+        
         +'</div>';
     }
     // 토지
@@ -667,7 +718,7 @@ function render(){
       +'</div>'
       +'<div class="bsec"><div class="sec-title" style="margin-bottom:3px">건설 부지 ('+used+'/12)</div><div class="grid12 bgrid">'+blds+'</div></div>'
       +'</div>'
-      +(p.i===G.n-1?fabShopHtml:'')
+      
       +'</div>';
   });
   // 자리 순서 그대로 — 펼친 보드가 자기 자리에서 열린다 (접힘·오픈·접힘·접힘 …)
@@ -731,11 +782,29 @@ function render(){
   if(isReport){
     // 결과 보고: [확인]을 누를 때까지 게임이 기다린다 (바깥 클릭도 확인으로 취급).
     // stage 보고(선적·판매)는 진행 패널과 같은 크기·레이아웃 — 같은 창 안에서 내용만 바뀐다.
+    // 온라인: 사람 좌석 전원이 확인해야 넘어간다 — 누가 눌렀고 누구를 기다리는지 함께 보여준다
+    const onl=(typeof NET!=='undefined'&&NET.on);
+    const acks=pd.acks||[];
+    const humans=onl?G.players.filter(p=>!p.ai):[];
+    const iAcked=onl&&acks.includes(NET.mySeat);
+    let ackFoot='';
+    if(onl&&humans.length>1){
+      const done=humans.filter(p=>acks.includes(p.i));
+      const wait=humans.filter(p=>!acks.includes(p.i));
+      ackFoot='<div class="ap-acks">'
+        +'<span class="ok">확인 '+done.length+'/'+humans.length+'</span>'
+        +(done.length?'<span class="who">'+done.map(p=>'<b style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+'</b>').join(' · ')+'</span>':'')
+        +(wait.length?'<span class="waiting">대기 중: '+wait.map(p=>'<b style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+'</b>').join(' · ')+'</span>':'')
+        +'</div>';
+    }
+    const btnLabel=iAcked?'확인함 — 다른 플레이어 대기 중':'확인';
     apParts={ title:pd.title,
-      sub:'<span class="ap-sub">결과를 확인하세요</span>',
-      btn:'<button class="btn-ghost" onclick="actReportDone()">확인 ✓</button>',
+      sub:'<span class="ap-sub">'+(iAcked?'다른 플레이어를 기다리는 중…':'결과를 확인하세요')+'</span>',
+      btn:(iAcked?'':'<button class="btn-ghost" onclick="actReportDone()">확인 ✓</button>'),
       cls:' report'+(pd.stage?' stage':''),
-      body:pd.html+'<div class="ap-btns"><button class="ap-opt hot" onclick="actReportDone()">확인</button></div>' };
+      body:pd.html+ackFoot
+        +'<div class="ap-btns"><button class="ap-opt'+(iAcked?' no':' hot')+'"'
+        +(iAcked?'':' onclick="actReportDone()"')+'>'+btnLabel+'</button></div>' };
   } else if(panelNow) apParts=renderActionPanel(pd);
 
   /* ── 조립: 스켈레톤은 한 번만 세우고, 이후에는 달라진 섹션만 갈아끼운다 ── */
@@ -759,7 +828,7 @@ function render(){
         +'<div class="log" id="logbox"></div>'
       +'</div>'
     +'</div>'
-    +'<div id="rd-bar"></div><div id="rd-modal"></div><div id="rd-panel"></div><div id="rd-shop"></div><div id="rd-help"></div>';
+    +'<div id="rd-fabs"></div><div id="rd-net"></div><div id="rd-wait"></div><div id="rd-bar"></div><div id="rd-modal"></div><div id="rd-panel"></div><div id="rd-shop"></div><div id="rd-help"></div>';
   }
 
   setPart('rd-hdr',
@@ -767,6 +836,9 @@ function render(){
     +'<h1>푸에르토리코</h1><span class="sub">1897</span>'
     +'<div class="meta"><span>라운드 <b>'+G.round+'</b></span><span>주지사 <b>'+esc(P(G.governor).name)+'</b></span>'
     +(G.phase?'<span>단계 <b>'+ROLES[G.phase.id].ph+'</b></span>':'')
+    // 누구 차례인지 항상 보이게 — 특히 온라인에서 남의 행동을 기다리는 동안 (사용자 요청)
+    +(curPi!==null&&pd.type!=='gameOver'
+      ?'<span>차례 <b style="color:'+PCOLOR[curPi]+'">'+(P(curPi).ai?aosIcon('bot',11)+' ':'')+esc(P(curPi).name)+'</b></span>':'')
     +stampHtml()
     +(typeof NET!=='undefined'&&NET.on?'<span class="netbadge" title="온라인 게임 — 방 코드">🌐 '+esc(NET.room.code)+'</span>':'')
     +'<button class="helpbtn" onclick="uiToggleHelp()" title="요약 규칙 — 언제든 볼 수 있습니다">?</button>'
@@ -797,6 +869,24 @@ function render(){
   setCls('card-market','card'+cardFxCls('#card-market'));
   setCls('card-labor','card'+cardFxCls('#card-labor'));
   setCls('card-supply','card'+cardFxCls('#card-supply'));
+  /* 온라인: 내 차례가 아닌 동안 "누구 차례인지"를 화면에 계속 띄운다 (사용자 요청).
+     하단 액션바는 스크롤·패널에 가릴 수 있어, 화면 상단 중앙에 상시 배너로 둔다. */
+  let waitHtml='';
+  // 봇 차례에는 안 띄운다 — 봇은 알아서 두고 넘어가므로 기다림을 알릴 대상이 아니다.
+  // 다른 "사람"의 행동을 기다릴 때만 (사용자 지적).
+  if(typeof NET!=='undefined'&&NET.on&&curPi!==null&&pd.type!=='gameOver'&&pd.type!=='report'
+     &&NET.mySeat!==curPi&&!P(curPi).ai){
+    const q=P(curPi);
+    // 기본은 화면 정중앙(눈에 띄게). 중앙 패널이 떠 있으면 그 내용을 가리지 않게 상단으로 비켜선다.
+    waitHtml='<div class="waitbanner'+(panelNow?' top':'')+'" style="--pc:'+PCOLOR[curPi]+'">'
+      +'<span class="spin">'+aosIcon('loader',panelNow?13:18)+'</span>'
+      +'<span class="txt"><b>'+esc(q.name)+'</b> 차례입니다</span>'
+      +'<span class="sub">기다리는 중…</span>'
+      +'</div>';
+  }
+  setPart('rd-fabs', G.over?'':fabShopHtml);   // 화면 우측 고정 버튼 열 (위: 채팅 / 아래: 건물)
+  setPart('rd-net', typeof netStatusHtml==='function'?netStatusHtml():'');   // 연결 끊김 안내
+  setPart('rd-wait', waitHtml);
   setPart('rd-bar', bar);
   setPart('rd-modal', modal);
   /* 패널: 스켈레톤(배경+창)은 유지, 클래스·제목·본문만 부분 교체 */
@@ -834,6 +924,9 @@ function render(){
   if(setPart('logbox', G.log.slice(-120).map(l=>'<div>'+l+'</div>').join(''))){
     const lb=document.getElementById('logbox'); if(lb) lb.scrollTop=lb.scrollHeight;
   }
+  /* 온라인 채팅 플로팅 위젯 — 게임 화면에서도 매 렌더 확인한다.
+     예전엔 대기실·채널 이벤트에서만 그려서, 게임을 시작한 호스트 화면에 버튼이 안 떴다. */
+  if(typeof netChatRender==='function') netChatRender();
   /* 배치 팝 이어 재생 — 보드 노드가 다른 이유로 교체돼도 애니메이션이 처음부터 다시 재생되지 않게.
      모든 DOM 쓰기가 끝난 뒤(새로 만들어진 노드가 다 자리잡은 뒤) 한 번에 처리해야 한다. */
   fxTimeSync();

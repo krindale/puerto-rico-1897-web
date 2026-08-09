@@ -58,8 +58,34 @@ const PCOLOR = ['#b5533c','#3f6b9e','#6f8c2f','#96588f','#b8860b'];
 
 const PLANT_NM = { corn:'옥수수', fruit:'과일', sugar:'설탕', tobacco:'담배', coffee:'커피', quarry:'채석장' };
 
-/* 이미지 규칙: img/역할_개척자.png · img/건물_소형과일공장.png · img/농장_옥수수.png (없으면 자동 텍스트 폴백) */
+/* 이미지 규칙: img/역할_개척자 · img/건물_소형과일공장 · img/농장_옥수수 (띄어쓰기 없이)
+   .webp를 먼저 쓰고(무손실 변환본 — tools/optimize-images.py), 없으면 .png로 폴백,
+   둘 다 없으면 태그를 지워 텍스트 대체 표시가 나온다. */
 function imgTag(cat, nm, cls){
-  const f = 'img/' + cat + '_' + nm.replace(/\s/g,'') + '.png';
-  return '<img class="'+(cls||'')+'" src="'+f+'" alt="" onerror="this.remove()">';
+  const b = 'img/' + cat + '_' + nm.replace(/\s/g,'');
+  return '<img class="'+(cls||'')+'" src="'+b+'.webp" alt="" decoding="async"'
+    + ' onerror="if(this.dataset.f){this.remove();}else{this.dataset.f=1;this.src=&quot;'+b+'.png&quot;;}">';
+}
+
+/* ── 플레이어 이름 (1897 카리브 정서) ──
+   기본 이름은 접속할 때마다 이 풀에서 무작위로 뽑고, 방에 같은 이름이 있으면
+   역시 이 풀의 "안 쓰인 이름"으로 무작위 교체한다 (번호 접미사보다 자연스럽다).
+   봇 이름(NET_AI_NAMES)과는 겹치지 않는다. */
+const PR_NAMES=['페드로','이사벨라','알론소','루시아','라몬','카탈리나','후안','엘레나','마테오','소피아',
+  '안드레스','마리아나','가브리엘','발렌티나','산티아고','카밀라','레오나르도','비올레타','에르난도','셀레스테',
+  '파블로','아드리아나','니콜라스','마르셀라','세바스티안','플로렌시아','알레한드로','그라시엘라','펠리페','에스페란사'];
+function prRandomName(not){
+  const pool=PR_NAMES.filter(n=>n!==not);
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+/* 이름 유일화 — 이미 쓰이는 이름이면 풀에서 안 쓰인 이름을 무작위로 준다.
+   풀이 다 찼거나 사용자가 직접 넣은 이름이 겹치는 드문 경우에만 번호를 붙인다. */
+function uniqueName(name, taken){
+  name=String(name||'').trim().slice(0,12);
+  if(!name) name=prRandomName();
+  if(taken.indexOf(name)<0) return name;
+  const free=PR_NAMES.filter(n=>taken.indexOf(n)<0);
+  if(free.length) return free[Math.floor(Math.random()*free.length)];
+  for(let i=2;i<=99;i++){ const c=(name+' '+i).slice(0,14); if(taken.indexOf(c)<0) return c; }
+  return name+' '+(Date.now()%1000);
 }

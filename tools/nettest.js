@@ -121,6 +121,7 @@ const guest=makeClient('G');
 
   const t0=Date.now();
   let deckMaskedChecked=false;
+  let ackChecked=false;   // "호스트만 확인한 시점"이 관측되면 전원 확인 규칙이 동작하는 것
   while(true){
     if(Date.now()-t0>90000){ console.error('90초 내 종료 실패 — host pending:', host.run('G&&G.pending&&G.pending.type'), 'guest rev:', guest.run('NET.rev')); process.exit(1); }
     const over=host.run('!!(G&&G.over)');
@@ -135,18 +136,54 @@ const guest=makeClient('G');
       deckMaskedChecked=true;
       console.log('게스트 덱 가림 OK (길이만 보임)');
     }
+    // 결과 보고: 호스트만 확인한 순간(acks=[0])이 존재해야 한다 = 게스트를 기다리는 중
+    if(host.run("!!(G&&G.pending&&G.pending.type==='report'&&(G.pending.acks||[]).length===1&&G.pending.acks[0]===0)")) ackChecked=true;
     // 호스트 좌석(0) 차례 → 호스트 쪽 AI 로직으로 / report → 호스트가 확인
     host.run("(function(){ const pd=G&&G.pending; if(!pd) return;"
       +" if(pd.type==='report'){ actReportDone(); return; }"
       +" if(pd.player===0 && !G.players[0].ai) aiDecide(); })()");
     // 게스트 좌석(1) 차례 → 게스트 쪽 AI 로직 (감싼 진입점이 intent를 보낸다).
+    // 결과 보고(report)는 온라인에서 전원 확인이 필요하므로 게스트도 확인을 보낸다.
     // 같은 pending(rev)에는 한 번만 행동 — 실제 UI도 클릭은 한 번이다 (중복은 호스트 dedup이 막지만)
     guest.run("(function(){ const pd=G&&G.pending; if(!pd) return;"
       +" const key=NET.rev+':'+pd.type+':'+pd.player;"
       +" if(globalThis.__acted===key) return;"
+      +" if(pd.type==='report'){ globalThis.__acted=key; actReportDone(); return; }"
       +" if(pd.player===1 && NET.mySeat===1 && !G.players[1].ai){ globalThis.__acted=key; aiDecide(); } })()");
     await sleep(3);
   }
+  if(!ackChecked) { console.error('FAIL: 결과 보고에서 "전원 확인" 대기 상태를 한 번도 관측하지 못함'); process.exit(1); }
+  /* ── 연결 끊김 시나리오 (쇼케이스와 같은 규칙) ── */
+  // ① 게스트 이탈 → 호스트에게 BOT 전환 제안이 떠야 한다 (10초 유예를 타이머 압축으로 즉시)
+  guest.run("NET.presence=[]; ");           // 게스트 쪽은 신경 안 씀
+  host.run("NET.presence=[netClientId()]; NET.room.status='playing'; netCheckGuestOff();");
+  await until(()=>host.run('!!NET.offSeat'), '호스트: 게스트 이탈 감지');
+  console.log('게스트 이탈 감지 OK — 제안 좌석', host.run('NET.offSeat.seat'));
+  host.run('uiNetKeepWaiting(NET.offSeat.seat)');
+  if(host.run('!!NET.offSeat')) throw new Error('계속 기다리기 후에도 제안이 남음');
+  console.log('계속 기다리기 OK');
+
+  // ② 호스트 이탈 → 게스트에게 승계 안내가 떠야 하고, 후계자(최소 좌석)여야 한다
+  const hostCid=host.run('netClientId()'), guestCid=guest.run('netClientId()');
+  guest.run("NET.presence=['"+guestCid+"']; netCheckHostTakeover();");   // 호스트가 presence에서 빠짐
+  await until(()=>guest.run('!!NET.takeover'), '게스트: 호스트 이탈 감지');
+  if(!guest.run('NET.takeover.can')) throw new Error('후계자 자격이 없다고 판정됨(유일한 참가자인데)');
+  console.log('호스트 이탈 감지 OK — 이어받기 가능');
+  // 호스트 복귀 → 안내가 사라져야 한다
+  guest.run("NET.presence=['"+guestCid+"','"+hostCid+"']; netCheckHostTakeover();");
+  if(guest.run('!!NET.takeover')) throw new Error('호스트 복귀 후에도 승계 안내가 남음');
+  console.log('호스트 복귀 시 안내 해제 OK');
+  // 다시 이탈 → 승계 실행
+  guest.run("NET.presence=['"+guestCid+"']; netCheckHostTakeover();");
+  await until(()=>guest.run('!!NET.takeover'), '승계 안내 재표시');
+  await guest.run('uiNetTakeover()');
+  await until(()=>guest.run('NET.host===true'), '게스트: 호스트 승계');
+  if(guest.run("NET.room.seats[0].kind")!=='ai') throw new Error('옛 호스트 좌석이 BOT으로 안 바뀜');
+  if(!guest.run('G.players[0].ai')) throw new Error('게임 상태의 옛 호스트가 BOT이 아님');
+  console.log('호스트 승계 OK — 옛 호스트 좌석 BOT 전환 확인');
+  console.log('DISCONNECT TESTS OK');
+  process.exit(0);
+
   const hostScore=host.run('G.scores.map(s=>s.name+" "+s.total).join(" / ")');
   const guestScore=guest.run('G.scores.map(s=>s.name+" "+s.total).join(" / ")');
   if(hostScore!==guestScore){ console.error('FAIL: 최종 점수 불일치\n host:', hostScore, '\n guest:', guestScore); process.exit(1); }
