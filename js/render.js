@@ -153,10 +153,17 @@ function aosSeatFormRows(online){
         +'<span class="aos-accent">(나'+(online?' · 호스트':'')+')</span></div>';
     } else {
       const isAi=curSetupKinds()[i]==='ai';
-      // 봇으로 바꾸면 그 자리의 테마 이름이 바로 보인다 — 게임 생성도 같은 공식(NET_AI_NAMES[(i-1)%4])을 쓴다
-      rows+='<div class="aos-seatform"><span class="aos-seatlabel">자리 '+(i+1)+'</span>'
-        +'<button class="aos-chip'+(isAi?' bot':'')+'" onclick="uiSetupToggle('+i+')" title="눌러서 전환">'
-        +(isAi?aosIcon('bot',14)+' '+NET_AI_NAMES[(i-1)%4]+' (BOT)':aosIcon('user',14,'currentColor')+' '+(online?'친구 자리':'사람 (한 기기)'))+'</button></div>';
+      // "자리 N" 대신 실제 이름을 보여준다 — 봇은 테마 봇 이름(생성 공식과 동일),
+      // 로컬 사람은 배정될 이름(startNewGame과 같은 순서), 온라인 사람 자리는 친구 초대석
+      let nm;
+      if(isAi) nm=NET_AI_NAMES[(i-1)%4]+' <span class="aos-dim">(BOT)</span>';
+      else if(online) nm='<span class="aos-dim">친구 초대석</span>';
+      else { const pool=PR_NAMES.filter(n=>n!==setupName); let h=0; for(let j=1;j<i;j++) if(curSetupKinds()[j]==='human') h++; nm=pool[h%pool.length]; }
+      rows+='<div class="aos-seatform">'
+        +(isAi?'<span class="ic-bot">'+aosIcon('bot',15)+'</span>':'<span class="ic-ink">'+aosIcon('user',15,'currentColor')+'</span>')
+        +'<span class="nm">'+nm+'</span><span class="aos-sp"></span>'
+        +'<button class="aos-roundbtn" onclick="uiSetupToggle('+i+')" title="'+(isAi?(online?'친구 자리로':'사람 자리로'):'BOT으로')+' 전환">'
+        +aosIcon('swap',13)+' '+(isAi?aosIcon('user',14,'currentColor'):aosIcon('bot',14))+'</button></div>';
     }
   }
   return '<div class="aos-seatforms">'+rows+'</div>';

@@ -659,6 +659,8 @@
   .aos-seatforms{ display:flex; flex-direction:column; gap:7px; }
   .aos-seatform{ display:flex; align-items:center; gap:8px; font-size:13px; min-height:30px; }
   .aos-seatform .aos-input.name{ flex:1; max-width:200px; padding:5px 10px; font-size:13.5px; }
+  .aos-seatform .nm{ font-size:13.5px; color:#1c1b18; }
+  .aos-seatform .nm .aos-dim{ font-size:12px; }
   .aos-seatlabel{ color:#5f5b53; flex:1; }
   .aos-chip{ display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; border:none;
     font-size:12px; font-weight:600; background:#e9dfc9; color:#5f5b53; }
