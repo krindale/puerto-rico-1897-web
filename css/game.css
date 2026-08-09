@@ -616,7 +616,7 @@
   .aos-wrap{ display:grid; grid-template-columns:minmax(0,660px) 340px; gap:28px; justify-content:center;
     align-items:start; padding:clamp(24px,6vh,72px) 20px 48px; color:#1c1b18; }
   @media (max-width:1060px){ .aos-wrap{ grid-template-columns:minmax(0,660px); } }
-  .aos-card{ background:#f6efe0; border:1px solid #e6dcc6; border-radius:18px;
+  .aos-card{ background:#f6efe0; border:1px solid #e6dcc6; border-radius:3px;
     box-shadow:0 1px 2px rgba(28,27,24,.04), 0 14px 34px -18px rgba(28,27,24,.16); }
   .aos-main{ position:relative; padding:32px 32px 28px; }
   .aos-main h1{ font-family:inherit; font-size:30px; font-weight:700; letter-spacing:-.01em; color:#1c1b18; margin-bottom:6px; }
@@ -625,27 +625,27 @@
   .aos-x:hover{ color:#1c1b18; }
   /* 로컬/온라인 탭 */
   .aos-tabs{ display:flex; gap:8px; margin-bottom:24px; }
-  .aos-tabs button{ flex:1; padding:9px 0; border-radius:10px; border:none; font-size:14px; font-weight:700;
+  .aos-tabs button{ flex:1; padding:9px 0; border-radius:2px; border:none; font-size:14px; font-weight:700;
     background:transparent; color:#5f5b53; }
   .aos-tabs button:not(.on):hover{ background:#e9dfc9; }
   .aos-tabs button.on{ background:#a8442a; color:#efece4; }
   /* 라벨·입력 */
   .aos-label{ display:flex; align-items:center; gap:8px; font-size:13.5px; color:#5f5b53; margin:0 0 8px; }
   .aos-input{ width:100%; padding:9px 14px; background:#fbf6ea; border:1px solid rgba(28,27,24,.1);
-    border-radius:10px; font-family:inherit; font-size:14.5px; color:#1c1b18; }
+    border-radius:2px; font-family:inherit; font-size:14.5px; color:#1c1b18; }
   .aos-input:focus{ outline:none; border-color:#a8442a; }
   .aos-input.mono{ letter-spacing:.18em; text-transform:uppercase; }
   .aos-dim{ font-size:13px; color:#66625a; line-height:1.6; }
   .aos-accent{ color:#a8442a; font-size:13px; }
   .aos-accent.sm{ font-size:12px; flex:none; }
   /* 섹션 박스 (방 만들기 / 코드로 입장) */
-  .aos-box{ border:1px solid rgba(28,27,24,.1); border-radius:14px; padding:16px; margin-top:20px; }
+  .aos-box{ border:1px solid rgba(28,27,24,.1); border-radius:3px; padding:16px; margin-top:20px; }
   .aos-box-h{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
   .aos-box-h>span:first-child{ font-size:14px; font-weight:700; color:#1c1b18; }
   .aos-priv{ font-size:11.5px; color:#66625a; background:#e9dfc9; border-radius:999px; padding:3px 10px; }
   /* 인원 pills */
   .aos-pills{ display:flex; gap:8px; margin-bottom:12px; }
-  .aos-pill{ flex:1; padding:8px 12px; border-radius:10px; border:none; font-size:14px; font-weight:600;
+  .aos-pill{ flex:1; padding:8px 12px; border-radius:2px; border:none; font-size:14px; font-weight:600;
     background:#fbf6ea; color:#5f5b53; box-shadow:inset 0 0 0 1px rgba(28,27,24,.08); }
   .aos-pill:not(.on):hover{ background:#e9dfc9; }
   .aos-pill.on{ background:#a8442a; color:#efece4; box-shadow:none; }
@@ -660,19 +660,19 @@
   .aos-chip.bot{ background:rgba(69,123,157,.15); color:#457b9d; }
   /* 버튼 — 쇼케이스 btn-primary/secondary */
   .aos-btnp{ display:inline-flex; align-items:center; justify-content:center; gap:8px;
-    padding:12px 28px; border-radius:12px; border:none; font-family:inherit; font-weight:700; font-size:15px;
+    padding:12px 28px; border-radius:2px; border:none; font-family:inherit; font-weight:700; font-size:15px;
     background:#a8442a; color:#fffdf8; box-shadow:0 8px 20px -8px rgba(168,68,42,.6);
     transition:background-color .25s ease, transform .25s ease; }
   .aos-btnp:hover{ background:#7d2f1c; transform:translateY(-1px); }
   .aos-btnp.full{ width:100%; }
   .aos-btnp.sm{ padding:9px 20px; font-size:14px; }
   .aos-btnp.big{ padding:13px 28px; }
-  .aos-btns{ padding:9px 18px; border-radius:10px; border:1px solid #ddd6c8; font-family:inherit;
+  .aos-btns{ padding:9px 18px; border-radius:2px; border:1px solid #ddd6c8; font-family:inherit;
     font-weight:600; font-size:14px; color:#1c1b18; background:#fbf6ea;
     transition:border-color .25s ease, color .25s ease; }
   .aos-btns:hover{ border-color:#a8442a; color:#a8442a; }
   .aos-textbtn{ display:flex; align-items:center; justify-content:center; gap:6px; width:100%;
-    margin-top:10px; padding:9px 0; border:none; border-radius:10px; background:transparent;
+    margin-top:10px; padding:9px 0; border:none; border-radius:2px; background:transparent;
     font-size:13.5px; color:#5f5b53; }
   .aos-textbtn:hover{ background:rgba(28,27,24,.05); }
   .aos-joinrow{ display:flex; gap:8px; }
@@ -681,24 +681,24 @@
   .aos-errslot p{ font-size:12.5px; line-height:20px; color:#dc2626; }
   /* 이어하기 배너 */
   .aos-resume{ position:relative; border:1px solid rgba(168,68,42,.4); background:rgba(168,68,42,.05);
-    border-radius:14px; padding:16px; margin-bottom:24px; }
-  .aos-resume .rx{ position:absolute; top:8px; right:8px; border:none; background:transparent; color:#5f5b53; padding:4px; border-radius:6px; }
+    border-radius:3px; padding:16px; margin-bottom:24px; }
+  .aos-resume .rx{ position:absolute; top:8px; right:8px; border:none; background:transparent; color:#5f5b53; padding:4px; border-radius:2px; }
   .aos-resume .rx:hover{ color:#1c1b18; background:rgba(28,27,24,.1); }
   .aos-resume .t{ font-size:14px; font-weight:700; color:#1c1b18; margin-bottom:4px; padding-right:24px; }
   .aos-resume p{ font-size:12.5px; color:#5f5b53; line-height:1.6; margin-bottom:12px; }
   /* 방 코드 패널 */
-  .aos-codebox{ background:#e9dfc9; border-radius:14px; text-align:center; padding:16px 12px; margin-bottom:16px; }
+  .aos-codebox{ background:#e9dfc9; border-radius:3px; text-align:center; padding:16px 12px; margin-bottom:16px; }
   .aos-codebox .cap{ font-size:12.5px; color:#5f5b53; margin-bottom:4px; }
   .aos-codebox .row{ display:flex; align-items:center; justify-content:center; gap:8px; }
   .aos-codebox .code{ font-size:31px; font-weight:700; letter-spacing:.3em; color:#a8442a; text-indent:.3em; }
-  .aos-codebox .cpy{ border:none; background:transparent; color:#5f5b53; padding:8px; border-radius:10px; }
+  .aos-codebox .cpy{ border:none; background:transparent; color:#5f5b53; padding:8px; border-radius:2px; }
   .aos-codebox .cpy:hover{ background:rgba(28,27,24,.1); }
   .aos-codebox .cpy.ok{ color:#2f6b4f; }
   .aos-codebox .cnt{ display:flex; align-items:center; justify-content:center; gap:5px;
     font-size:12px; color:#66625a; margin-top:4px; }
   /* 대기실 좌석 행 */
   .aos-seats{ display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
-  .aos-seat{ display:flex; align-items:center; gap:8px; padding:9px 13px; border-radius:10px;
+  .aos-seat{ display:flex; align-items:center; gap:8px; padding:9px 13px; border-radius:2px;
     border:1px solid rgba(28,27,24,.1); background:#fbf6ea; font-size:14px; }
   .aos-seat.me{ border-color:#a8442a; background:rgba(168,68,42,.05); }
   .aos-seat .ic-bot{ color:#457b9d; display:inline-flex; }
@@ -724,17 +724,17 @@
   .aos-pubtgl.on{ background:rgba(47,107,79,.15); color:#2f6b4f; }
   .aos-pubtgl:hover{ filter:brightness(.97); }
   /* 공개방 목록 */
-  .aos-pubroom{ display:flex; align-items:center; gap:10px; padding:8px 11px; border-radius:10px;
+  .aos-pubroom{ display:flex; align-items:center; gap:10px; padding:8px 11px; border-radius:2px;
     border:1px solid rgba(28,27,24,.1); background:#fbf6ea; margin-bottom:6px; }
   .aos-pubroom .inf{ flex:1; min-width:0; }
   .aos-pubroom .t{ font-size:13px; font-weight:700; color:#1c1b18; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .aos-pubroom .d{ font-size:11.5px; color:#5f5b53; }
-  .aos-pubjoin{ border:none; border-radius:8px; padding:6px 14px; font-size:12.5px; font-weight:700;
+  .aos-pubjoin{ border:none; border-radius:2px; padding:6px 14px; font-size:12.5px; font-weight:700;
     background:rgba(168,68,42,.12); color:#7d2f1c; }
   .aos-pubjoin:hover{ background:rgba(168,68,42,.22); }
   .aos-pubjoin:disabled{ opacity:.5; cursor:not-allowed; }
   /* 대기실 채팅 */
-  .aos-chat{ border:1px solid rgba(28,27,24,.1); border-radius:10px; background:#fbf6ea;
+  .aos-chat{ border:1px solid rgba(28,27,24,.1); border-radius:2px; background:#fbf6ea;
     margin-bottom:16px; overflow:hidden; }
   .aos-chat .list{ max-height:128px; min-height:56px; overflow-y:auto; padding:8px 10px;
     display:flex; flex-direction:column; gap:4px; }
@@ -746,7 +746,7 @@
   .aos-chat .in button:hover{ color:#a8442a; }
   /* 시작 대기 상태 버튼 */
   .aos-startwait{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
-    padding:13px 16px; border-radius:12px; border:none; background:#e9dfc9; color:#66625a;
+    padding:13px 16px; border-radius:2px; border:none; background:#e9dfc9; color:#66625a;
     font-size:13.5px; font-weight:600; text-align:center; line-height:1.5; }
   .aos-startwait.center{ cursor:default; }
   .aos-spin{ display:inline-flex; animation:aosspin 1s linear infinite; }
