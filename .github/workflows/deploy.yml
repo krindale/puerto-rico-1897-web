@@ -32,14 +32,11 @@ jobs:
           mkdir -p _site/img
           cp index.html game.html _site/
           cp -r css js _site/
-          # 이미지는 WebP 무손실 변환본만 올린다 (PNG 원본은 저장소 보관 — 전송량 43% 절감).
-          # webp가 없는 파일은 png를 그대로 올려 imgTag의 폴백이 동작하게 한다.
-          for f in img/*; do
-            case "$f" in
-              *.png) [ -f "${f%.png}.webp" ] || cp "$f" _site/img/ ;;
-              *)     cp "$f" _site/img/ ;;
-            esac
-          done
+          # 이미지는 webp·png를 **둘 다** 올린다.
+          # 브라우저가 실제로 받는 건 webp뿐이라(imgTag가 webp를 먼저 요청) 전송량은 그대로지만,
+          # png를 빼면 imgTag의 "webp 없으면 png" 폴백이 배포본에서만 404가 되어 이미지가 통째로
+          # 사라진다 (실제 사고: 역할 선택 카드가 배포본에서만 안 보였음).
+          cp -r img/. _site/img/
 
       - name: Pages 설정 (처음 실행 시 자동 활성화)
         uses: actions/configure-pages@v5
