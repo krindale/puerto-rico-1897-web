@@ -445,7 +445,9 @@ function render(){
     // 결과 보고: [확인]을 누를 때까지 게임이 기다린다 (바깥 클릭도 확인으로 취급).
     // stage 보고(선적·판매)는 진행 패널과 같은 크기·레이아웃 — 패널이 이어지는 것처럼 보인다.
     // 헤더를 진행 창과 동일 구조(제목+부제+버튼)로 맞춰야 전환 때 헤더 높이가 튀지 않는다
-    panelPop='<div class="overlay panel-ov'+(panelJustOpened?' pop':'')+'" onclick="if(event.target===this)actReportDone()">'
+    // 결과 보고는 항상 등장 애니메이션 — 단계 진행 패널이 떠 있던 자리를 대체할 때(justOpened=false)도
+    // "이제 결과 창"이라는 전환이 눈에 보여야 한다 (내용이 상수라 pop이 반복 재생되지는 않는다)
+    panelPop='<div class="overlay panel-ov pop" onclick="if(event.target===this)actReportDone()">'
       +'<div class="modal act-modal report'+(pd.stage?' stage':'')+'">'
       +'<div class="shop-modal-h"><h2>'+pd.title+'</h2><span class="ap-sub">결과를 확인하세요</span>'
       +'<button class="btn-ghost" onclick="actReportDone()">확인 ✓</button></div>'

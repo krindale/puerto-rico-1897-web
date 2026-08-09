@@ -134,9 +134,9 @@ function shownBoard(){
   if(!G) return 0;
   if(uiBoardSel!==null) return uiBoardSel;
   const pd=G.pending;
-  // 중앙 패널이 떠 있는 단계(선적·저장·판매·생산 혜택·결과 보고)에는 개인 보드를 움직이지 않는다 —
+  // 중앙 패널이 떠 있는 단계(선적·저장·판매·생산 혜택·결과 보고·단계 마무리)에는 개인 보드를 움직이지 않는다 —
   // 패널 뒤에서 보드 아코디언이 전환되면 화면 전체가 흔들려 보인다
-  if(pd&&(pd.type==='captain'||pd.type==='storage'||pd.type==='trader'||pd.type==='craftBonus'||pd.type==='report')){
+  if(pd&&(pd.type==='captain'||pd.type==='storage'||pd.type==='trader'||pd.type==='craftBonus'||pd.type==='report'||pd.type==='phaseEnd')){
     const h=G.players.find(q=>!q.ai);
     return h?h.i:G.governor;
   }
@@ -164,6 +164,8 @@ function panelVisibleNow(){
   if(uiPanelOpen!==null) return uiPanelOpen;
   // 선적(저장 포함)·판매·생산 혜택은 봇 차례에도 패널을 유지한다 — 전원의 진행 상황을 그 안에서 보여준다
   if((pd.type==='captain'||pd.type==='storage'||pd.type==='trader'||pd.type==='craftBonus')&&G.players.some(q=>!q.ai)) return true;
+  // 단계 마무리 일시정지: 패널 단계였다면 마지막 행동이 보이도록 패널을 그대로 띄워 둔다
+  if(pd.type==='phaseEnd') return (pd.id==='captain'||pd.id==='trader'||pd.id==='craft')&&G.players.some(q=>!q.ai);
   const hp=humanPend();
   return !!hp && !!PANEL_TYPES[hp.type];
 }

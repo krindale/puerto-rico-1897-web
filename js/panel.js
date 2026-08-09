@@ -21,7 +21,7 @@ function panelHistHtml(F){
   return rows?'<div class="ap-hist"><div class="ap-sec-h">이번 단계 진행</div>'+rows+'</div>':'';
 }
 function renderActionPanel(pd, justOpened){
-  const p=P(pd.player); const F=G.phase;
+  const p=(pd.player!==undefined)?P(pd.player):null; const F=G.phase;  // phaseEnd에는 행동할 사람이 없다
   let title='', body='';
   if(pd.type==='pickRole'){
     title='역할 선택';
@@ -311,10 +311,51 @@ function renderActionPanel(pd, justOpened){
       +'<div class="ap-col"><div class="ap-col-h">② 수송선</div><div class="ap-ships vert">'+shipCards+'</div></div>'
       +'</div>';
   }
+  else if(pd.type==='phaseEnd'){
+    // 단계 마무리 일시정지 — 마지막 행동이 반영된 진행 상황을 잠깐 보여준 뒤(schedule의 PHASE_END_HOLD)
+    // 결과 창으로 넘어간다. 버튼 없는 관전용 화면이므로 pd에 행동 정보가 없어도 그릴 수 있어야 한다.
+    const F2=G.phase||{};
+    if(pd.id==='craft'){
+      title='생산 단계';
+      body='<div class="ap-msg">모두 생산을 마쳤습니다…</div>'
+        +craftStageHtml(F2.prod||[], F2.bonusTaken?{turnPi:F2.bonusPi, extra:'<div class="ap-prow"><span class="dim">생산자 혜택</span><span class="ap-g">'+goodChip(F2.bonusTaken)+'+1</span></div>'}:{});
+    } else {
+      title=(pd.id==='captain')?'선적 단계':'판매 단계';
+      const plist=G.players.map(q=>{
+        const chips=GTYPES.filter(t=>q.goods[t]>0).map(t=>'<span class="ap-g">'+goodChip(t)+'×'+q.goods[t]+'</span>').join('')
+          ||'<span class="dim">상품 없음</span>';
+        return '<div class="ap-pl'+pfxCls('plcard-'+q.i,'pfx-card')+'" style="--pc:'+PCOLOR[q.i]+'">'
+          +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)+'</div>'
+          +'<div class="ap-prow">'+chips+'</div></div>';
+      }).join('');
+      // 방금 실린 칸의 팝 이펙트(markPanelFx)가 이 화면에서 재생된다 — 진행 패널과 같은 마크업
+      const slotsOf=(s,si)=>{
+        let out='';
+        for(let i=0;i<s.size;i++)
+          out+= i<s.count?'<span class="ap-shipslot'+pfxCls('shipslot-'+si+'-'+i,'pfx-pop')+'">'+goodChip(s.type)+'</span>':'<span class="ap-shipslot"></span>';
+        return '<div class="ap-shipslots">'+out+'</div>';
+      };
+      const right=(pd.id==='captain')
+        ?'<div class="ap-ships vert">'+G.supply.ships.map((s,si)=>
+            '<div class="ap-ship'+pfxCls('ship-'+si,'pfx-card')+'"><div class="hd"><b>'+s.size+'칸 수송선</b>'
+            +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+' '+s.count+'/'+s.size+'</span>':'<span class="free">비어 있음</span>')
+            +'</div>'+slotsOf(s,si)+'</div>').join('')+'</div>'
+        :'<div class="ap-slots">'
+          +G.supply.market.map((t,i)=>'<div class="ap-slot'+pfxCls('mktslot-'+i,'pfx-pop')+'">'+goodChip(t)+'</div>').join('')
+          +Array(4-G.supply.market.length).fill('<div class="ap-slot"></div>').join('')+'</div>';
+      body='<div class="ap-msg">'+(pd.id==='captain'?'모두 선적을 마쳤습니다…':'모두 판매를 마쳤습니다…')+'</div>'
+        +'<div class="ap-cols">'
+        +'<div class="ap-col"><div class="ap-col-h">① 플레이어 상품</div><div class="ap-pls">'+plist+'</div></div>'
+        +'<div class="ap-col"><div class="ap-col-h">② '+(pd.id==='captain'?'수송선':'상점 (최대 4칸)')+'</div>'+right+'</div>'
+        +'</div>'
+        +panelHistHtml(F2);
+    }
+  }
   // stage(선적·판매): 단계 내내 떠 있으므로 높이를 고정 — 내용이 바뀌어도 패널 크기가 출렁이지 않게
   return '<div class="overlay panel-ov'+(justOpened?' pop':'')+'" onclick="if(event.target===this)uiTogglePanel()">'
-    +'<div class="modal act-modal'+(pd.type==='pickRole'?' wide':'')+((pd.type==='captain'||pd.type==='storage'||pd.type==='trader'||pd.type==='craftBonus')?' stage':'')+'">'
-    +'<div class="shop-modal-h"><h2>'+title+'</h2><span class="ap-sub" style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+' 차례</span>'
+    +'<div class="modal act-modal'+(pd.type==='pickRole'?' wide':'')+((pd.type==='captain'||pd.type==='storage'||pd.type==='trader'||pd.type==='craftBonus'||pd.type==='phaseEnd')?' stage':'')+'">'
+    +'<div class="shop-modal-h"><h2>'+title+'</h2>'
+    +(p?'<span class="ap-sub" style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+' 차례</span>':'<span class="ap-sub">단계 마무리…</span>')
     +'<button class="btn-ghost" onclick="uiTogglePanel()">닫기 ✕</button></div>'
     +body
     +'</div></div>';

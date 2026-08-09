@@ -107,7 +107,13 @@ G = {
 - `G.pending` — **지금 누가 무엇을 결정해야 하는가**. 이게 없으면 게임은 멈춰 있는 상태.
 
 `pending.type` 목록: `pickRole` · `settler` · `mayorPlace` · `builder` · `craftBonus` ·
-`trader` · `captain` · `storage` · `gameOver`
+`trader` · `captain` · `storage` · `report` · `phaseEnd` · `gameOver`
+
+`phaseEnd`는 **단계 마무리 일시정지**입니다 — 각 단계의 마지막 행동 직후 1초(`PHASE_END_HOLD`, app.js)
+멈췄다가 `actPhaseEnd()`가 실제 마무리(`xxxFinish()`: 결과 보고·다음 차례)를 실행합니다.
+마지막 행동과 결과 창이 같은 프레임에 겹쳐 "무슨 일이 있었는지 안 보이는" 문제를 막기 위한 것으로,
+pending이므로 직렬화되고 새로고침해도 `schedule()`이 타이머를 다시 겁니다.
+새 단계를 추가하면 끝 지점에서 `phasePause(id)`를 부르고 `actPhaseEnd()`에 분기를 추가하세요.
 
 각 단계는 `xxxNext()` (다음 차례 사람에게 `pending` 을 넘기거나, 다 돌았으면 `xxxEnd()`)와
 `actXxx()` (사람/AI 양쪽이 호출하는 **유일한** 행동 진입점) 쌍으로 되어 있습니다.
