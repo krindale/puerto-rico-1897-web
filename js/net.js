@@ -43,7 +43,7 @@ async function netAuth(){
 function netMkCode(){ let c=''; for(let i=0;i<6;i++) c+=NET_CODE_CHARS[Math.floor(Math.random()*NET_CODE_CHARS.length)]; return c; }
 
 /* ── 방 만들기 (호스트) ── */
-async function netCreateRoom(myName, n, seatKinds){
+async function netCreateRoom(myName, n, seatKinds, isPublic, title){
   // seatKinds: 좌석 1..n-1의 'ai'|'human' (0번은 항상 나)
   NET.err=''; NET.status='connecting'; NET.myName=myName; renderSetup();
   try{
@@ -59,7 +59,8 @@ async function netCreateRoom(myName, n, seatKinds){
     let row=null;
     for(let t=0;t<4;t++){  // 코드 충돌 시 재생성
       const { data, error }=await sb.from('rooms').insert({
-        code:netMkCode(), map_id:NET_MAP_ID, is_public:false, status:'waiting',
+        code:netMkCode(), map_id:NET_MAP_ID, is_public:!!isPublic, status:'waiting',
+        title:isPublic?String(title||myName+'의 방').trim().slice(0,60):null,
         seats, host_client_id:cid, host_uid:NET.uid, participant_uids:[NET.uid],
       }).select().single();
       if(!error){ row=data; break; }
@@ -97,6 +98,17 @@ async function netJoinRoom(code, myName){
       }
     });
   }catch(e){ NET.err=e.message; NET.status='idle'; NET.on=false; renderSetup(); }
+}
+
+/* ── 공개방 목록 — 대기 중 + 최근 2분 내 활동(호스트 하트비트 45초)만 살아 있는 방으로 본다 ── */
+async function netListPublicRooms(){
+  if(!netConfigured()) return [];
+  try{
+    const { data }=await netClient().from('public_rooms').select('*')
+      .eq('map_id', NET_MAP_ID).order('updated_at', {ascending:false}).limit(20);
+    NET.pubRooms=(data||[]).filter(r=>Date.now()-new Date(r.updated_at).getTime()<120000);
+  }catch(e){ NET.pubRooms=NET.pubRooms||[]; }
+  return NET.pubRooms;
 }
 
 function netSaveSession(){ try{ lsSet('pr1897_net_room', JSON.stringify({code:NET.room.code, name:NET.myName})); }catch(e){} }

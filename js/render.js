@@ -67,10 +67,37 @@ function uiSetupToggle(i){ setupKinds[i]=(setupKinds[i]==='ai')?'human':'ai'; re
 /* ═══ 설정·대기실 — aos_showcase의 설정 카드(GamePageClient) + OnlineLobby를 그대로 이식 ═══
    디자인 토큰까지 동일: 페이지 #efece4 · 카드 #faf8f3 (r18px) · 버밀리언 #c04a2b · 잉크 #1c1b18.
    이 화면들에서는 게임의 양피지 배경·프레임을 끈다(body.aos-setup — aosFrame이 켜고, 게임 render()가 끈다). */
-let setupMode='local';
+let setupMode='online';   // 온라인 멀티가 기본 탭 (사용자 결정)
+let setupPublic=true;     // 방 공개가 기본 — 공개방 목록에 노출, 스위치로 비공개 전환
+let setupTitle='';
 function uiSetupMode(m){
   if(typeof NET!=='undefined'&&NET.on){ if(m==='local') uiNetLeave(); return; }
   setupMode=m; renderSetup();
+}
+function uiSetupPublic(){ setupPublic=!setupPublic; renderSetup(); }
+/* 공개방 목록 8초 폴링 — 온라인 폼이 보이는 동안만 (쇼케이스와 같은 주기) */
+let pubT=0;
+function pubPoll(){
+  clearTimeout(pubT);
+  if(setupMode!=='online'||typeof NET==='undefined'||NET.on||!netConfigured()||!document.getElementById('aos-publist')) return;
+  netListPublicRooms().then(()=>{
+    const el=document.getElementById('aos-publist');
+    if(el){ el.innerHTML=pubListHtml(); pubT=setTimeout(pubPoll, 8000); }
+  });
+}
+function pubListHtml(){
+  const rooms=(typeof NET!=='undefined'&&NET.pubRooms)||[];
+  if(!rooms.length) return '<div class="aos-dim center" style="text-align:center;padding:10px 0">대기 중인 공개방이 없습니다</div>';
+  return rooms.map(r=>{
+    const seated=r.seats.filter(s=>s.kind==='human'&&s.clientId).length;
+    const aiN=r.seats.filter(s=>s.kind==='ai').length;
+    const full=!r.seats.some(s=>s.kind==='human'&&!s.clientId);
+    return '<div class="aos-pubroom">'
+      +'<div class="inf"><div class="t">'+esc(r.title||r.code)+'</div>'
+      +'<div class="d">'+(seated+aiN)+'/'+r.seats.length+'명'+(aiN>0?' (AI '+aiN+')':'')+'</div></div>'
+      +'<button class="aos-pubjoin"'+(full?' disabled':'')+' onclick="netJoinRoom(\''+esc(r.code)+'\', (setupName||\'게스트\').trim())">'+(full?'만석':'입장')+'</button>'
+      +'</div>';
+  }).join('');
 }
 /* lucide 아이콘 (MIT) — 쇼케이스가 쓰는 것과 같은 세트를 인라인 SVG로 */
 function aosIcon(n,s,fill){
@@ -132,11 +159,13 @@ function aosFrame(cardHtml){
   return '<div class="aos-wrap">'
     +'<div class="aos-card aos-main">'+cardHtml+'</div>'
     +'<aside class="aos-card aos-rules">'
-      +'<h3>푸에르토리코 1897</h3>'
-      +'<p class="sub">처음이라면 이 세 가지만 알면 됩니다.</p>'
-      +'<div class="it"><b>목표</b><p>승점을 가장 많이 모으면 승리 — 선적(상품 1개=1점) + 건물 승점 + 고급 건물 보너스.</p></div>'
-      +'<div class="it"><b>라운드 진행</b><p>주지사부터 돌아가며 역할을 하나씩 고릅니다. 행동은 전원이 하고, 특별 혜택은 고른 사람만 받습니다.</p></div>'
-      +'<div class="it"><b>게임 종료</b><p>일꾼 보충 불가 · 건설 부지 12칸 완성 · 승점 칩 소진 — 셋 중 하나면 그 라운드로 끝납니다.</p></div>'
+      +'<h3>푸에르토리코 전략</h3>'
+      +'<p class="sub">이기고 싶다면 이 감각부터.</p>'
+      +'<div class="it"><b>옥수수 선적 러시</b><p>옥수수는 공장 없이 농장만으로 생산됩니다. 초반부터 옥수수를 모아 꾸준히 선적하면 승점이 차곡차곡 — 항구(선적마다 +1점)·조선소와 만나면 폭발합니다.</p></div>'
+      +'<div class="it"><b>고가품 생산 경제</b><p>담배(3주화)·커피(4주화)는 팔았을 때 돈이 됩니다. 공장을 갖추고 상인으로 주화를 벌어 고급 건물(10주화)로 마무리하는 장기 플랜.</p></div>'
+      +'<div class="it"><b>채석장 건설 우위</b><p>초반 채석장 2~3개를 점유하면 건물이 사실상 반값 — 공업소·학교·항구 같은 좋은 건물을 남보다 먼저 세웁니다.</p></div>'
+      +'<div class="it"><b>역할은 "나만 좋게"</b><p>역할 행동은 전원이 합니다. 내가 크게 얻고 상대는 조금 얻는 타이밍에 고르세요 — 상대 커피가 쌓여 있을 때의 선장 선택은 남 좋은 일입니다.</p></div>'
+      +'<div class="it"><b>선적은 의무</b><p>선장 단계에선 실을 수 있으면 반드시 싣고, 남은 상품은 창고 없이는 1개 빼고 반납됩니다. 상대의 상점 자리·수송선 종류를 보고 생산량을 조절하세요.</p></div>'
     +'</aside>'
     +'</div>';
 }
@@ -153,7 +182,16 @@ function renderSetup(){
       '<div class="aos-label">'+icCrown(16)+' 내 이름</div>'
       +'<input class="aos-input" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" placeholder="이름">'
       +'<div class="aos-box">'
-        +'<div class="aos-box-h"><span>방 만들기</span><span class="aos-priv">비공개 · 코드로만 입장</span></div>'
+        +'<div class="aos-box-h"><span>방 만들기</span>'
+          /* 공개/비공개 스위치 — 공개가 기본 (공개방 목록에 노출) */
+          +'<button class="aos-pubtgl'+(setupPublic?' on':'')+'" onclick="uiSetupPublic()" '
+          +'title="'+(setupPublic?'공개방 (목록에 노출)':'비공개 (코드로만 입장)')+'">'
+          +(setupPublic?'공개':'비공개')+'</button>'
+        +'</div>'
+        +(setupPublic
+          ?'<input class="aos-input" style="margin-bottom:12px" type="text" maxlength="20" value="'+escAttr(setupTitle)+'" '
+            +'placeholder="방 제목 (기본: '+escAttr((setupName||'호스트').trim())+'의 방)" onchange="setupTitle=this.value">'
+          :'')
         +aosPills()
         +aosSeatFormRows(true)
         +'<button class="aos-btnp full" onclick="uiNetCreate()">방 만들기 (코드 발급)</button>'
@@ -167,6 +205,10 @@ function renderSetup(){
         +'</div>'
         /* 실패 사유는 입력 바로 아래 + 자리 선확보 — 나타나도 레이아웃이 안 움직인다 (쇼케이스 규칙) */
         +'<div class="aos-errslot">'+(typeof NET!=='undefined'&&NET.err?'<p>'+esc(NET.err)+'</p>':'')+'</div>'
+      +'</div>'
+      +'<div class="aos-box">'
+        +'<div class="aos-box-h"><span>공개방</span></div>'
+        +'<div id="aos-publist">'+pubListHtml()+'</div>'
       +'</div>'
       +(netSess?'<button class="aos-textbtn" onclick="uiNetResume()">진행하던 온라인 게임 이어서 하기 ('+esc(netSess.code)+')</button>':'');
   } else if(online){
@@ -193,9 +235,11 @@ function renderSetup(){
     +(netOK?aosTabs(online):'')
     +body
   );
+  if(online&&netOK) pubPoll();   // 공개방 목록 8초 폴링 시작 (온라인 폼이 보이는 동안만)
 }
 function uiNetCreate(){
-  netCreateRoom((setupName||'플레이어').trim(), setupN, setupKinds.slice());
+  clearTimeout(pubT);
+  netCreateRoom((setupName||'플레이어').trim(), setupN, setupKinds.slice(), setupPublic, setupTitle.trim());
 }
 function uiNetJoin(){
   const inp=document.getElementById('s2-code');
