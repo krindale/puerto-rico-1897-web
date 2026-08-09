@@ -64,91 +64,133 @@ let setupN=4;
 let setupKinds=['me','ai','ai','ai','ai'];   // 좌석 0=나 고정, 1~4는 'ai'|'human'(친구·같은 기기)
 function uiSetupCount(n){ setupN=n; renderSetup(); }
 function uiSetupToggle(i){ setupKinds[i]=(setupKinds[i]==='ai')?'human':'ai'; renderSetup(); }
-/* 좌석 아이콘 — aos_showcase와 같은 lucide 아이콘(User/Bot/Users)을 인라인 SVG로 (MIT, 의존성 없음) */
-const S2_ICON={
-  user:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-  bot:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>',
-  users:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-};
-/* 설정·대기실 공통 프레임: [메인 카드 | 요약 규칙 카드] — aos_showcase 대기실 화면과 같은 구조 */
-let setupMode='local';   // 'local' | 'online' (뷰 상태)
+/* ═══ 설정·대기실 — aos_showcase의 설정 카드(GamePageClient) + OnlineLobby를 그대로 이식 ═══
+   디자인 토큰까지 동일: 페이지 #efece4 · 카드 #faf8f3 (r18px) · 버밀리언 #c04a2b · 잉크 #1c1b18.
+   이 화면들에서는 게임의 양피지 배경·프레임을 끈다(body.aos-setup — aosFrame이 켜고, 게임 render()가 끈다). */
+let setupMode='local';
 function uiSetupMode(m){
-  if(typeof NET!=='undefined'&&NET.on){ if(m==='local') uiNetLeave(); return; }  // 방에 있으면 로컬 전환 = 나가기
+  if(typeof NET!=='undefined'&&NET.on){ if(m==='local') uiNetLeave(); return; }
   setupMode=m; renderSetup();
 }
-function s2Frame(mainHtml){
-  return '<div class="setup2 lb2">'
-    +'<div class="s2-top">'+backBtnHtml()+'</div>'
-    +'<div class="lb2-grid">'
-    +'<section class="lb2-card">'+mainHtml+'</section>'
-    +'<aside class="lb2-info">'
-      +'<h3>푸에르토리코 1897</h3>'
-      +'<p class="lead">규칙을 몰라도 화면이 안내합니다. 핵심만 미리 본다면:</p>'
-      +'<div class="it"><b>목표</b>승점을 가장 많이 — 선적(상품 1개=1점) + 건물 승점 + 고급 건물 보너스.</div>'
-      +'<div class="it"><b>라운드</b>주지사부터 역할을 하나씩 고릅니다. 행동은 전원이, 특별 혜택은 고른 사람만.</div>'
-      +'<div class="it"><b>종료</b>일꾼 부족 · 건설 부지 12칸 완성 · 승점 칩 소진 — 셋 중 하나면 그 라운드로 끝.</div>'
-      +'<div class="it"><b>2~5인</b>인원에 따라 시작 자원·수송선이 달라집니다. 빈자리는 AI가 채웁니다.</div>'
-    +'</aside>'
-    +'</div>'
-    +(storageBlocked?'<div class="hint center" style="color:var(--accent)">이 브라우저에서는 저장이 막혀 있어 <b>새로고침하면 진행 중인 게임이 사라집니다</b>.</div>':'')
-    +'<div class="hint s2-stamp center">파일 '+fileStamp()+' — 고친 내용이 안 보이면 ⇧⌘R</div>'
-    +'</div>';
+/* lucide 아이콘 (MIT) — 쇼케이스가 쓰는 것과 같은 세트를 인라인 SVG로 */
+function aosIcon(n,s,fill){
+  const P={
+    crown:'<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.735H5.81a1 1 0 0 1-.957-.735L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/>',
+    star:'<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
+    user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    bot:'<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+    wifi:'<path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/>',
+    wifioff:'<path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/>',
+    copy:'<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+    check:'<path d="M20 6 9 17l-5-5"/>',
+    pencil:'<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+    send:'<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+    play:'<polygon points="6 3 20 12 6 21 6 3"/>',
+    logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+    x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    swap:'<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
+    loader:'<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+  };
+  return '<svg width="'+(s||15)+'" height="'+(s||15)+'" viewBox="0 0 24 24" fill="'+(fill||'none')+'" stroke="currentColor" stroke-width="'+(fill?1.8:2)+'" stroke-linecap="round" stroke-linejoin="round">'+(P[n]||'')+'</svg>';
 }
-function s2ModeToggle(online){
-  return '<div class="lb2-modes">'
+/* 왕관·별은 쇼케이스처럼 금색 채움 + 짙은 획 */
+const AOS_GOLD='#E8B33C';
+function icCrown(s){ return '<span class="ic-ink">'+aosIcon('crown',s||16,AOS_GOLD)+'</span>'; }
+function icStar(s){ return '<span class="ic-ink">'+aosIcon('star',s||14,AOS_GOLD)+'</span>'; }
+
+function aosPills(){
+  return '<div class="aos-pills">'+[2,3,4,5].map(n=>
+    '<button class="aos-pill'+(n===setupN?' on':'')+'" onclick="uiSetupCount('+n+')">'+n+'인</button>').join('')+'</div>';
+}
+/* 자리 구성 폼 (로컬·온라인 방 만들기 공용) — 쇼케이스의 좌석 리스트와 같은 행 구조 */
+function aosSeatFormRows(online){
+  let rows='';
+  for(let i=0;i<setupN;i++){
+    if(i===0){
+      rows+='<div class="aos-seatform">'+icCrown(16)
+        +'<input class="aos-input name" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" placeholder="이름">'
+        +'<span class="aos-accent">(나'+(online?' · 호스트':'')+')</span></div>';
+    } else {
+      const isAi=setupKinds[i]==='ai';
+      rows+='<div class="aos-seatform"><span class="aos-seatlabel">자리 '+(i+1)+'</span>'
+        +'<button class="aos-chip'+(isAi?' bot':'')+'" onclick="uiSetupToggle('+i+')" title="눌러서 전환">'
+        +(isAi?aosIcon('bot',14):aosIcon('user',14,'currentColor'))+' '+(isAi?'BOT':(online?'친구 자리':'사람 (한 기기)'))+'</button></div>';
+    }
+  }
+  return '<div class="aos-seatforms">'+rows+'</div>';
+}
+function aosTabs(online){
+  return '<div class="aos-tabs">'
     +'<button class="'+(online?'':'on')+'" onclick="uiSetupMode(\'local\')">로컬 (한 기기)</button>'
     +'<button class="'+(online?'on':'')+'" onclick="uiSetupMode(\'online\')">온라인 멀티</button>'
     +'</div>';
 }
-function s2CountPills(){
-  return '<div class="lb2-count"><span>인원</span>'
-    +[2,3,4,5].map(n=>'<button class="s2-pill'+(n===setupN?' on':'')+'" onclick="uiSetupCount('+n+')">'+n+'인</button>').join('')
+/* 화면 프레임: [메인 카드 | 게임 요약 카드] — 쇼케이스 게임 셋업 화면의 2단 배치 */
+function aosFrame(cardHtml){
+  if(typeof document!=='undefined'&&document.body&&document.body.classList) document.body.classList.add('aos-setup');
+  return '<div class="aos-wrap">'
+    +'<div class="aos-card aos-main">'+cardHtml+'</div>'
+    +'<aside class="aos-card aos-rules">'
+      +'<h3>푸에르토리코 1897</h3>'
+      +'<p class="sub">처음이라면 이 세 가지만 알면 됩니다.</p>'
+      +'<div class="it"><b>목표</b><p>승점을 가장 많이 모으면 승리 — 선적(상품 1개=1점) + 건물 승점 + 고급 건물 보너스.</p></div>'
+      +'<div class="it"><b>라운드 진행</b><p>주지사부터 돌아가며 역할을 하나씩 고릅니다. 행동은 전원이 하고, 특별 혜택은 고른 사람만 받습니다.</p></div>'
+      +'<div class="it"><b>게임 종료</b><p>일꾼 보충 불가 · 건설 부지 12칸 완성 · 승점 칩 소진 — 셋 중 하나면 그 라운드로 끝납니다.</p></div>'
+    +'</aside>'
     +'</div>';
 }
 function renderSetup(){
-  rdReset();   // 설정 화면은 통짜 렌더 — 게임 스켈레톤·캐시를 비운다
+  rdReset();
   const netOK=typeof netConfigured==='function'&&netConfigured();
-  if(netOK&&typeof NET!=='undefined'&&NET.on&&(NET.status==='lobby'||NET.status==='connecting')){ renderLobby(); return; }
+  if(netOK&&typeof NET!=='undefined'&&NET.on){ renderLobby(); return; }
   const canResume=!!lsGet('pr1897_save');
   const netSess=netOK&&typeof netSavedSession==='function'?netSavedSession():null;
   const online=setupMode==='online';
-  /* 좌석 행 — 0번은 나(이름 입력), 나머지는 AI ↔ 사람/친구 전환 */
-  const seatRows=Array.from({length:setupN},(_,i)=>{
-    if(i===0){
-      return '<div class="lb2-seat me">'+S2_ICON.user
-        +'<input class="lb2-name" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" title="내 이름 — 눌러서 수정">'
-        +'<span class="lb2-badge gold">나</span></div>';
-    }
-    const isAi=setupKinds[i]==='ai';
-    const label=isAi?['AI 가영','AI 나정','AI 도준','AI 민수'][(i-1)%4]:(online?'친구 초대석':'사람 (같은 기기)');
-    return '<div class="lb2-seat'+(isAi?'':' fr')+'">'+(isAi?S2_ICON.bot:S2_ICON.users)
-      +'<span class="nm'+(isAi?' dim':'')+'">'+label+'</span>'
-      +(isAi?'':'<span class="lb2-badge">'+(online?'초대 대기':'번갈아 플레이')+'</span>')
-      +'<button class="lb2-swap" onclick="uiSetupToggle('+i+')" title="'+(isAi?(online?'친구 자리로':'사람 자리로'):'AI로')+' 바꾸기">⇆ '+(isAi?S2_ICON.users:S2_ICON.bot)+'</button>'
-      +'</div>';
-  }).join('');
   let body;
-  if(!online){
-    body=seatRows
-      +'<button class="lb2-start on" onclick="startNewGame()">게임 시작</button>'
-      +(canResume?'<button class="btn-ghost lb2-sub" onclick="resumeGame()">저장된 게임 이어서 하기</button>':'');
-  } else if(!netOK){
-    body='<div class="s2-note" style="margin:14px 2px">이 환경에서는 온라인 기능을 쓸 수 없습니다 (네트워크 모듈 미로드). 로컬 게임은 그대로 즐길 수 있습니다.</div>';
+  if(online&&netOK){
+    body=
+      '<div class="aos-label">'+icCrown(16)+' 내 이름</div>'
+      +'<input class="aos-input" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" placeholder="이름">'
+      +'<div class="aos-box">'
+        +'<div class="aos-box-h"><span>방 만들기</span><span class="aos-priv">비공개 · 코드로만 입장</span></div>'
+        +aosPills()
+        +aosSeatFormRows(true)
+        +'<button class="aos-btnp full" onclick="uiNetCreate()">방 만들기 (코드 발급)</button>'
+      +'</div>'
+      +'<div class="aos-box">'
+        +'<div class="aos-box-h"><span>코드로 입장</span></div>'
+        +'<div class="aos-joinrow">'
+          +'<input class="aos-input mono" id="s2-code" placeholder="방 코드 (예: 7XK2QP)" maxlength="8" '
+          +'oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key===\'Enter\')uiNetJoin()">'
+          +'<button class="aos-btns" onclick="uiNetJoin()">입장</button>'
+        +'</div>'
+        /* 실패 사유는 입력 바로 아래 + 자리 선확보 — 나타나도 레이아웃이 안 움직인다 (쇼케이스 규칙) */
+        +'<div class="aos-errslot">'+(typeof NET!=='undefined'&&NET.err?'<p>'+esc(NET.err)+'</p>':'')+'</div>'
+      +'</div>'
+      +(netSess?'<button class="aos-textbtn" onclick="uiNetResume()">진행하던 온라인 게임 이어서 하기 ('+esc(netSess.code)+')</button>':'');
+  } else if(online){
+    body='<div class="aos-box"><p class="aos-dim">온라인 기능이 설정되지 않은 환경입니다 (네트워크 모듈 미로드). 로컬 게임은 그대로 즐길 수 있습니다.</p></div>';
   } else {
-    body=seatRows
-      +'<button class="lb2-start on" onclick="uiNetCreate()">🌐 방 만들기 — 코드가 생깁니다</button>'
-      +'<div class="s2-div"><span></span>코드가 있다면<span></span></div>'
-      +'<div class="s2-join"><input type="text" id="s2-code" placeholder="방 코드" maxlength="8" '
-        +'oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key===\'Enter\')uiNetJoin()">'
-        +'<button class="btn-ghost" onclick="uiNetJoin()">입장</button></div>'
-      +(netSess?'<button class="btn-ghost lb2-sub" onclick="uiNetResume()">진행하던 온라인 게임 이어서 ('+esc(netSess.code)+')</button>':'')
-      +(typeof NET!=='undefined'&&NET.err?'<div class="s2-err">'+esc(NET.err)+'</div>':'');
+    body=
+      '<div class="aos-label">'+aosIcon('users',16)+' 플레이어 수</div>'
+      +aosPills()
+      +'<div class="aos-label" style="margin-top:20px">'+aosIcon('user',16)+' 자리</div>'
+      +aosSeatFormRows(false)
+      +'<button class="aos-btnp full" style="margin-top:20px" onclick="startNewGame()">게임 시작</button>';
   }
-  $app.innerHTML=s2Frame(
-    '<h2 class="lb2-title">푸에르토리코 <em>1897</em></h2>'
-    +'<div class="lb2-sub">'+setupN+'인 게임'+(online?' · 온라인':'')+'</div>'
-    +s2ModeToggle(online)
-    +s2CountPills()
+  $app.innerHTML=aosFrame(
+    (typeof EMBEDDED!=='undefined'&&EMBEDDED?'<button class="aos-x" onclick="uiBackToIntro()" title="소개로 돌아가기">'+aosIcon('x',20)+'</button>':'')
+    +'<h1>푸에르토리코 1897</h1>'
+    +'<p class="aos-sub">기본 게임 - '+setupN+'인 게임</p>'
+    +(canResume
+      ?'<div class="aos-resume">'
+        +'<button class="rx" onclick="lsDel(\'pr1897_save\');renderSetup()" title="저장된 게임 삭제" aria-label="저장된 게임 삭제">'+aosIcon('x',14)+'</button>'
+        +'<div class="t">진행 중인 게임이 있습니다</div>'
+        +'<p>이어서 하거나, X를 누르면 저장된 게임이 삭제됩니다. 새 게임을 시작해도 기존 게임은 사라집니다.</p>'
+        +'<button class="aos-btnp full sm" onclick="resumeGame()">이어하기</button>'
+      +'</div>':'')
+    +(netOK?aosTabs(online):'')
     +body
   );
 }
@@ -160,11 +202,11 @@ function uiNetJoin(){
   if(!inp||!inp.value.trim()) return;
   netJoinRoom(inp.value.trim().toUpperCase(), (setupName||'게스트').trim());
 }
-/* ── 온라인 대기실 — 방 코드 패널 · 좌석 행(배지·전환) · 인라인 채팅 · 큰 시작 버튼 ── */
+/* ── 온라인 대기실 — OnlineLobby의 대기실 화면 이식 ── */
 function renderLobby(){
   rdReset();
   // presence·방 이벤트로 다시 그려져도 입력 중이던 채팅·이름이 날아가지 않게 값·포커스를 보존한다
-  const keep=['lb-chat-in','lb2-name-in'].map(id=>{
+  const keep=['lb-chat-in','aos-name-in'].map(id=>{
     const el=document.getElementById(id);
     return el?{id, v:el.value, f:document.activeElement===el, s:el.selectionStart}:null;
   }).filter(Boolean);
@@ -174,63 +216,74 @@ function renderLobby(){
     el.value=k.v;
     if(k.f){ el.focus(); try{ el.setSelectionRange(k.s,k.s); }catch(e){} }
   });
+  const head='<h1>푸에르토리코 1897</h1>'
+    +'<p class="aos-sub">기본 게임 - '+(NET.room?NET.room.seats.length:setupN)+'인 게임</p>'
+    +aosTabs(true);
   if(NET.status==='connecting'){
-    $app.innerHTML=s2Frame(
-      '<h2 class="lb2-title">푸에르토리코 <em>1897</em></h2>'
-      +'<div class="lb2-sub">온라인</div>'
-      +s2ModeToggle(true)
-      +'<div class="lb-conn">서버에 연결하는 중<span class="lb-dots"></span></div>');
+    $app.innerHTML=aosFrame(head
+      +'<div class="aos-startwait center"><span class="aos-spin">'+aosIcon('loader',14)+'</span> 서버에 연결하는 중…</div>');
     return;
   }
-  const seats=NET.room.seats;
-  const emptyN=seats.filter(s=>s.kind==='human'&&!s.clientId).length;
+  const seats=NET.room.seats, present=NET.presence;
+  const allReady=seats.every(s=>s.kind==='ai'||(s.clientId&&present.includes(s.clientId)));
   const seatRows=seats.map((s,i)=>{
     const isMe=i===NET.mySeat;
-    const isHost=s.clientId&&s.clientId===NET.room.host_client_id;
-    const online=s.clientId&&NET.presence.includes(s.clientId);
-    let badges='';
-    if(isHost) badges+='<span class="lb2-badge gold">★ 호스트</span>';
-    if(s.kind==='ai') badges+='<span class="lb2-badge">AI</span>';
-    else if(isMe) badges+='<span class="lb2-badge green">접속</span>';
-    else if(s.clientId) badges+=online?'<span class="lb2-badge green">접속</span>':'<span class="lb2-badge red">연결 끊김</span>';
-    else badges+='<span class="lb2-badge">대기 중…</span>';
-    const icon=s.kind==='ai'?S2_ICON.bot:(isHost?'<span class="lb2-crown">👑</span>':S2_ICON.user);
+    const isHostSeat=s.clientId&&s.clientId===NET.room.host_client_id;
+    const online=s.clientId?present.includes(s.clientId):false;
+    // 정체성 아이콘: 나=왕관 / 호스트=별 / 봇 / 사람 (쇼케이스와 동일한 규칙)
+    const icon=isMe?icCrown(16):(isHostSeat?icStar(15):(s.kind==='ai'
+      ?'<span class="ic-bot">'+aosIcon('bot',15)+'</span>'
+      :'<span class="ic-ink">'+aosIcon('user',15,'currentColor')+'</span>'));
     const name=isMe
-      ?'<input class="lb2-name" id="lb2-name-in" type="text" value="'+escAttr(s.name||NET.myName)+'" maxlength="12" onchange="uiNetRename(this.value)" title="내 이름 — 눌러서 수정">'+'<span class="lb2-meark">(나)</span> ✏️'
-      :'<span class="nm'+(s.clientId||s.kind==='ai'?'':' dim')+'">'+(s.name?esc(s.name):'친구 초대석')+'</span>';
-    const swap=(NET.host&&!isMe&&!s.clientId)
-      ?'<button class="lb2-swap" onclick="uiNetToggleSeat('+i+')" title="'+(s.kind==='ai'?'친구 자리로':'AI로')+' 바꾸기">⇆ '+(s.kind==='ai'?S2_ICON.users:S2_ICON.bot)+'</button>':'';
-    return '<div class="lb2-seat'+(isMe?' me':'')+'">'+icon+name+'<span class="lb2-sp"></span>'+badges+swap+'</div>';
+      ?'<span class="aos-seatname"><input class="aos-nameinline" id="aos-name-in" type="text" value="'+escAttr(s.name||NET.myName)+'" maxlength="12" onchange="uiNetRename(this.value)">'
+        +'<span class="aos-accent sm">(나)</span><span class="pencil">'+aosIcon('pencil',12)+'</span></span>'
+      :'<span class="aos-seatname"><span class="nm'+((s.clientId||s.kind==='ai')?'':' dim')+'">'+(s.name?esc(s.name):'친구를 기다리는 자리')+'</span></span>';
+    const hostBadge=isHostSeat?'<span class="aos-badge host">'+icStar(11)+' 호스트</span>':'';
+    let stat='', swap='';
+    if(s.kind==='ai'){
+      if(NET.host) swap='<button class="aos-roundbtn" onclick="uiNetToggleSeat('+i+')" title="사람 자리로 전환 (참가 대기)">'+aosIcon('swap',13)+' '+aosIcon('user',14,'currentColor')+'</button>';
+    } else {
+      if(s.clientId) stat=online
+        ?'<span class="aos-badge on">'+aosIcon('wifi',11)+' 접속</span>'
+        :'<span class="aos-badge off">'+aosIcon('wifioff',11)+' 끊김</span>';
+      else stat='<span class="aos-badge off">대기 중…</span>';
+      if(NET.host&&!isMe&&!online) swap='<button class="aos-roundbtn" onclick="uiNetToggleSeat('+i+')" title="BOT으로 전환">'+aosIcon('swap',13)+' '+aosIcon('bot',14)+'</button>';
+    }
+    return '<div class="aos-seat'+(isMe?' me':'')+'">'+icon+name+hostBadge+stat+swap+'</div>';
   }).join('');
   const start=NET.host
-    ?(emptyN>0
-      ?'<button class="lb2-start" onclick="uiNetStartGame()">▷ 모든 자리가 차야 시작할 수 있어요 (빈자리는 AI로 전환 가능)</button>'
-      :'<button class="lb2-start on" onclick="uiNetStartGame()">게임 시작</button>')
-    :'<div class="lb2-start wait">호스트가 시작하기를 기다리는 중<span class="lb-dots"></span></div>';
-  $app.innerHTML=s2Frame(
-    '<button class="lb2-x" onclick="uiNetLeave()" title="'+(NET.host?'방 닫기':'나가기')+'">✕</button>'
-    +'<h2 class="lb2-title">푸에르토리코 <em>1897</em></h2>'
-    +'<div class="lb2-sub">'+seats.length+'인 게임 · 온라인</div>'
-    +s2ModeToggle(true)
-    +'<div class="lb2-code">'
+    ?'<button class="'+(allReady?'aos-btnp full big':'aos-startwait full')+'" onclick="uiNetStartGame()">'
+      +aosIcon('play',15)+' '+(allReady?'게임 시작':'모든 자리가 차야 시작할 수 있어요 (빈자리는 BOT으로 전환 가능)')+'</button>'
+    :'<div class="aos-startwait center"><span class="aos-spin">'+aosIcon('loader',14)+'</span> 호스트가 시작하기를 기다리는 중…</div>';
+  $app.innerHTML=aosFrame(
+    '<button class="aos-x" onclick="uiNetLeave()" title="방 나가기">'+aosIcon('x',20)+'</button>'
+    +head
+    +'<div class="aos-codebox">'
       +'<div class="cap">방 코드 — 친구에게 공유하세요</div>'
-      +'<div class="code">'+esc(NET.room.code).split('').join(' ')+' <button class="cp" onclick="uiNetCopyCode(this)" title="복사">⧉</button></div>'
-      +'<div class="cnt">📶 접속 '+Math.max(1,NET.presence.length)+'명</div>'
+      +'<div class="row"><span class="code">'+esc(NET.room.code)+'</span>'
+      +'<button class="cpy" onclick="uiNetCopyCode(this)" title="코드 복사">'+aosIcon('copy',16)+'</button></div>'
+      +'<div class="cnt">'+aosIcon('wifi',12)+' 접속 '+Math.max(1,present.length)+'명</div>'
     +'</div>'
-    +seatRows
-    +'<div class="lb2-chat"><div class="hd">대기실 채팅</div>'
+    +'<div class="aos-seats">'+seatRows+'</div>'
+    +'<div class="aos-chat">'
       +'<div class="list" id="lb-chat-list"></div>'
-      +'<div class="cinput"><input id="lb-chat-in" placeholder="메시지…" maxlength="300" onkeydown="uiLobbyChatKey(event)">'
-      +'<button onclick="uiLobbyChatSend()" aria-label="전송">➤</button></div>'
+      +'<div class="in"><input id="lb-chat-in" placeholder="메시지…" maxlength="300" onkeydown="uiLobbyChatKey(event)">'
+      +'<button onclick="uiLobbyChatSend()" aria-label="전송">'+aosIcon('send',14)+'</button></div>'
     +'</div>'
     +start
-    +(NET.err?'<div class="s2-err">'+esc(NET.err)+'</div>':'')
+    +'<button class="aos-textbtn" onclick="uiNetLeave()">'+aosIcon('logout',13)+' 방 나가기</button>'
+    +(NET.err?'<div class="aos-errslot"><p>'+esc(NET.err)+'</p></div>':'')
   );
   netChatRender();
   restoreInputs();
 }
 function uiNetCopyCode(btn){
-  try{ navigator.clipboard.writeText(NET.room.code); btn.textContent='✓'; setTimeout(()=>{ btn.textContent='⧉'; },1500); }catch(e){}
+  try{
+    navigator.clipboard.writeText(NET.room.code);
+    btn.innerHTML=aosIcon('check',16);
+    btn.classList.add('ok');
+    setTimeout(()=>{ btn.innerHTML=aosIcon('copy',16); btn.classList.remove('ok'); },1500);
+  }catch(e){}
 }
 function startNewGame(){
   const seats=[{name:(setupName||'플레이어').trim(), ai:false}];
@@ -250,6 +303,8 @@ function confirmNew(){
 /* 본 게임 렌더 */
 function render(){
   if(!G){ renderSetup(); return; }
+  // 설정·대기실의 크림 페이퍼 배경(aos-setup)을 해제 — 게임은 양피지 테마로
+  if(typeof document!=='undefined'&&document.body&&document.body.classList) document.body.classList.remove('aos-setup');
   const pd=G.pending||{};
   const curPi=(pd.player!==undefined)?pd.player:null;
 

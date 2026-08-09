@@ -259,8 +259,11 @@ function netGuestStart(){
   if(G) render();
 }
 function uiNetStartGame(){
-  const empty=NET.room.seats.filter(s=>s.kind==='human'&&!s.clientId).length;
-  if(empty>0){ NET.err='아직 비어 있는 친구 자리가 '+empty+'개 있습니다. 기다리거나 자리를 AI로 바꾸세요.'; netUiRefresh(); return; }
+  // 시작 조건(쇼케이스와 동일): AI 좌석이거나, 착석자가 "실제 접속 중"이어야 한다 —
+  // 나갔다 안 돌아온 좌석은 미준비로 취급 (그 사람 차례에 게임이 멈춘다)
+  const notReady=NET.room.seats.filter(s=>!(s.kind==='ai'||(s.clientId&&NET.presence.includes(s.clientId)))).length;
+  if(notReady>0){ NET.err='모든 자리가 차야 시작할 수 있어요. 빈자리는 [⇆] 버튼으로 BOT으로 바꿀 수 있습니다.'; netUiRefresh(); return; }
+  NET.err='';
   netHostStart(false);
 }
 /* 대기실: 빈 친구 자리 ↔ AI 전환 (호스트 전용) */
@@ -479,7 +482,7 @@ function netChatRender(){
   if(ll){
     if(ll.dataset.n!==String(NET.chat.length)){
       ll.dataset.n=String(NET.chat.length);
-      ll.innerHTML=msgsHtml()||'<div class="cempty">친구가 들어오면 인사해 보세요</div>';
+      ll.innerHTML=msgsHtml()||'<div class="cempty">대기실 채팅</div>';
       ll.scrollTop=ll.scrollHeight;
     }
     const fab=document.getElementById('pr-chat'); if(fab) fab.remove();  // 대기실에선 플로팅 버튼 숨김

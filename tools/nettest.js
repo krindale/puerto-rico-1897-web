@@ -13,6 +13,7 @@ const ROOT=process.argv[2]||path.join(__dirname,'..');
 /* ── 메모리 버스 + 가짜 rooms 테이블 ── */
 const DB={ rooms:new Map() };            // code → row
 const CHANNELS={};                        // code → [채널 인스턴스들]
+const PRES={};                            // code → Set(clientId) — presence 흉내
 let uidN=0;
 
 function fakeSupabaseFor(label){
@@ -21,13 +22,15 @@ function fakeSupabaseFor(label){
       async getSession(){ return { data:{ session:null } }; },
       async signInAnonymously(){ return { data:{ user:{ id:'uid-'+label+'-'+(++uidN) } }, error:null }; },
     },
-    channel(name){
+    channel(name, opts){
       const code=name.replace('room:','');
-      const ch={ code, handlers:{}, label,
+      const key=opts&&opts.config&&opts.config.presence?opts.config.presence.key:label;
+      const syncAll=()=>setImmediate(()=>{ (CHANNELS[code]||[]).forEach(o=>{ if(o.handlers.presence) o.handlers.presence(); }); });
+      const ch={ code, key, handlers:{}, label,
         on(type, filt, cb){ ch.handlers[type==='presence'?'presence':filt.event]=cb; return ch; },
         subscribe(cb){ (CHANNELS[code]=CHANNELS[code]||[]).push(ch); if(cb) cb('SUBSCRIBED'); return ch; },
-        async track(){},
-        presenceState(){ return {}; },
+        async track(){ (PRES[code]=PRES[code]||new Set()).add(key); syncAll(); },
+        presenceState(){ const o={}; (PRES[code]||new Set()).forEach(k=>o[k]=[{}]); return o; },
         send({event, payload}){  // self=false — 다른 쪽에만 전달
           const msg=JSON.parse(JSON.stringify(payload));  // 실제 전송처럼 구조 복사 (참조 공유 버그 검출)
           setImmediate(()=>{ (CHANNELS[code]||[]).forEach(o=>{ if(o!==ch&&o.handlers[event]) o.handlers[event]({ payload:msg }); }); });
@@ -35,7 +38,10 @@ function fakeSupabaseFor(label){
       };
       return ch;
     },
-    removeChannel(ch){ const a=CHANNELS[ch.code]||[]; const i=a.indexOf(ch); if(i>=0) a.splice(i,1); },
+    removeChannel(ch){
+      const a=CHANNELS[ch.code]||[]; const i=a.indexOf(ch); if(i>=0) a.splice(i,1);
+      if(PRES[ch.code]) PRES[ch.code].delete(ch.key);
+    },
     from(){ return {
       insert(row){ return { select(){ return { async single(){
         row.id='room-'+row.code; DB.rooms.set(row.code, row); return { data:JSON.parse(JSON.stringify(row)), error:null };
