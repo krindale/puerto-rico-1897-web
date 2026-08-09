@@ -329,6 +329,10 @@ function renderActionPanel(pd){
       title='생산 단계';
       body='<div class="ap-msg">모두 생산을 마쳤습니다…</div>'
         +craftStageHtml(F2.prod||[], F2.bonusTaken?{turnPi:F2.bonusPi, extra:'<div class="ap-prow"><span class="dim">생산자 혜택</span><span class="ap-g">'+goodChip(F2.bonusTaken)+'+1</span></div>'}:{});
+    } else if(pd.id!=='captain'&&pd.id!=='trader'){
+      // 개척·모집·건설 마무리(0.3초) — 보통 패널이 닫혀 있지만, 열어둔 채라면 간단한 안내만
+      title={settler:'개척 단계',mayor:'모집 단계',builder:'건설 단계'}[pd.id]||'단계 마무리';
+      body='<div class="ap-msg">단계가 끝났습니다. 다음 역할 선택으로 넘어갑니다…</div>'+panelHistHtml(F2);
     } else {
       title=(pd.id==='captain')?'선적 단계':'판매 단계';
       const plist=G.players.map(q=>{
