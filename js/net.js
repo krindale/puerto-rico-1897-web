@@ -284,7 +284,10 @@ async function uiNetToggleSeat(i){
   const s=NET.room.seats[i];
   if(!s||s.clientId) return;   // 사람이 앉은 자리는 못 바꾼다
   const toAi=s.kind!=='ai';
-  NET.room.seats[i]={...s, kind:toAi?'ai':'human', name:toAi?NET_AI_NAMES[i%4]:'', clientId:null};
+  // 봇 이름은 테마 이름 중 이 방에서 아직 안 쓰인 것 — 전환 순서가 어떻든 중복되지 않는다
+  const used=NET.room.seats.filter(x=>x.kind==='ai').map(x=>x.name);
+  const botName=NET_AI_NAMES.find(n=>!used.includes(n))||NET_AI_NAMES[i%4];
+  NET.room.seats[i]={...s, kind:toAi?'ai':'human', name:toAi?botName:'', clientId:null};
   await netUpdateRoom({ seats:NET.room.seats });
   netSend('room', NET.room);
   netUiRefresh();

@@ -86,7 +86,7 @@ function craftStageHtml(rows, opts){
     const q=P(r.pi); const kinds=Object.keys(r.got);
     const isTurn=(q.i===opts.turnPi);
     return '<div class="ap-pl'+(isTurn?' turn':'')+'" style="--pc:'+PCOLOR[q.i]+'">'
-      +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)+(isTurn&&opts.label?opts.label:'')+'</div>'
+      +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)+(isTurn&&opts.label?opts.label:'')+'</div>'
       +'<div class="ap-prow">'
       +(kinds.length
         ? kinds.map(t=>'<span class="ap-g">'+goodChip(t)+'×'+r.got[t]+'</span>').join('')

@@ -629,7 +629,7 @@ function finishGame(){
       tie:p.coins+goodsTotal(p), notes};
   });
   rows.sort((a,b)=> b.total-a.total || b.tie-a.tie);
-  G.scores=rows.map(r=>({name:r.p.name, chips:r.chips, bvp:r.bvp, big:r.bigBonus, total:r.total, tie:r.tie, notes:r.notes}));
+  G.scores=rows.map(r=>({name:r.p.name, ai:r.p.ai, chips:r.chips, bvp:r.bvp, big:r.bigBonus, total:r.total, tie:r.tie, notes:r.notes}));
   const reasons={workers:'인력 시장 보충 불가', sites:'건설 부지 12칸 완성', vp:'승점 칩 소진'};
   log('<span class="r">게임 종료</span> — '+G.endReasons.map(r=>reasons[r]).join(', '));
   log('🏆 승자: <b>'+G.scores[0].name+'</b> ('+G.scores[0].total+'점)');

@@ -57,7 +57,7 @@ function renderActionPanel(pd){
       }).map(b=>BUILDINGS[b.id].nm).join(' · ')||'—';
       const goods=GTYPES.filter(t=>q.goods[t]>0).map(t=>goodChip(t)+'×'+q.goods[t]).join(' ')||'—';
       return '<div class="ap-pcard" style="border-left:3px solid '+PCOLOR[q.i]+'">'
-        +'<div class="nm" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)+(G.governor===q.i?' 👑':'')+(q.i===pd.player?' (나)':'')+'</div>'
+        +'<div class="nm" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)+(G.governor===q.i?' 👑':'')+(q.i===pd.player?' (나)':'')+'</div>'
         // 접힌 개인 보드 카드와 같은 토큰 마크업(.cstat/.cpair) — 주화 $, 승점 VP, 일꾼 토큰
         +'<div class="cstat"><span class="cpair" title="주화"><span class="tok-coin sm">$</span><b>'+q.coins+'</b></span>'
         +'<span class="cpair" title="승점"><span class="tok-vp sm">VP</span><b>'+q.vp+'</b></span>'
@@ -156,7 +156,7 @@ function renderActionPanel(pd){
         inner='<div class="ap-prow">'+chips+'</div>';
       }
       return '<div class="ap-pl'+(isTurn?' turn':'')+pfxCls('plcard-'+q.i,'pfx-card')+'" style="--pc:'+PCOLOR[q.i]+'">'
-        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)
+        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)
         +(isTurn?(myTurn?' — 내 차례':' — 판매 중…'):'')+'</div>'
         +inner+'</div>';
     }).join('');
@@ -209,7 +209,7 @@ function renderActionPanel(pd){
         inner='<div class="ap-prow">'+chips+'</div>';
       }
       return '<div class="ap-pl'+(isTurn?' turn':'')+pfxCls('plcard-'+q.i,'pfx-card')+'" style="--pc:'+PCOLOR[q.i]+'">'
-        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)
+        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)
         +(isTurn?(myTurn?' — 내 차례':' — 선적 중…'):'')+'</div>'
         +inner+'</div>';
     }).join('');
@@ -302,7 +302,7 @@ function renderActionPanel(pd){
       const chips=GTYPES.filter(t=>q.goods[t]>0).map(t=>'<span class="ap-g">'+goodChip(t)+'×'+q.goods[t]+'</span>').join('')
         ||'<span class="dim">상품 없음</span>';
       return '<div class="ap-pl'+(isTurn?' turn':'')+pfxCls('plcard-'+q.i,'pfx-card')+'" style="--pc:'+PCOLOR[q.i]+'">'
-        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)
+        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)
         +(isTurn?(myTurn?' — 내 차례':' — 저장 정리 중…'):'')+'</div>'
         +'<div class="ap-prow">'+chips+'</div>'
         +(isTurn&&myTurn?picker:'')
@@ -339,7 +339,7 @@ function renderActionPanel(pd){
         const chips=GTYPES.filter(t=>q.goods[t]>0).map(t=>'<span class="ap-g">'+goodChip(t)+'×'+q.goods[t]+'</span>').join('')
           ||'<span class="dim">상품 없음</span>';
         return '<div class="ap-pl'+pfxCls('plcard-'+q.i,'pfx-card')+'" style="--pc:'+PCOLOR[q.i]+'">'
-          +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)+'</div>'
+          +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)+'</div>'
           +'<div class="ap-prow">'+chips+'</div></div>';
       }).join('');
       // 방금 실린 칸의 팝 이펙트(markPanelFx)가 이 화면에서 재생된다 — 진행 패널과 같은 마크업

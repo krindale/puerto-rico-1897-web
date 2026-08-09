@@ -63,9 +63,12 @@ function buildingTip(B){
 const PR_NAMES=['페드로','이사벨라','알론소','루시아','라몬','카탈리나'];
 let setupName=PR_NAMES[Math.floor(Math.random()*PR_NAMES.length)];
 let setupN=4;
-let setupKinds=['me','ai','ai','ai','ai'];   // 좌석 0=나 고정, 1~4는 'ai'|'human'(친구·같은 기기)
+/* 좌석 0=나 고정. 탭별 기본이 다르다 — 로컬은 봇과 혼자, 온라인은 친구 초대가 기본 (사용자 결정) */
+let setupKinds=['me','ai','ai','ai','ai'];            // 로컬 탭
+let setupKindsOn=['me','human','human','human','human'];  // 온라인 탭
+function curSetupKinds(){ return setupMode==='online'?setupKindsOn:setupKinds; }
 function uiSetupCount(n){ setupN=n; renderSetup(); }
-function uiSetupToggle(i){ setupKinds[i]=(setupKinds[i]==='ai')?'human':'ai'; renderSetup(); }
+function uiSetupToggle(i){ const k=curSetupKinds(); k[i]=(k[i]==='ai')?'human':'ai'; renderSetup(); }
 /* ═══ 설정·대기실 — aos_showcase의 설정 카드(GamePageClient) + OnlineLobby를 그대로 이식 ═══
    디자인 토큰까지 동일: 페이지 #efece4 · 카드 #faf8f3 (r18px) · 버밀리언 #c04a2b · 잉크 #1c1b18.
    이 화면들에서는 게임의 양피지 배경·프레임을 끈다(body.aos-setup — aosFrame이 켜고, 게임 render()가 끈다). */
@@ -141,7 +144,7 @@ function aosSeatFormRows(online){
         +'<input class="aos-input name" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" placeholder="이름">'
         +'<span class="aos-accent">(나'+(online?' · 호스트':'')+')</span></div>';
     } else {
-      const isAi=setupKinds[i]==='ai';
+      const isAi=curSetupKinds()[i]==='ai';
       rows+='<div class="aos-seatform"><span class="aos-seatlabel">자리 '+(i+1)+'</span>'
         +'<button class="aos-chip'+(isAi?' bot':'')+'" onclick="uiSetupToggle('+i+')" title="눌러서 전환">'
         +(isAi?aosIcon('bot',14):aosIcon('user',14,'currentColor'))+' '+(isAi?'BOT':(online?'친구 자리':'사람 (한 기기)'))+'</button></div>';
@@ -241,7 +244,7 @@ function renderSetup(){
 }
 function uiNetCreate(){
   clearTimeout(pubT);
-  netCreateRoom((setupName||'플레이어').trim(), setupN, setupKinds.slice(), setupPublic, setupTitle.trim());
+  netCreateRoom((setupName||'플레이어').trim(), setupN, setupKindsOn.slice(), setupPublic, setupTitle.trim());
 }
 function uiNetJoin(){
   const inp=document.getElementById('s2-code');
@@ -675,7 +678,7 @@ function render(){
     modal='<div class="overlay pop"><div class="modal">'   // 종료 모달은 한 번만 뜨므로 항상 등장 애니메이션
     +'<h2>최종 점수</h2>'
     +'<table><tr><th>플레이어</th><th>승점 칩</th><th>건물</th><th>고급 건물 보너스</th><th>합계</th></tr>'
-    +G.scores.map((s,i)=>'<tr'+(i===0?' class="scorewin"':'')+'><td>'+esc(s.name)+(i===0?' 🏆':'')+'</td><td>'+s.chips+'</td><td>'+s.bvp+'</td>'
+    +G.scores.map((s,i)=>'<tr'+(i===0?' class="scorewin"':'')+'><td>'+(s.ai?aosIcon('bot',12)+' ':'')+esc(s.name)+(i===0?' 🏆':'')+'</td><td>'+s.chips+'</td><td>'+s.bvp+'</td>'
       +'<td>'+s.big+(s.notes.length?' <span style="color:var(--dim);font-size:11px">('+s.notes.join(', ')+')</span>':'')+'</td>'
       +'<td><b>'+s.total+'</b></td></tr>').join('')
     +'</table>'
