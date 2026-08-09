@@ -153,6 +153,11 @@ const guest=makeClient('G');
     await sleep(3);
   }
   if(!ackChecked) { console.error('FAIL: 결과 보고에서 "전원 확인" 대기 상태를 한 번도 관측하지 못함'); process.exit(1); }
+  /* ── 최종 점수 일치 — 끊김 시나리오가 상태를 바꾸기 전에 비교한다 ── */
+  const hostScore=host.run('G.scores.map(s=>s.name+" "+s.total).join(" / ")');
+  const guestScore=guest.run('G.scores.map(s=>s.name+" "+s.total).join(" / ")');
+  if(hostScore!==guestScore){ console.error('FAIL: 최종 점수 불일치\n host:', hostScore, '\n guest:', guestScore); process.exit(1); }
+  console.log('게임 완주 — 라운드', host.run('G.round'), '· 점수:', hostScore);
   /* ── 연결 끊김 시나리오 (쇼케이스와 같은 규칙) ── */
   // ① 게스트 이탈 → 호스트에게 BOT 전환 제안이 떠야 한다 (10초 유예를 타이머 압축으로 즉시)
   guest.run("NET.presence=[]; ");           // 게스트 쪽은 신경 안 씀
@@ -182,12 +187,6 @@ const guest=makeClient('G');
   if(!guest.run('G.players[0].ai')) throw new Error('게임 상태의 옛 호스트가 BOT이 아님');
   console.log('호스트 승계 OK — 옛 호스트 좌석 BOT 전환 확인');
   console.log('DISCONNECT TESTS OK');
-  process.exit(0);
-
-  const hostScore=host.run('G.scores.map(s=>s.name+" "+s.total).join(" / ")');
-  const guestScore=guest.run('G.scores.map(s=>s.name+" "+s.total).join(" / ")');
-  if(hostScore!==guestScore){ console.error('FAIL: 최종 점수 불일치\n host:', hostScore, '\n guest:', guestScore); process.exit(1); }
-  console.log('게임 완주 — 라운드', host.run('G.round'), '· 점수:', hostScore);
   console.log('NETTEST OK');
   process.exit(0);
 })().catch(e=>{ console.error('FAIL:', e); process.exit(1); });

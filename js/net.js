@@ -288,6 +288,8 @@ async function netUpdateRoom(patch){
 
 /* ── 방 메타 수신 (게스트) ── */
 function netOnRoom(room){
+  // 호스트가 방을 닫음 — 통지 없이 두면 게스트는 재연결만 반복하다 실패한다
+  if(room.status==='finished'&&!NET.host){ netLeave('호스트가 방을 닫아 게임이 종료되었습니다.'); return; }
   NET.room=room;
   const cid=netClientId();
   /* 이중 호스트 방지 — 내가 호스트인데 방이 다른 호스트를 가리키면(승계 직후 옛 호스트 복귀)
@@ -295,6 +297,10 @@ function netOnRoom(room){
   if(NET.host&&room.host_client_id&&room.host_client_id!==cid){
     NET.host=false; NET.rev=0;
     netStopHeartbeat();
+    clearTimeout(NET.saveT);                    // 디바운스된 낡은 snapshot이 새 호스트의 DB 기록을 덮지 않게
+    clearTimeout(aiTimer);                      // 걸려 있던 엔진(AI·phaseEnd) 타이머 중단 — 이제 새 호스트가 굴린다
+    for(const k in NET.orig) globalThis[k]=NET.orig[k];   // fx 중계 훅 원복 (안 풀면 게스트인데 fx를 계속 쏜다)
+    NET.orig={};
     netWrapActs();
   }
   NET.mySeat=room.seats.findIndex(s=>s.clientId===cid);
@@ -335,10 +341,13 @@ function uiNetStartGame(){
   NET.err='';
   netHostStart(false);
 }
-/* 대기실: 빈 친구 자리 ↔ AI 전환 (호스트 전용) */
+/* 대기실: 빈 친구 자리 ↔ AI 전환 (호스트 전용)
+   접속이 끊긴(나가버린) 좌석도 전환 가능 — 대기실 좌석 행의 [⇆] 버튼이 끊긴 좌석에도
+   보이므로, 여기서 clientId만 보고 거부하면 버튼이 눌러도 조용히 무시된다 */
 async function uiNetToggleSeat(i){
   const s=NET.room.seats[i];
-  if(!s||s.clientId) return;   // 사람이 앉은 자리는 못 바꾼다
+  if(!s) return;
+  if(s.clientId&&NET.presence.includes(s.clientId)) return;   // 접속 중인 사람 자리는 못 바꾼다
   const toAi=s.kind!=='ai';
   // 봇 이름은 테마 이름 중 이 방에서 아직 안 쓰인 것 — 전환 순서가 어떻든 중복되지 않는다
   const used=NET.room.seats.filter(x=>x.kind==='ai').map(x=>x.name);
@@ -358,13 +367,15 @@ function netPushState(){
   if(!NET.on||!NET.host||!G) return;
   NET.rev++;
   const g=netStripDeck(G);
-  netSend('snapshot', { rev:NET.rev, g:{...g, log:G.log.slice(-150)} });
+  netSend('snapshot', { rev:NET.rev, from:netClientId(), g:{...g, log:G.log.slice(-150)} });
   // DB에는 완전한 상태를 저장 (호스트 재접속·복구용). 디바운스 1초 — 매 행동마다 쓰지 않는다
   clearTimeout(NET.saveT);
   NET.saveT=setTimeout(()=>{ netUpdateRoom({ snapshot:G, status:G&&G.over?'playing':NET.room.status }); }, 1000);
 }
 function netOnSnapshot(m){
   if(!m||m.rev<=NET.rev) return;   // 역순 도착 무시
+  // 호스트가 보낸 것만 반영 — 채널 참가자(게스트)도 브로드캐스트는 쏠 수 있다
+  if(NET.room&&NET.room.host_client_id&&m.from!==NET.room.host_client_id) return;
   NET.rev=m.rev;
   G=m.g;
   if(NET.status!=='playing'){ NET.status='playing'; netWrapActs(); rdReset(); }
@@ -544,6 +555,8 @@ function uiNetAiTakeover(pi){
   netUpdateRoom({ seats:NET.room.seats });
   netSend('room', NET.room);
   log(pname(P(pi))+' — 연결이 끊겨 AI가 이어받습니다.');
+  // 결과 확인 대기 중이었으면 재평가 — 이 좌석이 마지막 미확인자였다면 여기서 풀어야 안 멈춘다
+  if(G.pending&&G.pending.type==='report'){ actReportDone(pi); return; }
   schedule();
 }
 
@@ -585,12 +598,13 @@ function netHeartbeat(){
 }
 function netStopHeartbeat(){ clearInterval(NET.hbT); }
 
-/* ── 나가기 ── */
-async function netLeave(){
+/* ── 나가기 ── msg: 나간 뒤 설정 화면에 보여줄 안내 (예: 호스트가 방을 닫음) */
+async function netLeave(msg){
   netStopHeartbeat();
-  clearTimeout(NET.takeoverT); clearTimeout(NET.offT); clearTimeout(NET.reconnT);
+  clearTimeout(NET.takeoverT); clearTimeout(NET.offT); clearTimeout(NET.reconnT); clearTimeout(NET.saveT);
   try{
     if(NET.host&&NET.room){
+      netSend('room', {...NET.room, status:'finished'});   // 게스트에게 "방이 닫혔다" 통지
       await netClient().from('rooms').update({ status:'finished' }).eq('id', NET.room.id);
       await netClient().from('rooms').delete().eq('id', NET.room.id);
     }
@@ -601,7 +615,7 @@ async function netLeave(){
   NET.orig={};
   netClearSession();
   Object.assign(NET, { on:false, host:false, status:'idle', chan:null, room:null, mySeat:null, presence:[],
-    chat:[], chatUnread:0, rev:0, err:'', takeover:null, takeoverT:0, offSeat:null, offT:0,
+    chat:[], chatUnread:0, rev:0, err:msg||'', takeover:null, takeoverT:0, offSeat:null, offT:0,
     reconnT:0, reconnN:0, connected:true, dismissed:[] });
   G=null;
   renderSetup();
