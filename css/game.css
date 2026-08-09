@@ -849,8 +849,10 @@
   /* 채팅 버튼 — 건물 버튼 바로 위, 같은 우측 정렬 (52px + 간격 10px = 62) */
   #pr-chat{ position:fixed; right:var(--fab-right); bottom:136px; z-index:120;
     display:flex; flex-direction:column; align-items:flex-end; }
+  /* 아이콘은 인라인 SVG(lucide) — 이모지와 달리 스스로 가운데 정렬되지 않으므로 flex로 잡는다 */
   #pr-chat .cfab{ position:relative; width:52px; height:52px; border-radius:50%;
-    border:1px solid var(--gold); background:var(--accent); color:#fff8ec; font-size:19px;
+    border:1px solid var(--gold); background:var(--accent); color:#fff8ec;
+    display:flex; align-items:center; justify-content:center;
     box-shadow:0 3px 12px rgba(70,52,28,.32); }
   #pr-chat .cfab:hover{ background:var(--accent-deep); }
   #pr-chat .cbadge{ position:absolute; top:-4px; right:-4px; min-width:19px; height:19px; padding:0 5px;
@@ -860,10 +862,12 @@
     border-radius:10px; overflow:hidden; box-shadow:0 10px 28px rgba(70,52,28,.3); animation:apbIn .25s ease-out; }
   #pr-chat .chead{ display:flex; justify-content:space-between; align-items:center; padding:8px 12px;
     background:#efe8d6; border-bottom:1px solid var(--line); font-size:12.5px; font-weight:700; }
-  #pr-chat .chead button{ border:none; background:transparent; color:var(--dim); font-size:13px; }
+  #pr-chat .chead button{ border:none; background:transparent; color:var(--dim);
+    display:flex; align-items:center; justify-content:center; padding:2px; }
   #pr-chat .clist{ height:200px; overflow-y:auto; padding:9px 11px; display:flex; flex-direction:column; gap:5px; }
   #pr-chat .cinput{ display:flex; border-top:1px solid var(--line); }
   #pr-chat .cinput input{ flex:1; min-width:0; border:none; background:transparent; padding:9px 11px;
     font-family:inherit; font-size:12.5px; }
   #pr-chat .cinput input:focus{ outline:none; }
-  #pr-chat .cinput button{ border:none; background:transparent; color:var(--act); padding:0 12px; font-size:14px; }
+  #pr-chat .cinput button{ border:none; background:transparent; color:var(--act); padding:0 12px;
+    display:flex; align-items:center; justify-content:center; }

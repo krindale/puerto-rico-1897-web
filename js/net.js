@@ -760,13 +760,14 @@ function netChatRender(){
   host.innerHTML=
     (uiChatOpen
       ?'<div class="cpanel">'
-        +'<div class="chead"><span>💬 채팅</span><button onclick="uiToggleChat()" aria-label="채팅 닫기">✕</button></div>'
+        +'<div class="chead"><span>채팅</span><button onclick="uiToggleChat()" aria-label="채팅 닫기">'+aosIcon('x',13)+'</button></div>'
         +'<div class="clist" id="pr-chat-list" data-n="'+NET.chat.length+'">'+msgs+'</div>'
         +'<div class="cinput"><input id="pr-chat-in" maxlength="300" placeholder="메시지…" onkeydown="uiChatKey(event)">'
-        +'<button onclick="uiChatSend()" aria-label="전송">➤</button></div>'
+        +'<button onclick="uiChatSend()" aria-label="전송">'+aosIcon('send',13)+'</button></div>'
         +'</div>'
       :'')
-    +'<button class="cfab" onclick="uiToggleChat()" aria-label="채팅 열기">💬'
+    // 아이콘은 쇼케이스(GameChat.tsx)와 같은 lucide MessageCircle 18px
+    +'<button class="cfab" onclick="uiToggleChat()" aria-label="채팅 열기">'+aosIcon('messagecircle',18)
     +(!uiChatOpen&&NET.chatUnread>0?'<span class="cbadge">'+(NET.chatUnread>9?'9+':NET.chatUnread)+'</span>':'')
     +'</button>';
   if(uiChatOpen){ const list=document.getElementById('pr-chat-list'); if(list) list.scrollTop=list.scrollHeight; }
