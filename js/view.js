@@ -150,7 +150,8 @@ function roleSplash(roleId, p){
     const d=document.createElement('div');
     d.className='rsplash';
     d.style.setProperty('--tc', PCOLOR[p.i]);
-    d.innerHTML='<img src="img/역할_'+ROLES[roleId].nm+'.png" onerror="this.remove()">'
+    // 반드시 imgTag를 쓴다 — 배포본에는 webp만 올라가므로(.png는 404) 손으로 짠 <img src=".png">는 사라진다
+    d.innerHTML=imgTag('역할', ROLES[roleId].nm)
       +'<div class="who">'+esc(p.name)+' — '+ROLES[roleId].nm+'</div>';
     document.body.appendChild(d);
     setTimeout(()=>{ try{d.remove();}catch(_){} }, ROLE_ANIM+50);

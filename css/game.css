@@ -481,17 +481,18 @@
   .hint{ font-size:12px; color:var(--dim); margin-top:6px; line-height:1.6; }
 
   /* ── 중앙 액션 패널 — 내 차례의 선택지를 건물 보관소처럼 화면 가운데에 모아 보여준다 ── */
-  /* ⚠️ 모든 액션 패널은 **같은 고정 크기**다 — 단계가 바뀌어도 창이 커졌다 작아지지 않게
-     (사용자 지적: 패널마다 레이아웃이 출렁인다). 내용이 넘치면 본문(#ap-bodyc)만 스크롤한다.
-     폭 1100px은 역할 선택의 타일 8장(5인)이 한 줄에 들어가는 최소 폭 기준. */
-  .act-modal{ width:min(1100px, 95vw); height:min(640px, 86vh); max-width:none;
-    padding:20px 24px; display:flex; flex-direction:column; }
+  /* 패널 크기는 **타입별로 다르다** — 창이 커졌다 작아지는 출렁임은 "단계 내내 떠 있는 패널"에서만
+     문제이므로, 그것(.stage)만 높이를 고정한다. 개척·모집(일꾼 배치)처럼 잠깐 뜨는 선택 창까지
+     같은 크기로 키우면 쓸데없이 거대한 창이 된다. */
+  .act-modal{ max-width:800px; padding:20px 24px; display:flex; flex-direction:column; }
   .act-modal>#ap-head{ flex:none; }
-  .act-modal>#ap-bodyc{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; }
-  .act-modal.wide{ width:min(1100px, 95vw); }   /* 하위 호환 — 크기는 동일 */
+  .act-modal>#ap-bodyc{ flex:1 1 auto; min-height:0; }
+  .act-modal.wide{ max-width:1150px; }   /* 역할 선택 — 타일이 한 줄에 들어가야 한다 */
   /* 선적·판매·생산 상시 패널: 단계 동안 내용이 계속 바뀌므로 높이를 고정한다 — 넘치면 안에서 스크롤.
      진행 창과 결과 창이 같은 flex column 레이아웃을 써야 전환 때 내용이 튀지 않는다 */
+  .act-modal.stage{ height:min(620px, 84vh); }
   .act-modal.stage>*{ flex-shrink:0; }
+  .act-modal.stage>#ap-bodyc{ flex:1 1 auto; overflow-y:auto; overflow-x:hidden; }
   /* 패널 스켈레톤: 창 = [머리 #ap-head + 본문 #ap-bodyc]. 본문은 세로 flex —
      stage 창에서 남는 높이를 본문이 갖고(report의 확인 버튼 margin-top:auto가 여기 기댄다),
      내용이 넘쳐도 창 높이는 흔들리지 않는다 */
@@ -620,10 +621,11 @@
   .pf-none{ color:var(--dim); }
   .pf-hint{ font-size:11px; color:var(--dim); margin-top:8px; }
   .pf-div{ border-top:1px dashed var(--line); margin:9px 0; }
-  /* 결과 보고도 같은 크기 — 진행 패널 → 결과로 넘어갈 때 창이 바뀌지 않는다 */
+  /* 단독 결과 보고는 짧다 — 작은 창 */
+  .act-modal.report{ max-width:480px; }
   .act-modal.report .ap-btns{ justify-content:flex-end; }
   /* stage 보고(선적·판매·생산 결과): 진행 패널과 같은 폭·높이·레이아웃, 확인 버튼은 아래에 고정 */
-
+  .act-modal.report.stage{ max-width:800px; }
   .act-modal.report.stage .ap-btns{ margin-top:auto; }
   /* 역할 선택 패널 하단 — 각 플레이어 요약 (접힌 카드와 같은 정보) */
   .ap-pstrip{ display:flex; gap:10px; margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; align-items:stretch; }
