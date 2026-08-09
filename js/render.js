@@ -225,7 +225,8 @@ function renderSetup(){
      "설정 화면에는 무조건 없다"를 보장하지 못한다. 대기실로 갈 때는 renderLobby가 다시 그린다. */
   const oldChat=document.getElementById('pr-chat');
   if(oldChat&&oldChat.remove) oldChat.remove();
-  uiChatOpen=false;
+  // net.js는 render.js보다 뒤에 로드된다 — 그쪽이 평가되지 않았을 때 여기서 죽으면 설정 화면이 통째로 안 그려진다
+  if(typeof uiChatOpen!=='undefined') uiChatOpen=false;
   const netOK=typeof netConfigured==='function'&&netConfigured();
   if(netOK&&typeof NET!=='undefined'&&NET.on){ renderLobby(); return; }
   const canResume=!!lsGet('pr1897_save');
