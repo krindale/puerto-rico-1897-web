@@ -98,7 +98,8 @@ function craftStageHtml(rows, opts){
   }).join('');
   const sup='<div class="ap-pls">'+GTYPES.map(t=>
     '<div class="ap-supline"><span class="ap-g">'+goodChip(t)+PLANT_NM[t]+'</span><b>'+G.supply.goods[t]+'</b></div>').join('')+'</div>';
-  return '<div class="ap-cols">'
+  // craft: 좌우 1:1이 아니라 좌(플레이어 카드)를 넓게 — 5인에서 상품 칩이 줄바꿈되며 세로로 길어져 스크롤이 생겼다
+  return '<div class="ap-cols craft">'
     +'<div class="ap-col"><div class="ap-col-h">① 생산 결과</div><div class="ap-pls">'+plCards+'</div></div>'
     +'<div class="ap-col"><div class="ap-col-h">② 공급처 재고</div>'+sup+'</div>'
     +'</div>';
@@ -113,15 +114,17 @@ function shipSlotsHtml(s){
 /* 단계 결과 보고 — 사람이 있으면 [확인]을 누를 때까지 게임을 멈춘다.
    pending(직렬화 가능)으로 만들어야 이 상태에서 새로고침해도 복구된다. 봇만 있으면 지나가는 패널로 대체.
    stage('captain'|'trader')를 주면 해당 단계 진행 패널과 같은 크기·레이아웃으로 그려져 패널이 이어지는 것처럼 보인다.
-   호출 전에 G.phase는 정리되어 있어야 하며, 반환 false면 호출자가 직접 진행(nextChooser)한다. */
-function phaseReport(title, html, stage){
+   호출 전에 G.phase는 정리되어 있어야 하며, 반환 false면 호출자가 직접 진행(nextChooser)한다.
+   banner: "단계가 끝났습니다" 배너 문구. 보고 모달에서는 확인 버튼과 같은 줄에 놓여 세로를 아끼고
+   (5인 결과가 620px 창을 넘겨 스크롤이 생겼다), 봇만 있는 지나가는 패널에서는 본문 아래에 그대로 붙는다. */
+function phaseReport(title, html, stage, banner){
   if(G.players.some(p=>!p.ai)){
     // acks: 이 결과를 확인한 좌석들 — 온라인에서는 사람 좌석 전원이 확인해야 다음으로 넘어간다
-    G.pending={type:'report', title, html, stage:stage||null, acks:[]};
+    G.pending={type:'report', title, html, stage:stage||null, banner:banner||'', acks:[]};
     schedule();
     return true;
   }
-  phaseFlash(title, html);
+  phaseFlash(title, html+(banner?'<div class="ap-endbanner">'+banner+'</div>':''));
   return false;
 }
 /* 결과 확인 — 로컬은 즉시 진행, 온라인은 사람 좌석 전원이 확인해야 진행한다.

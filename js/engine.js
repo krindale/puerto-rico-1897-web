@@ -360,10 +360,9 @@ function actCraftBonus(t){
 function craftFinish(){
   const F=G.phase, rows=(F&&F.prod)||[], t=F&&F.bonusTaken;
   G.phase=null;
-  const html='<div class="ap-msg">모두 생산을 마쳤습니다. 결과를 확인하세요.</div>'
-    +craftStageHtml(rows, t?{turnPi:F.bonusPi, extra:'<div class="ap-prow"><span class="dim">생산자 혜택</span><span class="ap-g">'+goodChip(t)+'+1</span></div>'}:{})
-    +'<div class="ap-endbanner">🌾 생산 단계가 끝났습니다</div>';
-  if(!phaseReport('🌾 생산 결과', html, 'craft')) nextChooser();
+  // "모두 생산을 마쳤습니다. 결과를 확인하세요."는 모달 제목·부제와 겹쳐서 뺐다 (세로 절약 + 중복 제거)
+  const html=craftStageHtml(rows, t?{turnPi:F.bonusPi, extra:'<div class="ap-prow"><span class="dim">생산자 혜택</span><span class="ap-g">'+goodChip(t)+'+1</span></div>'}:{});
+  if(!phaseReport('🌾 생산 결과', html, 'craft', '🌾 생산 단계가 끝났습니다')) nextChooser();
 }
 
 /* ── 상인 ── */
@@ -396,20 +395,19 @@ function traderFinish(){
     +G.supply.market.map(t=>'<div class="ap-slot">'+goodChip(t)+'</div>').join('')
     +Array(4-G.supply.market.length).fill('<div class="ap-slot"></div>').join('')+'</div>'
     +'<div class="ap-msg" style="margin-top:8px">'+(full?'가득 차 상품을 공급처로 반납합니다.':(G.supply.market.length?G.supply.market.length+'/4 — 다음 판매 단계까지 유지됩니다.':'비어 있음'))+'</div>';
-  const html='<div class="ap-msg">모두 판매를 마쳤습니다. 결과를 확인하세요.'
-    +'<br><span class="dim">'+(full?'가득 찬 상점은 비워집니다.':'남은 상품은 다음 판매 단계까지 유지됩니다.')+'</span></div>'
+  // 첫 문장("모두 판매를 마쳤습니다…")은 제목·부제와 중복이라 뺐다 — 규칙 안내(dim)만 남긴다
+  const html='<div class="ap-msg"><span class="dim">'+(full?'가득 찬 상점은 비워집니다.':'남은 상품은 다음 판매 단계까지 유지됩니다.')+'</span></div>'
     +'<div class="ap-cols">'
     +'<div class="ap-col"><div class="ap-col-h">① 플레이어 결과</div><div class="ap-pls">'+plCards+'</div></div>'
     +'<div class="ap-col"><div class="ap-col-h">② 상점 (최대 4칸)</div>'+slots+'</div>'
-    +'</div>'
-    +'<div class="ap-endbanner">💰 판매 단계가 끝났습니다</div>';
+    +'</div>';
   if(full){
     for(const t of G.supply.market) G.supply.goods[t]++;
     G.supply.market=[];
     log('상점이 가득 차 상품을 모두 공급처로 치웠습니다.');
   }
   G.phase=null;
-  if(!phaseReport('💰 판매 결과', html, 'trader')) nextChooser();
+  if(!phaseReport('💰 판매 결과', html, 'trader', '💰 판매 단계가 끝났습니다')) nextChooser();
 }
 function saleCoins(p,t,isChooser){
   let c=GOODS[t].price+(isChooser?1:0);
@@ -579,13 +577,12 @@ function captainFinish(){
       +(full?'<span class="why">가득 차 비워짐</span>':(s.type?'<span class="cnt">유지</span>':''))
       +'</div>'+shipSlotsHtml(s)+'</div>';
   }).join('');
-  const html='<div class="ap-msg">모두 선적을 마쳤습니다. 결과를 확인하세요.'
-    +'<br><span class="dim">가득 찬 수송선의 상품은 공급처로 반납됩니다.</span></div>'
+  // 첫 문장은 제목·부제와 중복이라 뺐고, 반납 안내는 배너에도 같은 말이 있었어서 여기 한 번만 남긴다
+  const html='<div class="ap-msg"><span class="dim">가득 찬 수송선의 상품은 공급처로 반납됩니다.</span></div>'
     +'<div class="ap-cols">'
     +'<div class="ap-col"><div class="ap-col-h">① 플레이어 결과</div><div class="ap-pls">'+plCards+'</div></div>'
     +'<div class="ap-col"><div class="ap-col-h">② 수송선</div><div class="ap-ships vert">'+shipCards+'</div></div>'
-    +'</div>'
-    +'<div class="ap-endbanner">⚓ 선적 단계가 끝났습니다 — 가득 찬 수송선의 상품은 공급처로 반납됩니다</div>';
+    +'</div>';
   for(const s of G.supply.ships){
     if(s.count>=s.size && s.type){
       G.supply.goods[s.type]+=s.count;
@@ -594,7 +591,7 @@ function captainFinish(){
     }
   }
   G.phase=null;
-  if(!phaseReport('⚓ 선적 결과', html, 'captain')) nextChooser();
+  if(!phaseReport('⚓ 선적 결과', html, 'captain', '⚓ 선적 단계가 끝났습니다')) nextChooser();
 }
 
 /* ═══════════════════════════ 게임 종료 / 점수 ═══════════════════════════ */
