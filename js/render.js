@@ -219,6 +219,9 @@ function aosFrame(cardHtml){
 }
 function renderSetup(){
   rdReset();
+  /* 채팅 위젯은 body에 직접 붙어 있어 $app 교체로는 안 지워진다 —
+     온라인에서 빠져나온 뒤(netLeave) 설정 화면에 버튼만 남던 문제. 들어오는 모든 경로를 여기서 막는다. */
+  if(typeof netChatRender==='function') netChatRender();
   const netOK=typeof netConfigured==='function'&&netConfigured();
   if(netOK&&typeof NET!=='undefined'&&NET.on){ renderLobby(); return; }
   const canResume=!!lsGet('pr1897_save');
