@@ -193,9 +193,9 @@ function renderSetup(){
   let body;
   if(online&&netOK){
     body=
-      '<div class="aos-label">'+icCrown(16)+' 내 이름</div>'
-      +'<div class="aos-joinrow"><input class="aos-input" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" placeholder="이름">'
-      +'<button class="aos-btns icon" onclick="uiSetupRandomName()" title="다른 이름 뽑기">'+aosIcon('refresh',15)+'</button></div>'
+      '<div class="aos-label">'+icCrown(16)+' 내 이름'
+      +'<button class="aos-iconbtn" onclick="uiSetupRandomName()" title="다른 이름 뽑기">'+aosIcon('refresh',13)+'</button></div>'
+      +'<input class="aos-input" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" placeholder="이름">'
       +'<div class="aos-box">'
         +'<div class="aos-box-h"><span>방 만들기</span>'
           /* 공개/비공개 스위치 — 공개가 기본 (공개방 목록에 노출) */

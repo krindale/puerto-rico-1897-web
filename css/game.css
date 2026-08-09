@@ -679,6 +679,10 @@
   .aos-btns:hover{ border-color:#a8442a; color:#a8442a; }
   .aos-btns.icon{ padding:9px 12px; display:inline-flex; align-items:center; }
   .aos-btns.icon.sm{ padding:5px 8px; }
+  /* 라벨 텍스트 오른쪽에 붙는 작은 아이콘 버튼 (이름 다시 뽑기) */
+  .aos-iconbtn{ border:none; background:transparent; color:#66625a; padding:2px 4px; margin-left:2px;
+    display:inline-flex; align-items:center; border-radius:2px; }
+  .aos-iconbtn:hover{ color:#a8442a; background:rgba(28,27,24,.06); }
   .aos-textbtn{ display:flex; align-items:center; justify-content:center; gap:6px; width:100%;
     margin-top:10px; padding:9px 0; border:none; border-radius:2px; background:transparent;
     font-size:13.5px; color:#5f5b53; }
