@@ -677,6 +677,8 @@
     font-weight:600; font-size:14px; color:#1c1b18; background:#fbf6ea;
     transition:border-color .25s ease, color .25s ease; }
   .aos-btns:hover{ border-color:#a8442a; color:#a8442a; }
+  .aos-btns.icon{ padding:9px 12px; display:inline-flex; align-items:center; }
+  .aos-btns.icon.sm{ padding:5px 8px; }
   .aos-textbtn{ display:flex; align-items:center; justify-content:center; gap:6px; width:100%;
     margin-top:10px; padding:9px 0; border:none; border-radius:2px; background:transparent;
     font-size:13.5px; color:#5f5b53; }

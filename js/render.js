@@ -59,8 +59,12 @@ function buildingTip(B){
 }
 
 /* ── 설정 화면 (aos_showcase 스타일: 히어로 + 좌 비주얼 / 우 설정 카드) ── */
-/* 기본 이름도 1897 카리브 정서로 — 접속할 때마다 농장주 이름 하나를 뽑아 준다 */
-const PR_NAMES=['페드로','이사벨라','알론소','루시아','라몬','카탈리나'];
+/* 기본 이름도 1897 카리브 정서로 — 접속할 때마다 농장주 이름 하나를 뽑아 주고,
+   이름 옆 🔄 버튼으로 다시 뽑을 수 있다. 봇 이름(미겔·카르멘·디에고·로시타)과는 겹치지 않는 풀. */
+const PR_NAMES=['페드로','이사벨라','알론소','루시아','라몬','카탈리나','후안','엘레나','마테오','소피아',
+  '안드레스','마리아나','가브리엘','발렌티나','산티아고','카밀라','레오나르도','비올레타','에르난도','셀레스테',
+  '파블로','아드리아나','니콜라스','마르셀라','세바스티안','플로렌시아','알레한드로','그라시엘라','펠리페','에스페란사'];
+function prRandomName(not){ let n; do{ n=PR_NAMES[Math.floor(Math.random()*PR_NAMES.length)]; }while(n===not); return n; }
 let setupName=PR_NAMES[Math.floor(Math.random()*PR_NAMES.length)];
 let setupN=4;
 /* 좌석 0=나 고정. 탭별 기본이 다르다 — 로컬은 봇과 혼자, 온라인은 친구 초대가 기본 (사용자 결정) */
@@ -68,6 +72,8 @@ let setupKinds=['me','ai','ai','ai','ai'];            // 로컬 탭
 let setupKindsOn=['me','human','human','human','human'];  // 온라인 탭
 function curSetupKinds(){ return setupMode==='online'?setupKindsOn:setupKinds; }
 function uiSetupCount(n){ setupN=n; renderSetup(); }
+function uiSetupRandomName(){ setupName=prRandomName(setupName); renderSetup(); }
+function uiNetRandomName(){ uiNetRename(prRandomName(NET.myName)); }
 function uiSetupToggle(i){ const k=curSetupKinds(); k[i]=(k[i]==='ai')?'human':'ai'; renderSetup(); }
 /* ═══ 설정·대기실 — aos_showcase의 설정 카드(GamePageClient) + OnlineLobby를 그대로 이식 ═══
    디자인 토큰까지 동일: 페이지 #efece4 · 카드 #faf8f3 (r18px) · 버밀리언 #c04a2b · 잉크 #1c1b18.
@@ -123,6 +129,7 @@ function aosIcon(n,s,fill){
     x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     swap:'<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
     loader:'<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+    refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/>',
   };
   return '<svg width="'+(s||15)+'" height="'+(s||15)+'" viewBox="0 0 24 24" fill="'+(fill||'none')+'" stroke="currentColor" stroke-width="'+(fill?1.8:2)+'" stroke-linecap="round" stroke-linejoin="round">'+(P[n]||'')+'</svg>';
 }
@@ -142,6 +149,7 @@ function aosSeatFormRows(online){
     if(i===0){
       rows+='<div class="aos-seatform">'+icCrown(16)
         +'<input class="aos-input name" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" placeholder="이름">'
+        +'<button class="aos-btns icon sm" onclick="uiSetupRandomName()" title="다른 이름 뽑기">'+aosIcon('refresh',13)+'</button>'
         +'<span class="aos-accent">(나'+(online?' · 호스트':'')+')</span></div>';
     } else {
       const isAi=curSetupKinds()[i]==='ai';
@@ -186,7 +194,8 @@ function renderSetup(){
   if(online&&netOK){
     body=
       '<div class="aos-label">'+icCrown(16)+' 내 이름</div>'
-      +'<input class="aos-input" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" placeholder="이름">'
+      +'<div class="aos-joinrow"><input class="aos-input" type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value" placeholder="이름">'
+      +'<button class="aos-btns icon" onclick="uiSetupRandomName()" title="다른 이름 뽑기">'+aosIcon('refresh',15)+'</button></div>'
       +'<div class="aos-box">'
         +'<div class="aos-box-h"><span>방 만들기</span>'
           /* 공개/비공개 스위치 — 공개가 기본 (공개방 목록에 노출) */
@@ -286,7 +295,8 @@ function renderLobby(){
       :'<span class="ic-ink">'+aosIcon('user',15,'currentColor')+'</span>'));
     const name=isMe
       ?'<span class="aos-seatname"><input class="aos-nameinline" id="aos-name-in" type="text" value="'+escAttr(s.name||NET.myName)+'" maxlength="12" onchange="uiNetRename(this.value)">'
-        +'<span class="aos-accent sm">(나)</span><span class="pencil">'+aosIcon('pencil',12)+'</span></span>'
+        +'<span class="aos-accent sm">(나)</span><span class="pencil">'+aosIcon('pencil',12)+'</span>'
+        +'<button class="aos-roundbtn" onclick="uiNetRandomName()" title="다른 이름 뽑기">'+aosIcon('refresh',12)+'</button></span>'
       :'<span class="aos-seatname"><span class="nm'+((s.clientId||s.kind==='ai')?'':' dim')+'">'+(s.name?esc(s.name):'친구를 기다리는 자리')+'</span></span>';
     const hostBadge=isHostSeat?'<span class="aos-badge host">'+icStar(11)+' 호스트</span>':'';
     let stat='', swap='';
@@ -339,7 +349,7 @@ function startNewGame(){
   const seats=[{name:(setupName||'플레이어').trim(), ai:false}];
   let ai=0, fr=0;
   for(let i=1;i<setupN;i++){
-    if(setupKinds[i]==='human') seats.push({name:PR_NAMES.filter(n=>n!==setupName)[fr++%5], ai:false});
+    if(setupKinds[i]==='human'){ const pool=PR_NAMES.filter(n=>n!==setupName); seats.push({name:pool[fr++%pool.length], ai:false}); }
     else seats.push({name:NET_AI_NAMES[(i-1)%4], ai:true});   // 폼에서 보여준 그 이름 그대로
   }
   newGame(seats);
