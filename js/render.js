@@ -225,7 +225,7 @@ function renderSetup(){
   }
   $app.innerHTML=aosFrame(
     (typeof EMBEDDED!=='undefined'&&EMBEDDED?'<button class="aos-x" onclick="uiBackToIntro()" title="소개로 돌아가기">'+aosIcon('x',20)+'</button>':'')
-    +'<h1>푸에르토리코 1897</h1>'
+    +'<h1>푸에르토리코 <span class="yr">1897</span></h1>'
     +'<p class="aos-sub">기본 게임 - '+setupN+'인 게임</p>'
     +(canResume
       ?'<div class="aos-resume">'
@@ -262,7 +262,7 @@ function renderLobby(){
     el.value=k.v;
     if(k.f){ el.focus(); try{ el.setSelectionRange(k.s,k.s); }catch(e){} }
   });
-  const head='<h1>푸에르토리코 1897</h1>'
+  const head='<h1>푸에르토리코 <span class="yr">1897</span></h1>'
     +'<p class="aos-sub">기본 게임 - '+(NET.room?NET.room.seats.length:setupN)+'인 게임</p>'
     +aosTabs(true);
   if(NET.status==='connecting'){

@@ -619,7 +619,9 @@
   .aos-card{ background:#f6efe0; border:1px solid #e6dcc6; border-radius:3px;
     box-shadow:0 1px 2px rgba(28,27,24,.04), 0 14px 34px -18px rgba(28,27,24,.16); }
   .aos-main{ position:relative; padding:32px 32px 28px; }
-  .aos-main h1{ font-family:inherit; font-size:30px; font-weight:700; letter-spacing:-.01em; color:#1c1b18; margin-bottom:6px; }
+  /* 제목은 소개 페이지 히어로와 같은 서체·색: 고운바탕 세리프 + "1897"은 코모런트 이탤릭 벽돌색 */
+  .aos-main h1{ font-family:'Gowun Batang','Batang',serif; font-size:30px; font-weight:700; letter-spacing:-.02em; color:#221d16; margin-bottom:6px; }
+  .aos-main h1 .yr{ font-family:'Cormorant Garamond',Georgia,serif; font-style:italic; font-weight:600; color:#a8442a; }
   .aos-sub{ color:#5f5b53; font-size:15px; margin-bottom:24px; }
   .aos-x{ position:absolute; top:18px; right:18px; border:none; background:transparent; color:#5f5b53; padding:4px; }
   .aos-x:hover{ color:#1c1b18; }
