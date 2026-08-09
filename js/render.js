@@ -7,6 +7,9 @@ const $app=document.getElementById('app');
    이미지가 다시 그려지지 않으며, 호버 상태가 유지된다. AI 턴처럼 렌더가 잦은 구간의 끊김이 이걸로 사라진다.
    섹션을 새로 추가할 때는 스켈레톤에 컨테이너를 만들고 setPart(id, html)로 채울 것. */
 let rdCache={};        // 섹션 id → 마지막으로 써넣은 HTML 문자열
+/* 중앙 액션 패널 스켈레톤 — 패널이 떠 있는 동안 이 배경·창은 재사용되고 head/body만 교체된다 */
+const AP_SKEL='<div class="overlay panel-ov" id="ap-ov" onclick="uiPanelBg(event)">'
+  +'<div class="modal" id="ap-modal"><div class="shop-modal-h" id="ap-head"></div><div id="ap-bodyc"></div></div></div>';
 let rdBoards=[];       // 플레이어 보드별 HTML 문자열 (인원수만큼)
 let rdSkeleton=false;  // $app 안에 게임 스켈레톤이 세워져 있는가
 function rdReset(){ rdCache={}; rdBoards=[]; rdSkeleton=false; }
@@ -265,7 +268,8 @@ function render(){
   const ACTIONMSG={pickRole:'역할 선택 중',settler:'개척 중',mayorPlace:'일꾼 배치 중',
     builder:'건설 중',craftBonus:'상품 선택 중',trader:'판매 중',captain:'선적 중',storage:'저장 중'};
   // 건물 보관소 버튼: 가장 우측(마지막 자리) 개인 보드의 우측 하단에 붙인다
-  const fabShopHtml='<button class="fab-shop" onclick="uiToggleShop()" title="건물 보관소 열기/닫기 (Esc로 닫기)">🏘️<span>건물</span></button>';
+  // stopPropagation: 이 버튼은 접힌 개인 보드(클릭=펼치기) 안에 있어서, 막지 않으면 보드까지 같이 펼쳐진다
+  const fabShopHtml='<button class="fab-shop" onclick="event.stopPropagation();uiToggleShop()" title="건물 보관소 열기/닫기 (Esc로 닫기)">🏘️<span>건물</span></button>';
   // 두꺼운 색 띠(.cur)는 "이번 역할을 고른 사람"에게 — 역할 선택 중일 때는 고르는 중인 사람에게
   const chooserPi=G.phase?G.phase.chooser:curPi;
   const boardParts=G.players.map(p=>{
@@ -435,24 +439,23 @@ function render(){
       +'</div></div>';
   }
 
-  /* 중앙 액션 패널 — 내 차례의 선택지 (개척·모집·생산 보너스·판매·선적·저장) / 단계 결과 보고 */
-  let panelPop='';
+  /* 중앙 액션 패널 — 내 차례의 선택지 (개척·모집·생산 보너스·판매·선적·저장) / 단계 결과 보고.
+     배경 오버레이·창(스켈레톤)은 패널이 떠 있는 동안 유지하고 제목·본문만 갈아끼운다 —
+     매 행동마다 통째로 다시 만들면 진행→마무리→결과 전환이 뚝뚝 끊겨 보인다. */
   const isReport=(pd.type==='report');
   const panelNow=isReport||(!holding&&panelVisibleNow());
   const panelJustOpened=panelNow&&!uiPanelWasVisible;
   uiPanelWasVisible=panelNow;
+  let apParts=null;
   if(isReport){
     // 결과 보고: [확인]을 누를 때까지 게임이 기다린다 (바깥 클릭도 확인으로 취급).
-    // stage 보고(선적·판매)는 진행 패널과 같은 크기·레이아웃 — 패널이 이어지는 것처럼 보인다.
-    // 헤더를 진행 창과 동일 구조(제목+부제+버튼)로 맞춰야 전환 때 헤더 높이가 튀지 않는다
-    panelPop='<div class="overlay panel-ov'+(panelJustOpened?' pop':'')+'" onclick="if(event.target===this)actReportDone()">'
-      +'<div class="modal act-modal report'+(pd.stage?' stage':'')+'">'
-      +'<div class="shop-modal-h"><h2>'+pd.title+'</h2><span class="ap-sub">결과를 확인하세요</span>'
-      +'<button class="btn-ghost" onclick="actReportDone()">확인 ✓</button></div>'
-      +pd.html
-      +'<div class="ap-btns"><button class="ap-opt hot" onclick="actReportDone()">확인</button></div>'
-      +'</div></div>';
-  } else if(panelNow) panelPop=renderActionPanel(pd, panelJustOpened);
+    // stage 보고(선적·판매)는 진행 패널과 같은 크기·레이아웃 — 같은 창 안에서 내용만 바뀐다.
+    apParts={ title:pd.title,
+      sub:'<span class="ap-sub">결과를 확인하세요</span>',
+      btn:'<button class="btn-ghost" onclick="actReportDone()">확인 ✓</button>',
+      cls:' report'+(pd.stage?' stage':''),
+      body:pd.html+'<div class="ap-btns"><button class="ap-opt hot" onclick="actReportDone()">확인</button></div>' };
+  } else if(panelNow) apParts=renderActionPanel(pd);
 
   /* ── 조립: 스켈레톤은 한 번만 세우고, 이후에는 달라진 섹션만 갈아끼운다 ── */
   if(!rdSkeleton){
@@ -514,11 +517,42 @@ function render(){
   setCls('card-supply','card'+cardFxCls('#card-supply'));
   setPart('rd-bar', bar);
   setPart('rd-modal', modal);
-  setPart('rd-panel', panelPop);
+  /* 패널: 스켈레톤(배경+창)은 유지, 클래스·제목·본문만 부분 교체 */
+  if(!apParts){
+    setPart('rd-panel','');
+    uiPanelAnim='';
+    uiPanelKey='';   // 닫혔다 다시 열리면 (같은 단계여도) 전환 애니메이션이 다시 나온다
+  } else {
+    if(setPart('rd-panel', AP_SKEL)){
+      // 스켈레톤을 새로 세웠으면 하위 캐시를 비워 클래스·내용이 반드시 다시 적용되게 한다
+      ['cls:ap-ov','cls:ap-modal','cls:ap-head','cls:ap-bodyc','ap-head','ap-bodyc'].forEach(k=>delete rdCache[k]);
+    }
+    // 등장(pop)은 새로 열릴 때 한 번, 결과 보고 전환은 창 유지 + 테두리 펄스(swap)
+    if(panelJustOpened) uiPanelAnim='pop';
+    else if(isReport){ if(uiPanelAnim!=='swap') uiPanelAnim='swap'; }
+    else if(uiPanelAnim==='swap') uiPanelAnim='';
+    /* 내용 전환 애니메이션 — 패널이 "다른 단계"를 보여주기 시작하는 순간(역할 선택→선적 등)
+       제목·본문이 떠오른다. 같은 단계 안의 차례 이동·마무리·결과(stage 연속)는 키가 같아 재생 안 됨.
+       a/b 클래스를 교대로 붙여야 요소가 유지된 채로도 애니메이션이 다시 튼다. */
+    const grpKey=t=>({storage:'captain', craftBonus:'craft'})[t]||t;
+    const apKey=isReport?(pd.stage||'report'):(pd.type==='phaseEnd'?pd.id:grpKey(pd.type));
+    // 키가 바뀌면 무조건 재생 — 새로 열릴 때 생략했더니 대부분의 등장 경로에서 애니메이션이 통째로 빠졌다
+    if(apKey!==uiPanelKey){ uiPanelKey=apKey; uiPanelFlip=!uiPanelFlip; }
+    const flip=uiPanelFlip?' apb-a':' apb-b';
+    setCls('ap-ov','overlay panel-ov'+(uiPanelAnim?' '+uiPanelAnim:''));
+    setCls('ap-modal','modal act-modal'+apParts.cls);
+    setCls('ap-head','shop-modal-h'+flip);
+    setCls('ap-bodyc',flip.trim());
+    setPart('ap-head','<h2>'+apParts.title+'</h2>'+apParts.sub+apParts.btn);
+    setPart('ap-bodyc', apParts.body);
+  }
   setPart('rd-shop', shopPop);
   setPart('rd-help', renderHelpPop());
   /* 로그: 내용이 바뀐 렌더에서만 바닥으로 스크롤 */
   if(setPart('logbox', G.log.slice(-120).map(l=>'<div>'+l+'</div>').join(''))){
     const lb=document.getElementById('logbox'); if(lb) lb.scrollTop=lb.scrollHeight;
   }
+  /* 배치 팝 이어 재생 — 보드 노드가 다른 이유로 교체돼도 애니메이션이 처음부터 다시 재생되지 않게.
+     모든 DOM 쓰기가 끝난 뒤(새로 만들어진 노드가 다 자리잡은 뒤) 한 번에 처리해야 한다. */
+  fxTimeSync();
 }

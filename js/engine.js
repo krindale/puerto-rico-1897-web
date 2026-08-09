@@ -41,6 +41,22 @@ function endRound(){
 
 /* ═══════════════════════════ 단계 공통 흐름 ═══════════════════════════ */
 /* phase state: G.phase = {id, chooser, queue:[pi...], qi, ...phase별 필드} */
+
+/* ── 단계 마무리 일시정지 ──
+   각 단계의 마지막 행동이 처리된 직후 1초(PHASE_END_HOLD, app.js) 멈췄다가 실제 마무리(결과 보고·
+   다음 차례)로 넘어간다 — 마지막 행동이 화면에 잠깐 머물러야 무슨 일이 있었는지 보인다.
+   pending이므로 직렬화되고, 새로고침해도 schedule()이 타이머를 다시 걸어 이어진다. */
+function phasePause(id){ G.pending={type:'phaseEnd', id}; schedule(); }
+function actPhaseEnd(){
+  if(!G || !G.pending || G.pending.type!=='phaseEnd') return;  // 그새 새 게임을 시작한 경우
+  const id=G.pending.id; G.pending=null;
+  if(id==='settler') settlerFinish();
+  else if(id==='mayor') mayorFinish();
+  else if(id==='builder') builderFinish();
+  else if(id==='craft') craftFinish();
+  else if(id==='trader') traderFinish();
+  else if(id==='captain') captainFinish();
+}
 function startPhase(roleId, chooser){
   // hist: 이번 단계에 누가 무엇을 했는지 — 중앙 액션 패널의 "이번 단계 진행" 표시용 (직렬화 가능)
   const base={id:roleId, chooser, queue:order(chooser), qi:0, hist:[]};
@@ -59,15 +75,16 @@ function startPhase(roleId, chooser){
 /* ── 개척자 ── */
 function settlerNext(){
   const F=G.phase;
-  if(F.qi>=F.queue.length){
-    refillDisplay();
-    log('개척 단계 종료 — 남은 농장을 버리고 새로 '+G.supply.display.length+'개를 공개했습니다.');
-    G.phase=null; nextChooser(); return;
-  }
+  if(F.qi>=F.queue.length){ phasePause('settler'); return; }
   const pi=F.queue[F.qi]; const p=P(pi);
   if(p.land.length>=12){ log(pname(p)+' — 토지 칸이 가득 차 개척을 생략합니다.'); toast(pname(p)+' — 개척 생략 (토지 가득)', 'pboard-'+p.i, false, PCOLOR[p.i]); F.qi++; settlerNext(); return; }
   G.pending={type:'settler', player:pi, haciendaUsed:false, took:false};
   schedule();
+}
+function settlerFinish(){
+  refillDisplay();
+  log('개척 단계 종료 — 남은 농장을 버리고 새로 '+G.supply.display.length+'개를 공개했습니다.');
+  G.phase=null; nextChooser();
 }
 function settlerCanQuarry(pi){
   const F=G.phase; const p=P(pi);
@@ -75,7 +92,9 @@ function settlerCanQuarry(pi){
 }
 function settlerPlace(p, type, fromDeck){
   p.land.push({type, w:0});
-  if(p.ai) markFx(p.i, 'land-'+p.i+'-'+(p.land.length-1));   // 이펙트는 봇 행동에만
+  // 개척도 건설과 같은 규칙 — 사람 행동에도 타일 팝 이펙트를 주고, 잠깐 보여준 뒤 보드를 다음 차례로 넘긴다
+  if(p.ai) markFx(p.i, 'land-'+p.i+'-'+(p.land.length-1));
+  else markFxThenFollow(p.i, 'land-'+p.i+'-'+(p.land.length-1));
   toast(imgTag('농장',PLANT_NM[type],'ticon')+'<span>'+pname(p)+' — <b>'+PLANT_NM[type]+'</b> 개척</span>', '#card-plants', false, PCOLOR[p.i]);
   // 병원: 더미(대규모 농장)로 가져온 타일에는 적용 안 됨
   if(!fromDeck && occB(p,'b_hosp')){
@@ -209,7 +228,8 @@ function actMayorDone(){
   const p=P(G.pending.player);
   G.pending=null; G.phase.qi++; mayorNextPlace();
 }
-function mayorEnd(){
+function mayorEnd(){ phasePause('mayor'); }
+function mayorFinish(){
   const need=Math.max(emptyBuildingCircles(), G.n);
   const put=Math.min(need,G.supply.workers);
   G.supply.workers-=put;
@@ -250,7 +270,7 @@ function buildBlockReason(p,id,isChooser){
 }
 function builderNext(){
   const F=G.phase;
-  if(F.qi>=F.queue.length){ G.phase=null; nextChooser(); return; }
+  if(F.qi>=F.queue.length){ phasePause('builder'); return; }
   const pi=F.queue[F.qi];
   const p=P(pi), isC=(pi===F.chooser);
   const any=BORDER.some(id=>canBuild(p,id,isC));
@@ -258,13 +278,18 @@ function builderNext(){
   G.pending={type:'builder', player:pi};
   schedule();
 }
+function builderFinish(){ G.phase=null; nextChooser(); }
 function actBuild(id){
   const pd=G.pending; const p=P(pd.player); const isC=(pd.player===G.phase.chooser);
   if(id==='skip'){ log(pname(p)+' — 건설을 생략'); toast(pname(p)+' — 건설 생략', 'pboard-'+p.i, false, PCOLOR[p.i]); G.pending=null; G.phase.qi++; builderNext(); return; }
   const cost=buildCost(p,id,isC);
   p.coins-=cost; G.supply.stock[id]--;
   const b={id,w:0}; p.buildings.push(b);
-  if(p.ai) markFx(pd.player, 'bld-'+pd.player+'-'+id);   // 이펙트는 봇 행동에만
+  // 사람이 지어도 이펙트를 준다 — 건설 중엔 보관소 팝업이 보드를 가리고 있어서,
+  // 팝업이 닫힌 뒤 내 보드에서 새 건물이 팝되는 게 보여야 "지어졌다"가 보인다.
+  // 사람은 잠깐 보여준 뒤 보드를 자동 모드로 되돌려 다음 차례에게 넘긴다.
+  if(p.ai) markFx(pd.player, 'bld-'+pd.player+'-'+id);
+  else markFxThenFollow(pd.player, 'bld-'+pd.player+'-'+id);
   log(pname(p)+' — <b>'+BUILDINGS[id].nm+'</b> 건설 ('+cost+'주화)');
   toast(imgTag('건물',BUILDINGS[id].nm,'ticon')+'<span>'+pname(p)+' — <b>'+BUILDINGS[id].nm+'</b> 건설 ('+cost+'주화)</span>', '[data-pi="'+pd.player+'"]', false, PCOLOR[p.i]);
   if(occB(p,'b_univ')){
@@ -320,21 +345,25 @@ function craftsmanRun(base){
     G.pending={type:'craftBonus', player:base.chooser};
     schedule();   // 결과 보고는 혜택 선택까지 끝난 뒤(actCraftBonus)에 띄운다
   } else {
-    G.phase=null;
-    const html='<div class="ap-msg">모두 생산을 마쳤습니다. 결과를 확인하세요.</div>'+craftStageHtml(prodRows,{})+'<div class="ap-endbanner">🌾 생산 단계가 끝났습니다</div>';
-    if(!phaseReport('🌾 생산 결과', html, 'craft')) nextChooser();
+    G.phase={...base, prod:prodRows};
+    phasePause('craft');
   }
 }
 function actCraftBonus(t){
   const p=P(G.pending.player);
   G.supply.goods[t]--; p.goods[t]++;
   log(pname(p)+' — 생산자 혜택으로 <b>'+PLANT_NM[t]+'</b> 1개 추가');
-  const rows=G.phase.prod;
-  G.pending=null; G.phase=null;
+  G.phase.bonusTaken=t; G.phase.bonusPi=p.i;   // craftFinish의 결과 보고에 쓴다
+  G.pending=null;
+  phasePause('craft');
+}
+function craftFinish(){
+  const F=G.phase, rows=(F&&F.prod)||[], t=F&&F.bonusTaken;
+  G.phase=null;
   const html='<div class="ap-msg">모두 생산을 마쳤습니다. 결과를 확인하세요.</div>'
-    +craftStageHtml(rows||[], {turnPi:p.i, extra:'<div class="ap-prow"><span class="dim">생산자 혜택</span><span class="ap-g">'+goodChip(t)+'+1</span></div>'})
+    +craftStageHtml(rows, t?{turnPi:F.bonusPi, extra:'<div class="ap-prow"><span class="dim">생산자 혜택</span><span class="ap-g">'+goodChip(t)+'+1</span></div>'}:{})
     +'<div class="ap-endbanner">🌾 생산 단계가 끝났습니다</div>';
-  if(!rows || !phaseReport('🌾 생산 결과', html, 'craft')) nextChooser();
+  if(!phaseReport('🌾 생산 결과', html, 'craft')) nextChooser();
 }
 
 /* ── 상인 ── */
@@ -346,40 +375,41 @@ function sellableTypes(p){
 }
 function traderNext(){
   const F=G.phase;
-  if(F.qi>=F.queue.length){
-    // 단계 요약 — 진행 패널과 같은 2단 레이아웃으로: 좌 = 플레이어별 결과, 우 = 상점 최종 상황(비우기 전)
-    const plCards=G.players.map(p=>{
-      const h=(F.hist||[]).find(x=>x.pi===p.i&&x.kind==='sell');
-      return '<div class="ap-pl" style="--pc:'+PCOLOR[p.i]+'">'
-        +'<div class="ap-pl-h" style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+'</div>'
-        +'<div class="ap-prow">'+(h?'<span class="ap-g">'+goodChip(h.t)+PLANT_NM[h.t]+' 판매</span><b>+'+h.coins+'주화</b>':'<span class="dim">판매 없음</span>')+'</div></div>';
-    }).join('');
-    const full=G.supply.market.length>=4;
-    const slots='<div class="ap-slots">'
-      +G.supply.market.map(t=>'<div class="ap-slot">'+goodChip(t)+'</div>').join('')
-      +Array(4-G.supply.market.length).fill('<div class="ap-slot"></div>').join('')+'</div>'
-      +'<div class="ap-msg" style="margin-top:8px">'+(full?'가득 차 상품을 공급처로 반납합니다.':(G.supply.market.length?G.supply.market.length+'/4 — 다음 판매 단계까지 유지됩니다.':'비어 있음'))+'</div>';
-    const html='<div class="ap-msg">모두 판매를 마쳤습니다. 결과를 확인하세요.'
-      +'<br><span class="dim">'+(full?'가득 찬 상점은 비워집니다.':'남은 상품은 다음 판매 단계까지 유지됩니다.')+'</span></div>'
-      +'<div class="ap-cols">'
-      +'<div class="ap-col"><div class="ap-col-h">① 플레이어 결과</div><div class="ap-pls">'+plCards+'</div></div>'
-      +'<div class="ap-col"><div class="ap-col-h">② 상점 (최대 4칸)</div>'+slots+'</div>'
-      +'</div>'
-      +'<div class="ap-endbanner">💰 판매 단계가 끝났습니다</div>';
-    if(full){
-      for(const t of G.supply.market) G.supply.goods[t]++;
-      G.supply.market=[];
-      log('상점이 가득 차 상품을 모두 공급처로 치웠습니다.');
-    }
-    G.phase=null;
-    if(!phaseReport('💰 판매 결과', html, 'trader')) nextChooser();
-    return;
-  }
+  if(F.qi>=F.queue.length){ phasePause('trader'); return; }
   const pi=F.queue[F.qi]; const p=P(pi);
   const opts=sellableTypes(p);
   if(!opts.length){ phaseHist({pi, kind:'skip', forced:true}); log(pname(p)+' — 판매할 수 있는 상품이 없어 생략합니다.'); F.qi++; traderNext(); return; }
   G.pending={type:'trader', player:pi};
   schedule();
+}
+function traderFinish(){
+  const F=G.phase;
+  // 단계 요약 — 진행 패널과 같은 2단 레이아웃으로: 좌 = 플레이어별 결과, 우 = 상점 최종 상황(비우기 전)
+  const plCards=G.players.map(p=>{
+    const h=(F.hist||[]).find(x=>x.pi===p.i&&x.kind==='sell');
+    return '<div class="ap-pl" style="--pc:'+PCOLOR[p.i]+'">'
+      +'<div class="ap-pl-h" style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+'</div>'
+      +'<div class="ap-prow">'+(h?'<span class="ap-g">'+goodChip(h.t)+PLANT_NM[h.t]+' 판매</span><b>+'+h.coins+'주화</b>':'<span class="dim">판매 없음</span>')+'</div></div>';
+  }).join('');
+  const full=G.supply.market.length>=4;
+  const slots='<div class="ap-slots">'
+    +G.supply.market.map(t=>'<div class="ap-slot">'+goodChip(t)+'</div>').join('')
+    +Array(4-G.supply.market.length).fill('<div class="ap-slot"></div>').join('')+'</div>'
+    +'<div class="ap-msg" style="margin-top:8px">'+(full?'가득 차 상품을 공급처로 반납합니다.':(G.supply.market.length?G.supply.market.length+'/4 — 다음 판매 단계까지 유지됩니다.':'비어 있음'))+'</div>';
+  const html='<div class="ap-msg">모두 판매를 마쳤습니다. 결과를 확인하세요.'
+    +'<br><span class="dim">'+(full?'가득 찬 상점은 비워집니다.':'남은 상품은 다음 판매 단계까지 유지됩니다.')+'</span></div>'
+    +'<div class="ap-cols">'
+    +'<div class="ap-col"><div class="ap-col-h">① 플레이어 결과</div><div class="ap-pls">'+plCards+'</div></div>'
+    +'<div class="ap-col"><div class="ap-col-h">② 상점 (최대 4칸)</div>'+slots+'</div>'
+    +'</div>'
+    +'<div class="ap-endbanner">💰 판매 단계가 끝났습니다</div>';
+  if(full){
+    for(const t of G.supply.market) G.supply.goods[t]++;
+    G.supply.market=[];
+    log('상점이 가득 차 상품을 모두 공급처로 치웠습니다.');
+  }
+  G.phase=null;
+  if(!phaseReport('💰 판매 결과', html, 'trader')) nextChooser();
 }
 function saleCoins(p,t,isChooser){
   let c=GOODS[t].price+(isChooser?1:0);
@@ -526,7 +556,8 @@ function actStorage(keepTypes, single){
   if(lost.length) log(pname(p)+' — 저장 한도 초과로 반납: '+lost.join(', '));
   G.pending=null; G.phase.sqi++; storageNext();
 }
-function captainEnd(){
+function captainEnd(){ phasePause('captain'); }
+function captainFinish(){
   const F=G.phase;
   // 단계 요약 — 진행 패널과 같은 2단 레이아웃으로: 좌 = 플레이어별 결과, 우 = 수송선 최종 상황(비우기 전)
   const tally={};
