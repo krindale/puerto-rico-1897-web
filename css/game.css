@@ -609,7 +609,7 @@
 
   /* ═══ 설정·대기실 — aos_showcase 디자인 토큰 그대로 ═══
      페이지 #efece4 · 카드 #fbf6ea (r18px, 종이 그림자) · 잉크 #1c1b18 · 보조 #5f5b53
-     버밀리언 #d97f22 (hover #b5651a) · positive #2f6b4f · 봇 파랑 #457b9d */
+     버밀리언 #a8442a (hover #7d2f1c) · positive #2f6b4f · 봇 파랑 #457b9d */
   body.aos-setup{ background:#efece4; font-family:'Noto Sans KR','Malgun Gothic',sans-serif; }
   body.aos-setup::before, body.aos-setup::after{ display:none; }  /* 게임의 양피지 프레임 끄기 */
   body.aos-setup .wrap{ max-width:none; padding:0; }
@@ -628,15 +628,15 @@
   .aos-tabs button{ flex:1; padding:9px 0; border-radius:10px; border:none; font-size:14px; font-weight:700;
     background:transparent; color:#5f5b53; }
   .aos-tabs button:not(.on):hover{ background:#e9dfc9; }
-  .aos-tabs button.on{ background:#d97f22; color:#efece4; }
+  .aos-tabs button.on{ background:#a8442a; color:#efece4; }
   /* 라벨·입력 */
   .aos-label{ display:flex; align-items:center; gap:8px; font-size:13.5px; color:#5f5b53; margin:0 0 8px; }
   .aos-input{ width:100%; padding:9px 14px; background:#fbf6ea; border:1px solid rgba(28,27,24,.1);
     border-radius:10px; font-family:inherit; font-size:14.5px; color:#1c1b18; }
-  .aos-input:focus{ outline:none; border-color:#d97f22; }
+  .aos-input:focus{ outline:none; border-color:#a8442a; }
   .aos-input.mono{ letter-spacing:.18em; text-transform:uppercase; }
   .aos-dim{ font-size:13px; color:#66625a; line-height:1.6; }
-  .aos-accent{ color:#d97f22; font-size:13px; }
+  .aos-accent{ color:#a8442a; font-size:13px; }
   .aos-accent.sm{ font-size:12px; flex:none; }
   /* 섹션 박스 (방 만들기 / 코드로 입장) */
   .aos-box{ border:1px solid rgba(28,27,24,.1); border-radius:14px; padding:16px; margin-top:20px; }
@@ -648,7 +648,7 @@
   .aos-pill{ flex:1; padding:8px 12px; border-radius:10px; border:none; font-size:14px; font-weight:600;
     background:#fbf6ea; color:#5f5b53; box-shadow:inset 0 0 0 1px rgba(28,27,24,.08); }
   .aos-pill:not(.on):hover{ background:#e9dfc9; }
-  .aos-pill.on{ background:#d97f22; color:#efece4; box-shadow:none; }
+  .aos-pill.on{ background:#a8442a; color:#efece4; box-shadow:none; }
   /* 자리 구성 폼 행 */
   .aos-seatforms{ display:flex; flex-direction:column; gap:7px; }
   .aos-seatform{ display:flex; align-items:center; gap:8px; font-size:13px; min-height:30px; }
@@ -661,16 +661,16 @@
   /* 버튼 — 쇼케이스 btn-primary/secondary */
   .aos-btnp{ display:inline-flex; align-items:center; justify-content:center; gap:8px;
     padding:12px 28px; border-radius:12px; border:none; font-family:inherit; font-weight:700; font-size:15px;
-    background:#d97f22; color:#fffdf8; box-shadow:0 8px 20px -8px rgba(217,127,34,.6);
+    background:#a8442a; color:#fffdf8; box-shadow:0 8px 20px -8px rgba(168,68,42,.6);
     transition:background-color .25s ease, transform .25s ease; }
-  .aos-btnp:hover{ background:#b5651a; transform:translateY(-1px); }
+  .aos-btnp:hover{ background:#7d2f1c; transform:translateY(-1px); }
   .aos-btnp.full{ width:100%; }
   .aos-btnp.sm{ padding:9px 20px; font-size:14px; }
   .aos-btnp.big{ padding:13px 28px; }
   .aos-btns{ padding:9px 18px; border-radius:10px; border:1px solid #ddd6c8; font-family:inherit;
     font-weight:600; font-size:14px; color:#1c1b18; background:#fbf6ea;
     transition:border-color .25s ease, color .25s ease; }
-  .aos-btns:hover{ border-color:#d97f22; color:#d97f22; }
+  .aos-btns:hover{ border-color:#a8442a; color:#a8442a; }
   .aos-textbtn{ display:flex; align-items:center; justify-content:center; gap:6px; width:100%;
     margin-top:10px; padding:9px 0; border:none; border-radius:10px; background:transparent;
     font-size:13.5px; color:#5f5b53; }
@@ -680,7 +680,7 @@
   .aos-errslot{ min-height:20px; margin-top:8px; }
   .aos-errslot p{ font-size:12.5px; line-height:20px; color:#dc2626; }
   /* 이어하기 배너 */
-  .aos-resume{ position:relative; border:1px solid rgba(217,127,34,.4); background:rgba(217,127,34,.05);
+  .aos-resume{ position:relative; border:1px solid rgba(168,68,42,.4); background:rgba(168,68,42,.05);
     border-radius:14px; padding:16px; margin-bottom:24px; }
   .aos-resume .rx{ position:absolute; top:8px; right:8px; border:none; background:transparent; color:#5f5b53; padding:4px; border-radius:6px; }
   .aos-resume .rx:hover{ color:#1c1b18; background:rgba(28,27,24,.1); }
@@ -690,7 +690,7 @@
   .aos-codebox{ background:#e9dfc9; border-radius:14px; text-align:center; padding:16px 12px; margin-bottom:16px; }
   .aos-codebox .cap{ font-size:12.5px; color:#5f5b53; margin-bottom:4px; }
   .aos-codebox .row{ display:flex; align-items:center; justify-content:center; gap:8px; }
-  .aos-codebox .code{ font-size:31px; font-weight:700; letter-spacing:.3em; color:#d97f22; text-indent:.3em; }
+  .aos-codebox .code{ font-size:31px; font-weight:700; letter-spacing:.3em; color:#a8442a; text-indent:.3em; }
   .aos-codebox .cpy{ border:none; background:transparent; color:#5f5b53; padding:8px; border-radius:10px; }
   .aos-codebox .cpy:hover{ background:rgba(28,27,24,.1); }
   .aos-codebox .cpy.ok{ color:#2f6b4f; }
@@ -700,7 +700,7 @@
   .aos-seats{ display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
   .aos-seat{ display:flex; align-items:center; gap:8px; padding:9px 13px; border-radius:10px;
     border:1px solid rgba(28,27,24,.1); background:#fbf6ea; font-size:14px; }
-  .aos-seat.me{ border-color:#d97f22; background:rgba(217,127,34,.05); }
+  .aos-seat.me{ border-color:#a8442a; background:rgba(168,68,42,.05); }
   .aos-seat .ic-bot{ color:#457b9d; display:inline-flex; }
   .ic-ink{ color:#6b5410; display:inline-flex; }
   .aos-seatname{ flex:1; min-width:0; display:flex; align-items:center; gap:5px; overflow:hidden; }
@@ -709,7 +709,7 @@
   .aos-seatname .pencil{ color:#66625a; display:inline-flex; }
   .aos-nameinline{ border:none; background:transparent; font-family:inherit; font-size:14px; font-weight:600;
     color:#1c1b18; width:100px; padding:2px 0; border-bottom:1px dashed transparent; }
-  .aos-nameinline:hover, .aos-nameinline:focus{ border-bottom-color:#d97f22; outline:none; }
+  .aos-nameinline:hover, .aos-nameinline:focus{ border-bottom-color:#a8442a; outline:none; }
   .aos-badge{ display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px;
     font-size:11.5px; font-weight:600; white-space:nowrap; }
   .aos-badge.host{ background:rgba(234,179,8,.15); color:#a16207; }
@@ -730,8 +730,8 @@
   .aos-pubroom .t{ font-size:13px; font-weight:700; color:#1c1b18; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .aos-pubroom .d{ font-size:11.5px; color:#5f5b53; }
   .aos-pubjoin{ border:none; border-radius:8px; padding:6px 14px; font-size:12.5px; font-weight:700;
-    background:rgba(217,127,34,.12); color:#b5651a; }
-  .aos-pubjoin:hover{ background:rgba(217,127,34,.22); }
+    background:rgba(168,68,42,.12); color:#7d2f1c; }
+  .aos-pubjoin:hover{ background:rgba(168,68,42,.22); }
   .aos-pubjoin:disabled{ opacity:.5; cursor:not-allowed; }
   /* 대기실 채팅 */
   .aos-chat{ border:1px solid rgba(28,27,24,.1); border-radius:10px; background:#fbf6ea;
@@ -743,7 +743,7 @@
     font-family:inherit; font-size:13.5px; color:#1c1b18; }
   .aos-chat .in input:focus{ outline:none; }
   .aos-chat .in button{ border:none; background:transparent; color:#5f5b53; padding:0 12px; }
-  .aos-chat .in button:hover{ color:#d97f22; }
+  .aos-chat .in button:hover{ color:#a8442a; }
   /* 시작 대기 상태 버튼 */
   .aos-startwait{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
     padding:13px 16px; border-radius:12px; border:none; background:#e9dfc9; color:#66625a;
@@ -753,7 +753,7 @@
   @keyframes aosspin{ to{ transform:rotate(360deg); } }
   /* 우측 게임 요약 카드 (쇼케이스의 맵 특수룰 카드 자리) */
   .aos-rules{ padding:26px 28px; }
-  .aos-rules h3{ font-family:inherit; font-size:20px; font-weight:700; color:#d97f22; margin-bottom:4px; }
+  .aos-rules h3{ font-family:inherit; font-size:20px; font-weight:700; color:#a8442a; margin-bottom:4px; }
   .aos-rules .sub{ font-size:13px; color:#5f5b53; margin-bottom:18px; }
   .aos-rules .it{ border-left:3px solid #ddd6c8; padding:2px 0 2px 14px; margin-bottom:16px; }
   .aos-rules .it b{ display:block; font-size:14.5px; color:#1c1b18; margin-bottom:3px; }
@@ -761,7 +761,7 @@
   /* 채팅 공용 메시지 스타일 */
   .cmsg{ font-size:12.5px; line-height:1.5; word-break:break-word; color:#1c1b18; }
   .cmsg b{ color:#5f5b53; margin-right:4px; font-weight:600; }
-  .cmsg b.me{ color:#d97f22; }
+  .cmsg b.me{ color:#a8442a; }
   .cempty{ color:#66625a; font-size:12px; text-align:center; padding:16px 0; }
   .netbadge{ font-size:12px; font-weight:700; color:var(--act); border:1px solid var(--act);
     border-radius:999px; padding:3px 10px; align-self:center; }
