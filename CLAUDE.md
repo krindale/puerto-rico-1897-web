@@ -33,6 +33,8 @@ js/render.js                    ← 렌더링 — 부분 렌더 인프라(setPar
 js/panel.js                     ← 중앙 액션 패널(renderActionPanel)·하단 액션바(renderActionBar)
 js/ui.js                        ← 사람 전용 UI 헬퍼 (uiToggleLand·uiStoreDone…)
 js/net-config.js                ← Supabase 접속 설정 (publishable 키 — 공개 전제, RLS가 접근 제어)
+supabase/                       ← 전용 Supabase 프로젝트 스키마 (setup.sql·migrations/·config.toml)
+.mcp.json                       ← Supabase MCP 연결 (Claude Code에서 /mcp 로 인증 후 사용)
 js/net.js                       ← 온라인 멀티플레이 — 방/좌석/intent/snapshot/연출 중계/채팅 (아래 "온라인" 섹션)
 js/vendor/supabase.js           ← supabase-js UMD 번들 (CDN 금지 원칙 — 저장소에 포함)
 js/app.js                       ← 흐름 제어(schedule)와 부팅
@@ -268,10 +270,13 @@ pending(`type:'report'`, 직렬화 가능 — 새로고침 복구됨)**이고 �
 
 ### B. 온라인 멀티플레이 — 구현됨 (2026-08, js/net.js)
 
-**aos_showcase와 같은 Supabase 프로젝트·같은 `rooms` 테이블·같은 RLS를 그대로 재사용합니다**
-(스키마·정책·정리 크론은 aos_showcase/supabase/setup.sql이 원본 — 이 저장소에는 SQL이 없습니다).
-푸에르토리코 방은 `map_id='pr1897'` + **항상 비공개**(is_public=false)라 쇼케이스 공개방 목록에
-섞이지 않고, 방 코드는 같은 테이블의 unique 제약을 공유하므로 충돌하지 않습니다.
+**이 게임 전용 Supabase 프로젝트를 씁니다** — `puerto-rico-1897` (ref `cpdvwgwxkqhcsqfxzdec`, 서울),
+aos_showcase 프로젝트와 완전히 분리(사용자 결정). 스키마·RLS·정리 크론은 쇼케이스에서 검증된 것을
+가져와 `supabase/setup.sql`(대시보드 붙여넣기용) + `supabase/migrations/`(CLI `db push`용)에 둡니다.
+전제 설정: Authentication → Anonymous sign-ins ON (config.toml `enable_anonymous_sign_ins=true` →
+`supabase config push`로 적용됨). DB 비밀번호는 `.env.local`(git 미추적).
+realtime.messages 정책은 프로젝트 생성 직후엔 적용이 안 된다(Realtime 서비스가 떠야 테이블이 생김) —
+그래서 별도 마이그레이션(...realtime_policies.sql)이며, 실패하면 잠시 후 `db push` 재시도.
 
 **모델: 호스트 권위(host-authoritative).** 서버(Edge Function)가 아니라 방을 만든 클라이언트가 권위입니다.
 
