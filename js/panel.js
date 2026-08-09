@@ -3,7 +3,8 @@
    내 차례의 선택지를 화면 가운데에 모아 보여준다. 모든 버튼은 기존 actXxx/uiXxx 진입점만 호출한다.
    G.phase.hist(이번 단계 진행 내역)로 "봇들이 방금 무엇을 했는지"도 함께 보여준다. */
 function panelHistHtml(F){
-  const items=(F&&F.hist||[]);
+  const all=(F&&F.hist||[]);
+  const items=all.slice(-4);   // 최근 4건만 — 줄이 계속 늘어나며 패널 내용이 밀리는 것을 막는다
   const rows=items.map((h,i)=>{
     const q=P(h.pi);
     const nm='<b style="color:'+PCOLOR[q.i]+'">'+esc(q.name)+'</b>';
@@ -18,9 +19,13 @@ function panelHistHtml(F){
     // 마지막 줄(방금 일어난 일)은 슬라이드 인
     return '<div class="hrow'+(i===items.length-1?pfxCls('hist-last','pfx-row'):'')+'">'+inner+'</div>';
   }).join('');
-  return rows?'<div class="ap-hist"><div class="ap-sec-h">이번 단계 진행</div>'+rows+'</div>':'';
+  return rows?'<div class="ap-hist"><div class="ap-sec-h">이번 단계 진행'
+    +(all.length>items.length?' <span class="dim">· 최근 '+items.length+'건</span>':'')
+    +'</div>'+rows+'</div>':'';
 }
-function renderActionPanel(pd, justOpened){
+/* 패널 내용을 부품({title, sub, btn, cls, body})으로 반환한다 — 배경 오버레이·창 스켈레톤은
+   render()가 유지하며 제목·본문만 갈아끼운다 (통째로 다시 만들면 전환이 뚝뚝 끊겨 보인다) */
+function renderActionPanel(pd){
   const p=(pd.player!==undefined)?P(pd.player):null; const F=G.phase;  // phaseEnd에는 행동할 사람이 없다
   let title='', body='';
   if(pd.type==='pickRole'){
@@ -142,7 +147,9 @@ function renderActionPanel(pd, justOpened){
       const isTurn=(q.i===pd.player);
       let inner;
       if(myTurn&&isTurn){
-        inner='<div class="ap-opts vert">'+(opts||'<span class="dim">보유 상품이 없습니다.</span>')+'</div>';
+        // 패스 버튼은 선택지 바로 아래에 — 패널 하단은 내용이 길면 잘려서 버튼이 안 보인다
+        inner='<div class="ap-opts vert">'+(opts||'<span class="dim">보유 상품이 없습니다.</span>')
+          +'<button class="ap-opt" onclick="actTrade(\'skip\')">이번엔 판매 안 함</button></div>';
       } else {
         const chips=GTYPES.filter(t=>q.goods[t]>0).map(t=>'<span class="ap-g">'+goodChip(t)+'×'+q.goods[t]+'</span>').join('')
           ||'<span class="dim">상품 없음</span>';
@@ -163,7 +170,6 @@ function renderActionPanel(pd, justOpened){
       +'</div>'
       +'<div class="ap-col"><div class="ap-col-h">② 상점 (최대 4칸)</div>'+slots+'</div>'
       +'</div>'
-      +(myTurn?'<div class="ap-btns"><button class="ap-opt" onclick="actTrade(\'skip\')">판매 안 함</button></div>':'')
       +panelHistHtml(F);
   }
   else if(pd.type==='captain'){
@@ -193,7 +199,10 @@ function renderActionPanel(pd, justOpened){
       const isTurn=(q.i===pd.player);
       let inner;
       if(myTurn&&isTurn){
-        inner='<div class="ap-opts vert">'+(goodsBtns||'<span class="dim">보유 상품이 없습니다.</span>')+'</div>';
+        // 넘기기 버튼도 선택지 바로 아래에 — 패널 하단은 내용이 길면 잘려서 버튼이 안 보인다
+        inner='<div class="ap-opts vert">'+(goodsBtns||'<span class="dim">보유 상품이 없습니다.</span>')
+          +(pd.mayPass?'<button class="ap-opt" onclick="actCaptain(\'pass\')">넘기기</button>':'')
+          +'</div>';
       } else {
         const chips=GTYPES.filter(t=>q.goods[t]>0).map(t=>'<span class="ap-g">'+goodChip(t)+'×'+q.goods[t]+'</span>').join('')
           ||'<span class="dim">상품 없음</span>';
@@ -261,7 +270,6 @@ function renderActionPanel(pd, justOpened){
         +'<div class="ap-ships vert">'+ships+wharfCard+'</div>'
       +'</div>'
       +'</div>'
-      +(myTurn&&pd.mayPass?'<div class="ap-btns"><button class="ap-opt" onclick="actCaptain(\'pass\')">넘기기</button></div>':'')
       +panelHistHtml(F);
   }
   else if(pd.type==='storage'){
@@ -277,7 +285,9 @@ function renderActionPanel(pd, justOpened){
         const keep=sel.types.includes(t)?p.goods[t]:(sel.single===t?1:0);
         if(p.goods[t]-keep>0) drops.push(PLANT_NM[t]+' '+(p.goods[t]-keep));
       }
-      picker='<div class="ap-msg" style="margin:8px 0 2px">창고 <b>'+cap+'종류</b> 전부 + 낱개 <b>1개</b>만 저장 — 나머지는 반납됩니다.</div>'
+      picker='<div class="ap-msg" style="margin:8px 0 2px">'+(cap>0
+          ?'창고 <b>'+cap+'종류</b> 전부 + 낱개 <b>1개</b>만 저장 — 나머지는 반납됩니다.'
+          :'창고가 없어 <b>낱개 1개</b>만 저장할 수 있습니다 — 나머지는 반납됩니다.')+'</div>'
         +(cap>0?'<div class="ap-opts">'
           +types.map(t=>'<button class="ap-opt'+(sel.types.includes(t)?' on':'')+'" onclick="uiStoreType(\''+t+'\')">'
             +goodChip(t)+PLANT_NM[t]+' 전부('+p.goods[t]+')</button>').join('')+'</div>':'')
@@ -352,13 +362,13 @@ function renderActionPanel(pd, justOpened){
     }
   }
   // stage(선적·판매): 단계 내내 떠 있으므로 높이를 고정 — 내용이 바뀌어도 패널 크기가 출렁이지 않게
-  return '<div class="overlay panel-ov'+(justOpened?' pop':'')+'" onclick="if(event.target===this)uiTogglePanel()">'
-    +'<div class="modal act-modal'+(pd.type==='pickRole'?' wide':'')+((pd.type==='captain'||pd.type==='storage'||pd.type==='trader'||pd.type==='craftBonus'||pd.type==='phaseEnd')?' stage':'')+'">'
-    +'<div class="shop-modal-h"><h2>'+title+'</h2>'
-    +(p?'<span class="ap-sub" style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+' 차례</span>':'<span class="ap-sub">단계 마무리…</span>')
-    +'<button class="btn-ghost" onclick="uiTogglePanel()">닫기 ✕</button></div>'
-    +body
-    +'</div></div>';
+  return {
+    title,
+    sub: (p?'<span class="ap-sub" style="color:'+PCOLOR[p.i]+'">'+esc(p.name)+' 차례</span>':'<span class="ap-sub">단계 마무리…</span>'),
+    btn: '<button class="btn-ghost" onclick="uiTogglePanel()">닫기 ✕</button>',
+    cls: (pd.type==='pickRole'?' wide':'')+((pd.type==='captain'||pd.type==='storage'||pd.type==='trader'||pd.type==='craftBonus'||pd.type==='phaseEnd')?' stage':''),
+    body,
+  };
 }
 
 function renderActionBar(pd){
@@ -412,8 +422,11 @@ function renderActionBar(pd){
     const cap=pd.cap;
     const sel=storeSel();
     const types=GTYPES.filter(t=>p.goods[t]>0);
-    msg='저장 한도 초과 — 창고 저장 종류 <b>'+cap+'</b>개 + 낱개 1개를 고르세요.';
-    for(const t of types){
+    msg=cap>0
+      ?'저장 한도 초과 — 창고 저장 종류 <b>'+cap+'</b>개 + 낱개 1개를 고르세요.'
+      :'저장 한도 초과 — 창고가 없어 <b>낱개 1개</b>만 남길 수 있습니다.';
+    // 종류 보관 버튼은 창고가 있을 때만 — 없는데 그리면 보관할 수 있는 것처럼 보인다 (눌러도 무반응)
+    if(cap>0) for(const t of types){
       const on=sel.types.includes(t);
       btns+='<button style="'+(on?'background:#4e8c46;border-color:#4e8c46':'')+'" onclick="uiStoreType(\''+t+'\')">'
         +(on?'✓ ':'')+PLANT_NM[t]+' 전부('+p.goods[t]+')</button>';

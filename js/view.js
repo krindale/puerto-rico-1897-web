@@ -5,13 +5,37 @@
 /* 방금 배치된 것 강조: 액션한 플레이어 보드로 화면을 옮기고, 새 타일/일꾼에 팝 이펙트 */
 let fxMark=null;
 let cardFx=null;   // 사건이 일어난 사이드 카드 번쩍임
-const FX_HOLD=600;  // 직전 행동의 이펙트를 이 시간만큼은 화면에 붙잡아둔다 (렌더 전환·큰 토스트 모두 공통 기준)
+/* 직전 행동의 이펙트를 이 시간만큼은 화면에 붙잡아둔다 (렌더 전환·큰 토스트 공통 기준).
+   = 배치 애니메이션 전체 길이: 보드 열림+간격(--fx-step .72s) + 팝(fxpop .95s) ≈ 1.67s
+   CSS의 애니메이션 길이를 바꾸면 이 값도 반드시 같이 바꿀 것 — 짧으면 이펙트가 끝나기 전에
+   다음 차례 UI(패널·팝업·액션바)가 떠서 방금 일어난 일이 안 보인다. */
+const FX_HOLD=1700;
 const BOARD_ANIM=470;  // 개인 보드 펼침 애니메이션(CSS --board-anim = .42s)이 끝나는 데 걸리는 시간 + 여유
 const SHOP_DELAY=300;  // 보드가 다 펼쳐진 뒤 건물 보관판이 뜨기까지 쉬는 한 박자
 function cardFxCls(id){ return (cardFx && cardFx.sel===id && Date.now()-cardFx.t<1400) ? ' cardflash' : ''; }
 function markFxKeys(pi, keys){ const m={}; keys.forEach(k=>m[k]=1); fxMark={keys:m, t:Date.now(), pi}; uiBoardSel=pi; }
 function markFx(pi, key){ markFxKeys(pi, [key]); }
+/* 사람 행동용: 이펙트를 잠깐 보여준 뒤 보드를 자동 모드로 되돌려 다음 차례에게 넘긴다.
+   봇은 다음 봇의 markFx가 보드를 가져가지만, 사람 뒤 차례가 전부 생략되면 보드가 내게 묶인 채 남는다. */
+function markFxThenFollow(pi, key){
+  markFx(pi, key);
+  setTimeout(()=>{ if(uiBoardSel===pi){ uiBoardSel=null; render(); } }, FX_HOLD);
+}
 function fxCls(key){ return (fxMark && fxMark.keys[key] && Date.now()-fxMark.t<1900) ? ' fx-pop' : ''; }
+/* 배치 팝이 두 번 재생되는 것을 막는다 — 보드 HTML은 fx와 무관한 이유(차례 띠·단계 전환 클래스)로도
+   다시 만들어지는데, 교체된 새 노드의 애니메이션은 0초부터 다시 시작한다. 그래서 새로 만들어진
+   fx 요소에 음수 animation-delay를 줘서 원래 타임라인의 그 시점부터 "이어서" 재생한다.
+   render() 마지막에 호출. data-fxd 표시로 같은 노드를 두 번 만지지 않는다 (delay를 다시 쓰면 그게 또 재시작이다). */
+function fxTimeSync(){
+  if(!fxMark || typeof document==='undefined' || !document.querySelectorAll || typeof getComputedStyle!=='function') return;
+  const elapsed=Date.now()-fxMark.t;
+  document.querySelectorAll('.fx-pop:not([data-fxd])').forEach(el=>{
+    el.dataset.fxd='1';
+    if(fxMark.delay===undefined)   // 첫 렌더에 CSS가 정한 지연(0.3s 또는 board-in 0.72s)이 이 fx의 기준
+      fxMark.delay=Math.round((parseFloat(getComputedStyle(el).animationDelay)||0)*1000);
+    el.style.animationDelay=(fxMark.delay-elapsed)+'ms';
+  });
+}
 
 let toastLive={};
 function toast(html, sel, big, color){
@@ -156,6 +180,15 @@ function uiToggleShop(){ uiShopOpen=!shopVisibleNow(); render(); }
    건설은 기존 건물 보관소 팝업이 그 역할이므로 여기서 다루지 않는다. */
 let uiPanelOpen = null;        // null = 자동(내 차례에 열림) / true = 열어둠 / false = 닫아둠
 let uiPanelWasVisible = false; // 등장 애니메이션은 "새로 열린 순간"에만
+let uiPanelAnim = '';          // 패널 오버레이에 붙일 애니메이션 클래스 ('pop'=새로 열림, 'swap'=결과 전환 펄스)
+let uiPanelKey = '';           // 패널이 지금 보여주는 단계 키 — 바뀌는 순간 내용 전환 애니메이션을 튼다
+let uiPanelFlip = false;       // 내용 전환 애니메이션 재생 트리거 (a/b 클래스 교대)
+/* 패널 바깥(어두운 배경) 클릭 — 결과 보고 중이면 확인으로, 그 외에는 닫기로 취급 */
+function uiPanelBg(e){
+  if(!e || e.target.id!=='ap-ov') return;
+  if(G && G.pending && G.pending.type==='report') actReportDone();
+  else uiTogglePanel();
+}
 const PANEL_TYPES = { pickRole:1, settler:1, mayorPlace:1, craftBonus:1, trader:1, captain:1, storage:1 };
 function panelVisibleNow(){
   if(!G||G.over) return false;
@@ -172,7 +205,24 @@ function panelVisibleNow(){
 function uiTogglePanel(){ uiPanelOpen=!panelVisibleNow(); render(); }
 /* 선적 패널의 2단계 선택: ① 상품을 고르면 ② 실을 수 있는 배가 버튼이 된다 (뷰 상태 — 새로고침하면 초기화) */
 let uiShipSel = null;
-function uiSelectShipGood(t){ uiShipSel=(uiShipSel===t)?null:t; render(); }
+function uiSelectShipGood(t){
+  uiShipSel=(uiShipSel===t)?null:t;
+  // 화물을 골랐는데 실을 곳이 단 하나뿐이면 두 번째 클릭 없이 바로 싣는다 (사용자 요청)
+  if(uiShipSel){
+    const pd=G&&G.pending;
+    if(pd&&pd.type==='captain'){
+      const ships=pd.opts.map((o,i)=>({o,i})).filter(x=>x.o.type===t);
+      const nOpts=ships.length+(pd.wharfOK?1:0);   // 조선소도 선택지 하나로 센다
+      if(nOpts===1){
+        uiShipSel=null;
+        if(ships.length) actCaptain('ship', ships[0].i);
+        else actCaptain('wharf', t);
+        return;
+      }
+    }
+  }
+  render();
+}
 /* ? 도움말 — 언제든 볼 수 있는 요약 규칙 팝업 (뷰 상태) */
 let uiHelpOpen=false;
 function uiToggleHelp(){ uiHelpOpen=!uiHelpOpen; render(); }

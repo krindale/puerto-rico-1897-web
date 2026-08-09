@@ -92,7 +92,9 @@ function settlerCanQuarry(pi){
 }
 function settlerPlace(p, type, fromDeck){
   p.land.push({type, w:0});
-  if(p.ai) markFx(p.i, 'land-'+p.i+'-'+(p.land.length-1));   // 이펙트는 봇 행동에만
+  // 개척도 건설과 같은 규칙 — 사람 행동에도 타일 팝 이펙트를 주고, 잠깐 보여준 뒤 보드를 다음 차례로 넘긴다
+  if(p.ai) markFx(p.i, 'land-'+p.i+'-'+(p.land.length-1));
+  else markFxThenFollow(p.i, 'land-'+p.i+'-'+(p.land.length-1));
   toast(imgTag('농장',PLANT_NM[type],'ticon')+'<span>'+pname(p)+' — <b>'+PLANT_NM[type]+'</b> 개척</span>', '#card-plants', false, PCOLOR[p.i]);
   // 병원: 더미(대규모 농장)로 가져온 타일에는 적용 안 됨
   if(!fromDeck && occB(p,'b_hosp')){
@@ -283,7 +285,11 @@ function actBuild(id){
   const cost=buildCost(p,id,isC);
   p.coins-=cost; G.supply.stock[id]--;
   const b={id,w:0}; p.buildings.push(b);
-  if(p.ai) markFx(pd.player, 'bld-'+pd.player+'-'+id);   // 이펙트는 봇 행동에만
+  // 사람이 지어도 이펙트를 준다 — 건설 중엔 보관소 팝업이 보드를 가리고 있어서,
+  // 팝업이 닫힌 뒤 내 보드에서 새 건물이 팝되는 게 보여야 "지어졌다"가 보인다.
+  // 사람은 잠깐 보여준 뒤 보드를 자동 모드로 되돌려 다음 차례에게 넘긴다.
+  if(p.ai) markFx(pd.player, 'bld-'+pd.player+'-'+id);
+  else markFxThenFollow(pd.player, 'bld-'+pd.player+'-'+id);
   log(pname(p)+' — <b>'+BUILDINGS[id].nm+'</b> 건설 ('+cost+'주화)');
   toast(imgTag('건물',BUILDINGS[id].nm,'ticon')+'<span>'+pname(p)+' — <b>'+BUILDINGS[id].nm+'</b> 건설 ('+cost+'주화)</span>', '[data-pi="'+pd.player+'"]', false, PCOLOR[p.i]);
   if(occB(p,'b_univ')){

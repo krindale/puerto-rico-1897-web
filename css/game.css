@@ -208,7 +208,7 @@
         속성이 서로를 덮어써 플래시가 통째로 무시된다 — 반드시 쉼표로 합쳐 둘 다 재생시킨다.
      ③ 연속된 애니메이션은 붙여 돌리지 않는다 — 앞 동작이 끝나고 --fx-gap(0.3초)을 쉰 뒤에 시작한다.
         그래서 대기 시간 --fx-step = 보드 슬라이드(--board-anim) + 간격(--fx-gap).
-        (JS 쪽 BOARD_ANIM·SHOP_DELAY도 같은 규칙이다 — 값을 바꾸면 양쪽을 같이 바꿀 것) */
+        (JS 쪽 BOARD_ANIM·SHOP_DELAY·FX_HOLD도 같은 규칙이다 — 값을 바꾸면 양쪽을 같이 바꿀 것) */
   :root{ --board-anim:.42s; --board-ease:cubic-bezier(.4,0,.2,1); --fx-gap:.3s; --fx-step:.72s; }
   .pboard.board-in .fx-pop{ animation-delay:var(--fx-step); }   /* 보드가 열리는 중이면 그 뒤로 더 민다 */
   .pboard.board-in.cardflash{ animation:boardGrow var(--board-anim) var(--board-ease), unclip var(--board-anim) step-end forwards, cardflash 1.3s ease var(--fx-step) backwards; }
@@ -445,6 +445,10 @@
   @keyframes modalIn{ from{ opacity:0; transform:translateY(10px) scale(.975); } to{ opacity:1; transform:none; } }
   .overlay.pop{ animation:ovIn .22s ease-out; }
   .overlay.pop .modal{ animation:modalIn .3s cubic-bezier(.2,.8,.3,1) .06s backwards; }
+  /* 떠 있던 진행 패널을 결과 보고가 대체할 때: 오버레이·창은 끊김 없이 유지하고(깜빡임 방지)
+     금빛 테두리 펄스로만 "결과 창으로 바뀌었다"를 알린다 (cardflash와 같은 시각 언어) */
+  @keyframes panelSwap{ 0%{ box-shadow:0 0 0 3px rgba(217,127,34,.9), 0 0 26px rgba(217,127,34,.5); } 100%{} }
+  .overlay.swap .modal{ animation:panelSwap 1s ease; }
   /* 건물 보관소 팝업: 어둠막은 화면 전체, 패널은 (액션바 제외 영역의) 세로 가운데 */
   .overlay.shop-ov{ align-items:center; padding-top:16px; padding-bottom:88px; }
   .shop-modal{ max-width:1110px; padding:20px 24px; }
@@ -465,6 +469,16 @@
      진행 창과 결과 창이 같은 flex column 레이아웃을 써야 전환 때 내용이 튀지 않는다 */
   .act-modal.stage{ height:min(620px, 84vh); display:flex; flex-direction:column; }
   .act-modal.stage>*{ flex-shrink:0; }
+  /* 패널 스켈레톤: 창 = [머리 #ap-head + 본문 #ap-bodyc]. 본문은 세로 flex —
+     stage 창에서 남는 높이를 본문이 갖고(report의 확인 버튼 margin-top:auto가 여기 기댄다),
+     내용이 넘쳐도 창 높이는 흔들리지 않는다 */
+  #ap-bodyc{ display:flex; flex-direction:column; min-height:0; }
+  .act-modal.stage>#ap-bodyc{ flex:1 1 auto; overflow:hidden; }
+  /* 패널 내용 전환(역할 선택→선적 등 단계가 바뀔 때): 제목·본문이 아래에서 떠오른다.
+     .apb-a/.apb-b는 같은 애니메이션 — 클래스를 교대로 갈아끼워 재생을 트리거한다 */
+  @keyframes apbIn{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+  #ap-head.apb-a, #ap-bodyc.apb-a{ animation:apbIn .4s cubic-bezier(.2,.8,.3,1); }
+  #ap-head.apb-b, #ap-bodyc.apb-b{ animation:apbIn .4s cubic-bezier(.2,.8,.3,1); }
   .ap-sub{ color:var(--dim); font-size:13px; margin-left:14px; margin-right:auto; }
   .ap-roles{ display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start; }
   .ap-rolecell{ width:128px; display:flex; flex-direction:column; gap:5px; }
@@ -513,13 +527,16 @@
   .ap-shipslot .goodchip{ position:absolute; inset:1px; width:auto; height:auto; }
   .ap-shipslot.pv{ border:1.5px solid var(--accent); }         /* 지금 선택한 상품이 실릴 자리 미리보기 */
   .ap-shipslot.pv .goodchip{ opacity:.55; }
-  /* 선적·판매 패널 액션 애니메이션 — 방금 바뀐 요소만 움직인다 */
-  @keyframes pfxPop{ 0%{ transform:scale(.2); opacity:0; } 60%{ transform:scale(1.18); opacity:1; } 100%{ transform:scale(1); } }
-  .pfx-pop{ animation:pfxPop .5s cubic-bezier(.2,.8,.3,1) backwards; }
-  @keyframes pfxCard{ 0%{ box-shadow:0 0 0 3px var(--accent); background:#f3e3d8; } 100%{ } }
-  .pfx-card{ animation:pfxCard .9s ease-out; }
-  @keyframes pfxRow{ from{ opacity:0; transform:translateX(-10px); } to{ opacity:1; transform:none; } }
-  .pfx-row{ animation:pfxRow .45s ease-out backwards; }
+  /* 선적·판매 패널 액션 애니메이션 — 방금 바뀐 요소만 움직인다.
+     보드의 배치 팝(fxpop)과 같은 시각 언어(확대 + 금빛 글로우)로, 짧고 약하면 눈에 안 잡힌다 */
+  @keyframes pfxPop{ 0%{ transform:scale(.2); opacity:0; filter:drop-shadow(0 0 10px rgba(232,178,60,.95)); }
+    55%{ transform:scale(1.5); opacity:1; filter:brightness(1.3) drop-shadow(0 0 10px rgba(232,178,60,.9)); }
+    100%{ transform:scale(1); filter:none; } }
+  .pfx-pop{ animation:pfxPop .8s cubic-bezier(.2,.8,.3,1) .1s backwards; z-index:5; }
+  @keyframes pfxCard{ 0%{ box-shadow:0 0 0 3px var(--accent), 0 0 18px rgba(217,127,34,.55); background:#f3e3d8; } 100%{ } }
+  .pfx-card{ animation:pfxCard 1.1s ease-out; }
+  @keyframes pfxRow{ from{ opacity:0; transform:translateX(-12px); background:rgba(232,178,60,.4); } to{ opacity:1; transform:none; } }
+  .pfx-row{ animation:pfxRow .6s ease-out backwards; }
   /* 단계 종료 배너 — 결과 화면임을 확실히 구분 */
   .ap-endbanner{ border:1px solid var(--accent); border-left:5px solid var(--accent); background:#f3e3d8;
     padding:10px 14px; font-weight:700; font-size:15px; border-radius:2px; margin-top:14px; }
@@ -532,6 +549,10 @@
   .ap-pl{ border:1px solid var(--line); border-left:3px solid var(--pc); border-radius:2px;
     background:rgba(251,247,238,.6); padding:8px 11px; }
   .ap-pl.turn{ box-shadow:0 0 0 1px var(--pc); background:var(--panel); }
+  /* 차례 하이라이트가 카드 사이를 옮겨갈 때 부드럽게 —
+     카드 DOM이 매 렌더 새로 만들어지므로 transition 대신 animation을 쓴다 */
+  @keyframes turnIn{ 0%{ box-shadow:0 0 0 0 transparent; background:transparent; } }
+  .ap-pl.turn{ animation:turnIn .35s ease; }
   .ap-pl-h{ font-weight:700; font-size:13px; margin-bottom:5px; }
   .ap-prow{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-size:13px; }
   .ap-g{ display:inline-flex; align-items:center; gap:3px; }
@@ -550,7 +571,10 @@
   .ap-slot{ width:40px; height:40px; border:1px dashed var(--line); border-radius:2px;
     display:flex; align-items:center; justify-content:center; background:rgba(251,247,238,.6); }
   .ap-slot .goodchip{ width:24px; height:28px; }
-  .ap-hist{ margin-top:16px; border-top:1px dashed var(--line); padding-top:10px; }
+  /* height: 4줄 분량을 미리 확보 — 줄이 추가될 때마다 패널 내용이 밀리지 않게 (표시는 최근 4건).
+     min-height:0 + flex-shrink → 패널 공간이 모자라면 내역이 먼저 줄어들어 위의 버튼·카드를 가리지 않는다 */
+  .ap-hist{ margin-top:16px; border-top:1px dashed var(--line); padding-top:10px;
+    height:124px; min-height:0; flex:0 1 auto; overflow:hidden; }
   .ap-hist .hrow{ font-size:13px; padding:2.5px 0; display:flex; gap:7px; align-items:center; }
   .ap-hist .hrow .goodchip{ width:15px; height:17px; }
   .ap-hist .hrow .dim{ color:var(--dim); }
