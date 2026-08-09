@@ -427,6 +427,22 @@ function netUiRefresh(){
   netChatRender();
 }
 
+/* 대기실에서 내 이름 바꾸기 — 호스트는 좌석을 직접 고치고, 게스트는 claim을 다시 보낸다
+   (같은 clientId의 claim은 좌석 유지 + 이름 갱신으로 처리된다) */
+function uiNetRename(name){
+  name=String(name||'').trim().slice(0,12)||'플레이어';
+  NET.myName=name; setupName=name;
+  netSaveSession();
+  if(NET.host){
+    NET.room.seats[NET.mySeat]={...NET.room.seats[NET.mySeat], name};
+    netUpdateRoom({ seats:NET.room.seats });
+    netSend('room', NET.room);
+    netUiRefresh();
+  } else {
+    netSend('intent', { t:'claim', clientId:netClientId(), name });
+  }
+}
+
 /* ═══ 채팅 플로팅 위젯 — 대기실·게임 공용. render()와 무관하게 body에 직접 그린다
    (토스트와 같은 층위 — 게임 렌더가 아무리 자주 돌아도 채팅 입력이 안 끊긴다) ═══ */
 let uiChatOpen=false;
@@ -444,10 +460,33 @@ function uiChatSend(){
   inp.focus();
 }
 function uiChatKey(e){ if(e.key==='Enter'&&!e.isComposing) uiChatSend(); }
+/* 대기실 인라인 채팅 입력 */
+function uiLobbyChatSend(){
+  const inp=document.getElementById('lb-chat-in');
+  if(!inp||!inp.value.trim()) return;
+  netSendChat(inp.value);
+  inp.value='';
+  inp.focus();
+}
+function uiLobbyChatKey(e){ if(e.key==='Enter'&&!e.isComposing) uiLobbyChatSend(); }
 function netChatRender(){
   if(typeof document==='undefined'||!document.body||!document.getElementById) return;
+  const msgsHtml=()=>NET.chat.slice(-80).map(m=>
+    '<div class="cmsg"><b'+(m.clientId===netClientId()?' class="me"':'')+'>'+esc(m.name)+'</b> '+esc(m.text)+'</div>'
+  ).join('');
+  // 대기실: 인라인 채팅 박스가 있으면 그 목록만 갱신 (입력창은 renderLobby가 만든 그대로 유지)
+  const ll=document.getElementById('lb-chat-list');
+  if(ll){
+    if(ll.dataset.n!==String(NET.chat.length)){
+      ll.dataset.n=String(NET.chat.length);
+      ll.innerHTML=msgsHtml()||'<div class="cempty">친구가 들어오면 인사해 보세요</div>';
+      ll.scrollTop=ll.scrollHeight;
+    }
+    const fab=document.getElementById('pr-chat'); if(fab) fab.remove();  // 대기실에선 플로팅 버튼 숨김
+    return;
+  }
   let host=document.getElementById('pr-chat');
-  const show=NET.on&&(NET.status==='lobby'||NET.status==='playing');
+  const show=NET.on&&NET.status==='playing';   // 플로팅 위젯은 게임 중에만
   if(!show){ if(host) host.remove(); return; }
   if(!host){
     host=document.createElement('div');
