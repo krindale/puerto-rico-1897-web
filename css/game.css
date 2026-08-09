@@ -299,6 +299,12 @@
   .gov-ic{ display:inline-flex; width:22px; height:15px; flex-shrink:0; }
   .gov-ic svg{ width:100%; height:100%; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
   .phead .tag{ font-size:10.5px; padding:2px 7px; border-radius:2px; background:#e2d7c2; color:#5d5346; }
+  /* 사람/봇 정체 배지 — 봇은 카리브 바다색, 나는 금색 왕관 */
+  .tag svg{ vertical-align:-2px; margin-right:3px; }
+  .tag.bot{ background:#dde7ea; color:#3c6b85; }
+  .tag.meid{ background:#f3e2b5; color:#7a5a12; }
+  .tag.humanid{ background:#e2d7c2; color:#5d5346; }
+  .actionbar .who svg{ vertical-align:-2px; color:#7fb3c8; }
   .phead .tag.gov{ background:var(--ink); color:var(--bg); }
   .phead .tag.acting{ background:var(--act); color:#fff; }  /* 자동으로 펼쳐진 게 이 사람 차례라서일 때, 지금 뭘 하는 중인지 */
   .phead .stats{ margin-left:auto; display:flex; gap:10px; font-size:12.5px; }
@@ -619,9 +625,7 @@
   .aos-card{ background:#f6efe0; border:1px solid #e6dcc6; border-radius:3px;
     box-shadow:0 1px 2px rgba(28,27,24,.04), 0 14px 34px -18px rgba(28,27,24,.16); }
   .aos-main{ position:relative; padding:32px 32px 28px; }
-  /* 제목은 소개 페이지 히어로와 같은 서체·색: 고운바탕 세리프 + "1897"은 코모런트 이탤릭 벽돌색 */
-  .aos-main h1{ font-family:'Gowun Batang','Batang',serif; font-size:30px; font-weight:700; letter-spacing:-.02em; color:#221d16; margin-bottom:6px; }
-  .aos-main h1 .yr{ font-family:'Cormorant Garamond',Georgia,serif; font-style:italic; font-weight:600; color:#a8442a; }
+  .aos-main h1{ font-family:inherit; font-size:30px; font-weight:700; letter-spacing:-.01em; color:#1c1b18; margin-bottom:6px; }
   .aos-sub{ color:#5f5b53; font-size:15px; margin-bottom:24px; }
   .aos-x{ position:absolute; top:18px; right:18px; border:none; background:transparent; color:#5f5b53; padding:4px; }
   .aos-x:hover{ color:#1c1b18; }

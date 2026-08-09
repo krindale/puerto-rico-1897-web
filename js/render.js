@@ -225,7 +225,7 @@ function renderSetup(){
   }
   $app.innerHTML=aosFrame(
     (typeof EMBEDDED!=='undefined'&&EMBEDDED?'<button class="aos-x" onclick="uiBackToIntro()" title="소개로 돌아가기">'+aosIcon('x',20)+'</button>':'')
-    +'<h1>푸에르토리코 <span class="yr">1897</span></h1>'
+    +'<h1>푸에르토리코 1897</h1>'
     +'<p class="aos-sub">기본 게임 - '+setupN+'인 게임</p>'
     +(canResume
       ?'<div class="aos-resume">'
@@ -262,7 +262,7 @@ function renderLobby(){
     el.value=k.v;
     if(k.f){ el.focus(); try{ el.setSelectionRange(k.s,k.s); }catch(e){} }
   });
-  const head='<h1>푸에르토리코 <span class="yr">1897</span></h1>'
+  const head='<h1>푸에르토리코 1897</h1>'
     +'<p class="aos-sub">기본 게임 - '+(NET.room?NET.room.seats.length:setupN)+'인 게임</p>'
     +aosTabs(true);
   if(NET.status==='connecting'){
@@ -525,11 +525,17 @@ function render(){
     const isChooser=(chooserPi===p.i);
     const isMayorMe=mayorActive&&isCur;
     const acting=(uiBoardSel===null&&isCur&&ACTIONMSG[pd.type]);
-    const tags=(G.governor===p.i?'<span class="gov-ic" title="주지사 — 이번 라운드 시작 플레이어"><svg viewBox="0 0 24 16"><path d="M2 14h20L20 4l-5 4.2L12 1 9 8.2 4 4z" fill="#e8c95c" stroke="#8a6a1f" stroke-width="1.2" stroke-linejoin="round"/></svg></span>':'')+(p.ai?'<span class="tag">AI</span>':'')+(acting?'<span class="tag acting">'+ACTIONMSG[pd.type]+'</span>':'');
+    // 사람/봇 정체 표시 — 봇은 봇 아이콘+BOT, 사람은 사람 아이콘, 온라인의 나는 왕관 (사용자 요청)
+    const idTag=p.ai
+      ?'<span class="tag bot" title="AI 봇">'+aosIcon('bot',11)+'BOT</span>'
+      :((typeof NET!=='undefined'&&NET.on&&NET.mySeat===p.i)
+        ?'<span class="tag meid" title="나">'+aosIcon('crown',11,AOS_GOLD)+'나</span>'
+        :'<span class="tag humanid" title="사람">'+aosIcon('user',10)+'사람</span>');
+    const tags=(G.governor===p.i?'<span class="gov-ic" title="주지사 — 이번 라운드 시작 플레이어"><svg viewBox="0 0 24 16"><path d="M2 14h20L20 4l-5 4.2L12 1 9 8.2 4 4z" fill="#e8c95c" stroke="#8a6a1f" stroke-width="1.2" stroke-linejoin="round"/></svg></span>':'')+idTag+(acting?'<span class="tag acting">'+ACTIONMSG[pd.type]+'</span>':'');
     if(p.i!==shown){
       // 좁은 카드에서는 이름이 먼저다 — AI 배지는 이름에 이미 "AI"가 들어 있으면 생략(자리만 먹는다)
       const ctags=(G.governor===p.i?'<span class="gov-ic" title="주지사 — 이번 라운드 시작 플레이어"><svg viewBox="0 0 24 16"><path d="M2 14h20L20 4l-5 4.2L12 1 9 8.2 4 4z" fill="#e8c95c" stroke="#8a6a1f" stroke-width="1.2" stroke-linejoin="round"/></svg></span>':'')
-        +((p.ai&&!/^\s*AI/i.test(p.name))?'<span class="tag">AI</span>':'');
+        +idTag;   // 접힌 카드에도 사람/봇 표시 (84px 폭에서 아이콘+짧은 라벨은 안전)
       // 요약 카드: 주화·승점 한 줄 / 일꾼 한 줄, 그 아래 농장·건물·상품을 "무엇을 가졌는지"까지 보여준다.
       // (카드 폭이 모자라면 펼친 보드의 타일이 대신 줄어든다 — boardMetrics 참고)
       const farm={}; for(const l of p.land) farm[l.type]=(farm[l.type]||0)+1;
@@ -653,7 +659,7 @@ function render(){
   } else if(!holding && pd.type && isLocalHuman(curPi)){
     bar=renderActionBar(pd);
   } else if(curPi!==null && P(curPi).ai){
-    bar='<div class="actionbar"><div class="inner"><span class="who">'+esc(P(curPi).name)+'</span><span class="msg">AI가 생각 중…</span></div></div>';
+    bar='<div class="actionbar"><div class="inner"><span class="who">'+aosIcon('bot',13)+' '+esc(P(curPi).name)+'</span><span class="msg">생각하는 중…</span></div></div>';
   } else if(curPi!==null && !P(curPi).ai){
     // 온라인: 원격 플레이어 차례 — 연결이 끊겼으면 호스트가 AI로 대체할 수 있다 (필수 기능)
     const dis=typeof netSeatDisconnected==='function'&&netSeatDisconnected(curPi);

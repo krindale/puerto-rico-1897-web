@@ -20,7 +20,7 @@ const NET={
 
 const NET_CODE_CHARS='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';  // I/O/0/1 제외 (구두로 불러줘도 안 헷갈림)
 /* 1897 카리브 배경에 어울리는 스페인풍 이름 — 게임 몰입용 (사용자 요청) */
-const NET_AI_NAMES=['AI 미겔','AI 카르멘','AI 디에고','AI 로시타'];
+const NET_AI_NAMES=['미겔','카르멘','디에고','로시타'];
 
 function netClientId(){
   let id=sessionStorage.getItem('pr1897-net-client-id');
