@@ -46,7 +46,10 @@ global.setTimeout = (fn, ms) => realSetTimeout(fn, Math.min(ms || 0, 1) );
 
 /* ── game.html의 <script src> 순서 그대로 로드 ── */
 const html = fs.readFileSync(path.join(ROOT, 'game.html'), 'utf8');
-const order = [...html.matchAll(/<script src="(js\/[^"]+)"/g)].map(m => m[1]);
+/* vendor(supabase UMD)는 브라우저 전역을 전제하므로 헤드리스에선 건너뛴다 —
+   net.js가 supabase 미로드를 감지해 온라인 기능만 조용히 끈다 (로컬 플레이 검증에는 무관) */
+const order = [...html.matchAll(/<script src="(js\/[^"]+)"/g)].map(m => m[1])
+  .filter(f => !f.startsWith('js/vendor/'));
 /* js/ 의 게임 파일(intro.js는 소개 페이지 전용)이 빠짐없이 game.html에 로드되는지 —
    파일을 만들고 script 태그를 잊는 실수를 잡는다 */
 const expect = fs.readdirSync(path.join(ROOT, 'js')).filter(f => f.endsWith('.js') && f !== 'intro.js').map(f => 'js/' + f);
@@ -60,9 +63,9 @@ for (const f of order) {
   } catch (e) { console.error('로드 실패 (' + f + '):', e); process.exit(1); }
 }
 
-/* ── AI 4인 게임 완주 ── */
+/* ── AI 4인 게임 완주 (설정 화면을 거치지 않고 newGame 직접 호출) ── */
 try {
-  vm.runInThisContext('setupN = 4; setupSeats.forEach(s => s.ai = true); startNewGame();');
+  vm.runInThisContext("newGame([{name:'플레이어 1',ai:true},{name:'AI 가영',ai:true},{name:'AI 나정',ai:true},{name:'AI 도준',ai:true}]);");
 } catch (e) { console.error('게임 시작 실패:', e); process.exit(1); }
 
 const t0 = Date.now();

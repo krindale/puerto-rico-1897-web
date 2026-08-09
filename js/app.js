@@ -7,6 +7,8 @@ const PHASE_END_HOLD_SHORT=300;
 let aiTimer=null;
 function schedule(){
   render(); save();
+  // 온라인 게스트는 엔진(AI·phaseEnd 타이머)을 돌리지 않는다 — 호스트가 굴리고 snapshot으로 받는다
+  if(typeof NET!=='undefined'&&NET.on&&!NET.host) return;
   const pd=G.pending;
   if(!pd || pd.type==='gameOver') return;
   if(pd.type==='phaseEnd'){
@@ -27,6 +29,16 @@ function schedule(){
 
 /* ═══════════════════════════ 부팅 ═══════════════════════════ */
 (function(){
+  if(typeof setupLoad==='function') setupLoad();   // 설정 화면 입력값 복원 (탭·이름·인원·좌석)
+  /* 온라인 게임 중이었으면 자동으로 그 방에 다시 들어간다 — 온라인은 로컬 저장(pr1897_save)을
+     쓰지 않으므로(호스트 snapshot이 서버에 있다) 이 경로가 없으면 새로고침·튕김에 설정 화면으로
+     돌아가 버린다. 방이 이미 사라졌으면 netJoinRoom이 안내를 띄우고 설정 화면으로 떨어진다. */
+  const sess=(typeof netSavedSession==='function')?netSavedSession():null;
+  if(sess&&sess.code&&typeof netConfigured==='function'&&netConfigured()){
+    // 세 번째 인자 true = 진행 중이던 게임만 복귀. 대기실이었으면 설정 화면 그대로 둔다.
+    netJoinRoom(sess.code, sess.name||'플레이어', true);
+    return;
+  }
   if(loadSave() && G && !G.over){
     render();
     schedule();

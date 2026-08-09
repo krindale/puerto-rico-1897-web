@@ -17,7 +17,7 @@
   body{ color:var(--ink); font-family:'Noto Sans KR','Malgun Gothic',sans-serif; font-size:14px;
     background:
       linear-gradient(rgba(245,238,218,.7), rgba(245,238,218,.7)),
-      url('img/보드_배경.png') center/cover no-repeat fixed,
+      image-set(url('img/보드_배경.webp') type('image/webp'), url('img/보드_배경.png') type('image/png')) center/cover no-repeat fixed,
       var(--bg); }
   body::before{ content:''; position:fixed; inset:6px; border:2px solid #7a5c39; border-radius:10px; pointer-events:none; z-index:40; }
   body::after{ content:''; position:fixed; inset:11px; border:1px solid rgba(122,92,57,.4); border-radius:7px; pointer-events:none; z-index:40; }
@@ -96,11 +96,14 @@
   @media (max-width:1000px){ .layout{ grid-template-columns:1fr; } .side-col{ position:static; max-height:none; } }
 
   /* role tiles */
-  .roles{ display:flex; gap:8px; flex-wrap:wrap; padding:4px 0 4px; }
+  /* 한 줄 유지: 좁아지면 줄바꿈 대신 타일이 줄어든다 (5인=8장까지 한 줄).
+     극단적으로 좁으면(모바일) 타일이 뭉개지는 대신 가로 스크롤로 넘긴다 */
+  .roles{ display:flex; gap:8px; flex-wrap:nowrap; padding:4px 0 4px; overflow-x:auto; scrollbar-width:thin; }
   /* 역할 타일: 5인(탐험가 2장 = 8장)일 때도 한 줄에 들어가는 최대 폭.
      화면이 낮으면 자동 축소해 하단 액션바와 겹치지 않게 */
-  .role{ position:relative; width:131px; border:1px solid var(--line); background:var(--panel); border-radius:3px; padding:0; overflow:hidden; text-align:left; }
-  @media (max-height:800px){ .role{ width:104px; } }
+  .role{ position:relative; flex:0 1 131px; min-width:62px; border:1px solid var(--line); background:var(--panel);
+    border-radius:3px; padding:0; overflow:hidden; text-align:left; }
+  @media (max-height:800px){ .role{ flex-basis:104px; } }
   .role .coin{ position:absolute; top:5px; right:5px; background:#e8c95c; border:1px solid #b89a30; color:#4a3b0a; font-size:11px; font-weight:700; min-width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:3; }
   .role.taken .img, .role.taken .rolefb{ opacity:.35; }
   .role.pickable{ transform:scale(1.06); transform-origin:center; box-shadow:0 5px 14px rgba(70,52,28,.32); cursor:pointer; z-index:5; }
@@ -299,6 +302,12 @@
   .gov-ic{ display:inline-flex; width:22px; height:15px; flex-shrink:0; }
   .gov-ic svg{ width:100%; height:100%; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
   .phead .tag{ font-size:10.5px; padding:2px 7px; border-radius:2px; background:#e2d7c2; color:#5d5346; }
+  /* 사람/봇 정체 배지 — 봇은 카리브 바다색, 나는 금색 왕관 */
+  .tag svg{ vertical-align:-2px; margin-right:3px; }
+  .tag.bot{ background:#dde7ea; color:#3c6b85; }
+  .tag.meid{ background:#f3e2b5; color:#7a5a12; }
+  .tag.humanid{ background:#e2d7c2; color:#5d5346; }
+  .actionbar .who svg{ vertical-align:-2px; color:#7fb3c8; }
   .phead .tag.gov{ background:var(--ink); color:var(--bg); }
   .phead .tag.acting{ background:var(--act); color:#fff; }  /* 자동으로 펼쳐진 게 이 사람 차례라서일 때, 지금 뭘 하는 중인지 */
   .phead .stats{ margin-left:auto; display:flex; gap:10px; font-size:12.5px; }
@@ -317,10 +326,14 @@
   .cell .lbl{ position:absolute; left:0; right:0; bottom:0; font-size:9.5px; font-weight:700; text-align:center; background:rgba(251,247,238,.85); padding:1px 0; line-height:1.25; }
   /* 일꾼 토큰: 타일에 인쇄된 원 위에 올린다.
      농장: 좌하단 원(27.5%, 70%) · 건물: 원이 왼쪽부터 20% + 25%씩 (y 60%) · 고급 건물: 원이 없어 좌측 중단 */
-  .cell.land .wk{ position:absolute; left:28%; top:71%; margin:-12.5px 0 0 -12.5px; z-index:2; }
-  .cell.land .wk .wtok{ display:block; width:25px; height:25px; }
+  /* 일꾼 토큰은 타일과 함께 줄어든다 — 폭 변수(--lw 토지 / --bw 건설)에 비례.
+     중앙 정렬은 고정 margin 대신 translate(-50%,-50%)로 (크기가 바뀌어도 안 어긋난다).
+     scale 속성을 쓰는 배치 팝(fxpop)은 transform과 독립 합성이라 서로 간섭하지 않는다. */
+  .cell.land .wk{ position:absolute; left:28%; top:71%; transform:translate(-50%,-50%); z-index:2; }
+  .cell.land .wk .wtok{ display:block; width:calc(var(--lw,59px)*.424); height:calc(var(--lw,59px)*.424); }
   .bimg{ position:relative; }
-  .bimg .wtok{ position:absolute; margin:-12.5px 0 0 -12.5px; width:25px; height:25px; z-index:2; }
+  .bimg .wtok{ position:absolute; transform:translate(-50%,-50%);
+    width:calc(var(--bw,119px)*.21); height:calc(var(--bw,119px)*.21); z-index:2; }
   .wtok{ width:11px; height:11px; border-radius:50%; background:#7b5230; border:1px solid #4a2f16; }
   .wtok.empty{ background:transparent; border:1px dashed #a08a6a; }
   /* 빈 토지·건설 부지: 채워진 칸(그림으로 구분)과 달리 테두리로 "빈 자리"임을 표시 */
@@ -346,10 +359,15 @@
   .bgrid .cell .lbl{ position:static; margin-top:auto; border-top:1px solid var(--line); background:rgba(251,247,238,.95); }
 
   /* 건물 보관판 플로팅 버튼 — 가장 우측(마지막 자리) 개인 보드 우측 하단에 붙는다 */
-  .fab-shop{ position:absolute; right:8px; bottom:8px; z-index:20; width:50px; height:50px; border-radius:50%;
-    border:1px solid var(--line); background:var(--panel); box-shadow:0 3px 10px rgba(0,0,0,.28);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; font-size:16px; }
-  .fab-shop span{ font-size:9px; font-weight:700; }
+  /* ── 화면 우측 고정 버튼 (건물·채팅) ──
+     우측 끝을 본문 래퍼(.wrap max-width:1460px + padding 18px)의 오른쪽 끝에 맞춘다 =
+     사이드 패널의 오른쪽 끝. 창이 좁으면 18px 여백으로 떨어진다. */
+  :root{ --fab-right: max(18px, calc((100vw - 1460px) / 2 + 18px)); }
+  .fab-shop{ position:fixed; right:var(--fab-right); bottom:74px; z-index:86;
+    width:52px; height:52px; border-radius:50%;
+    border:1px solid var(--line); background:var(--panel); color:var(--ink);
+    box-shadow:0 3px 12px rgba(70,52,28,.32);
+    display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; }
   .fab-shop:hover{ background:#e2d7c2; }
 
   /* action bar */
@@ -463,25 +481,34 @@
   .hint{ font-size:12px; color:var(--dim); margin-top:6px; line-height:1.6; }
 
   /* ── 중앙 액션 패널 — 내 차례의 선택지를 건물 보관소처럼 화면 가운데에 모아 보여준다 ── */
-  .act-modal{ max-width:800px; padding:20px 24px; }
-  .act-modal.wide{ max-width:1150px; }
+  /* ⚠️ 모든 액션 패널은 **같은 고정 크기**다 — 단계가 바뀌어도 창이 커졌다 작아지지 않게
+     (사용자 지적: 패널마다 레이아웃이 출렁인다). 내용이 넘치면 본문(#ap-bodyc)만 스크롤한다.
+     폭 1100px은 역할 선택의 타일 8장(5인)이 한 줄에 들어가는 최소 폭 기준. */
+  .act-modal{ width:min(1100px, 95vw); height:min(640px, 86vh); max-width:none;
+    padding:20px 24px; display:flex; flex-direction:column; }
+  .act-modal>#ap-head{ flex:none; }
+  .act-modal>#ap-bodyc{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; }
+  .act-modal.wide{ width:min(1100px, 95vw); }   /* 하위 호환 — 크기는 동일 */
   /* 선적·판매·생산 상시 패널: 단계 동안 내용이 계속 바뀌므로 높이를 고정한다 — 넘치면 안에서 스크롤.
      진행 창과 결과 창이 같은 flex column 레이아웃을 써야 전환 때 내용이 튀지 않는다 */
-  .act-modal.stage{ height:min(620px, 84vh); display:flex; flex-direction:column; }
   .act-modal.stage>*{ flex-shrink:0; }
   /* 패널 스켈레톤: 창 = [머리 #ap-head + 본문 #ap-bodyc]. 본문은 세로 flex —
      stage 창에서 남는 높이를 본문이 갖고(report의 확인 버튼 margin-top:auto가 여기 기댄다),
      내용이 넘쳐도 창 높이는 흔들리지 않는다 */
   #ap-bodyc{ display:flex; flex-direction:column; min-height:0; }
-  .act-modal.stage>#ap-bodyc{ flex:1 1 auto; overflow:hidden; }
   /* 패널 내용 전환(역할 선택→선적 등 단계가 바뀔 때): 제목·본문이 아래에서 떠오른다.
      .apb-a/.apb-b는 같은 애니메이션 — 클래스를 교대로 갈아끼워 재생을 트리거한다 */
   @keyframes apbIn{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
   #ap-head.apb-a, #ap-bodyc.apb-a{ animation:apbIn .4s cubic-bezier(.2,.8,.3,1); }
   #ap-head.apb-b, #ap-bodyc.apb-b{ animation:apbIn .4s cubic-bezier(.2,.8,.3,1); }
+  /* 내용이 바뀌는 순간 창 테두리도 한 번 빛난다 — 크기는 고정이라 이 신호가 전환을 알린다 */
+  @keyframes apbEdge{ 0%{ box-shadow:0 0 0 2px var(--accent), 0 18px 44px rgba(70,52,28,.4); } 100%{} }
+  .act-modal:has(#ap-head.apb-a){ animation:apbEdge .6s ease-out; }
+  .act-modal:has(#ap-head.apb-b){ animation:apbEdge .6s ease-out; }
   .ap-sub{ color:var(--dim); font-size:13px; margin-left:14px; margin-right:auto; }
   .ap-roles{ display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start; }
-  .ap-rolecell{ width:128px; display:flex; flex-direction:column; gap:5px; }
+  .ap-rolecell .role{ flex:none; }
+  .ap-rolecell{ width:116px; display:flex; flex-direction:column; gap:5px; }
   .ap-rolecell .role{ width:100%; }
   .ap-rolename{ font-size:12.5px; font-weight:700; }
   .ap-rolename .dim{ color:var(--dim); font-weight:400; }
@@ -593,10 +620,10 @@
   .pf-none{ color:var(--dim); }
   .pf-hint{ font-size:11px; color:var(--dim); margin-top:8px; }
   .pf-div{ border-top:1px dashed var(--line); margin:9px 0; }
-  .act-modal.report{ max-width:480px; }
+  /* 결과 보고도 같은 크기 — 진행 패널 → 결과로 넘어갈 때 창이 바뀌지 않는다 */
   .act-modal.report .ap-btns{ justify-content:flex-end; }
   /* stage 보고(선적·판매·생산 결과): 진행 패널과 같은 폭·높이·레이아웃, 확인 버튼은 아래에 고정 */
-  .act-modal.report.stage{ max-width:800px; }
+
   .act-modal.report.stage .ap-btns{ margin-top:auto; }
   /* 역할 선택 패널 하단 — 각 플레이어 요약 (접힌 카드와 같은 정보) */
   .ap-pstrip{ display:flex; gap:10px; margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; align-items:stretch; }
@@ -606,3 +633,235 @@
   .ap-pcard .row .goodchip{ width:14px; height:16px; }
   .ap-pcard .sec{ color:var(--dim); font-size:10.5px; font-weight:700; letter-spacing:.05em; margin-top:5px; }
   @media (max-width:1000px){ .ap-pstrip{ flex-wrap:wrap; } .ap-pstrip .ap-pcard{ flex:1 1 45%; } }
+
+  /* ═══ 설정·대기실 — aos_showcase 디자인 토큰 그대로 ═══
+     페이지 #efece4 · 카드 #fbf6ea (r18px, 종이 그림자) · 잉크 #1c1b18 · 보조 #5f5b53
+     버밀리언 #a8442a (hover #7d2f1c) · positive #2f6b4f · 봇 파랑 #457b9d */
+  body.aos-setup{ background:#efece4; font-family:'Noto Sans KR','Malgun Gothic',sans-serif; }
+  body.aos-setup::before, body.aos-setup::after{ display:none; }  /* 게임의 양피지 프레임 끄기 */
+  body.aos-setup .wrap{ max-width:none; padding:0; }
+  .aos-wrap{ display:grid; grid-template-columns:minmax(0,660px) 340px; gap:28px; justify-content:center;
+    align-items:start; padding:clamp(24px,6vh,72px) 20px 48px; color:#1c1b18; }
+  @media (max-width:1060px){ .aos-wrap{ grid-template-columns:minmax(0,660px); } }
+  .aos-card{ background:#f6efe0; border:1px solid #e6dcc6; border-radius:3px;
+    box-shadow:0 1px 2px rgba(28,27,24,.04), 0 14px 34px -18px rgba(28,27,24,.16); }
+  .aos-main{ position:relative; padding:32px 32px 28px; }
+  .aos-main h1{ font-family:inherit; font-size:30px; font-weight:700; letter-spacing:-.01em; color:#1c1b18; margin-bottom:6px; }
+  .aos-sub{ color:#5f5b53; font-size:15px; margin-bottom:24px; }
+  .aos-x{ position:absolute; top:18px; right:18px; border:none; background:transparent; color:#5f5b53; padding:4px; }
+  .aos-x:hover{ color:#1c1b18; }
+  /* 로컬/온라인 탭 */
+  .aos-tabs{ display:flex; gap:8px; margin-bottom:24px; }
+  .aos-tabs button{ flex:1; padding:9px 0; border-radius:2px; border:none; font-size:14px; font-weight:700;
+    background:transparent; color:#5f5b53; }
+  .aos-tabs button:not(.on):hover{ background:#e9dfc9; }
+  .aos-tabs button.on{ background:#a8442a; color:#efece4; }
+  /* 라벨·입력 */
+  .aos-label{ display:flex; align-items:center; gap:8px; font-size:13.5px; color:#5f5b53; margin:0 0 8px; }
+  .aos-input{ width:100%; padding:9px 14px; background:#fbf6ea; border:1px solid rgba(28,27,24,.1);
+    border-radius:2px; font-family:inherit; font-size:14.5px; color:#1c1b18; }
+  .aos-input:focus{ outline:none; border-color:#a8442a; }
+  .aos-input.mono{ letter-spacing:.18em; text-transform:uppercase; }
+  .aos-dim{ font-size:13px; color:#66625a; line-height:1.6; }
+  .aos-accent{ color:#a8442a; font-size:13px; }
+  .aos-accent.sm{ font-size:12px; flex:none; }
+  /* 섹션 박스 (방 만들기 / 코드로 입장) */
+  .aos-box{ border:1px solid rgba(28,27,24,.1); border-radius:3px; padding:16px; margin-top:20px; }
+  .aos-box-h{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .aos-box-h>span:first-child{ font-size:14px; font-weight:700; color:#1c1b18; }
+  .aos-priv{ font-size:11.5px; color:#66625a; background:#e9dfc9; border-radius:999px; padding:3px 10px; }
+  /* 인원 pills */
+  .aos-pills{ display:flex; gap:8px; margin-bottom:12px; }
+  .aos-pill{ flex:1; padding:8px 12px; border-radius:2px; border:none; font-size:14px; font-weight:600;
+    background:#fbf6ea; color:#5f5b53; box-shadow:inset 0 0 0 1px rgba(28,27,24,.08); }
+  .aos-pill:not(.on):hover{ background:#e9dfc9; }
+  .aos-pill.on{ background:#a8442a; color:#efece4; box-shadow:none; }
+  /* 자리 구성 폼 행 */
+  .aos-seatforms{ display:flex; flex-direction:column; gap:7px; }
+  /* 좌석 목록과 뒤따르는 버튼이 겹치지 않게 (스크린샷 검증) */
+  .aos-seatforms+.aos-btnp{ margin-top:16px; }
+  .aos-seatform{ display:flex; align-items:center; gap:8px; font-size:13px; min-height:30px; }
+  .aos-seatform .aos-input.name{ flex:1; max-width:200px; padding:5px 10px; font-size:13.5px; }
+  .aos-seatform .nm{ font-size:13.5px; color:#1c1b18; }
+  .aos-sp{ flex:1; }   /* 좌석 행 스페이서 — 전환(⇆) 버튼을 우측 정렬 */
+  .aos-seatform .nm .aos-dim{ font-size:12px; }
+  .aos-seatlabel{ color:#5f5b53; flex:1; }
+  .aos-chip{ display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; border:none;
+    font-size:12px; font-weight:600; background:#e9dfc9; color:#5f5b53; }
+  .aos-chip:hover{ background:rgba(28,27,24,.1); }
+  .aos-chip.bot{ background:rgba(69,123,157,.15); color:#457b9d; }
+  /* 버튼 — 쇼케이스 btn-primary/secondary */
+  .aos-btnp{ display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:12px 28px; border-radius:2px; border:none; font-family:inherit; font-weight:700; font-size:15px;
+    background:#a8442a; color:#fffdf8; box-shadow:0 8px 20px -8px rgba(168,68,42,.6);
+    transition:background-color .25s ease, transform .25s ease; }
+  .aos-btnp:hover{ background:#7d2f1c; transform:translateY(-1px); }
+  .aos-btnp.full{ width:100%; }
+  .aos-btnp.sm{ padding:9px 20px; font-size:14px; }
+  .aos-btnp.big{ padding:13px 28px; }
+  .aos-btns{ padding:9px 18px; border-radius:2px; border:1px solid #ddd6c8; font-family:inherit;
+    font-weight:600; font-size:14px; color:#1c1b18; background:#fbf6ea;
+    transition:border-color .25s ease, color .25s ease; }
+  .aos-btns:hover{ border-color:#a8442a; color:#a8442a; }
+  .aos-btns.icon{ padding:9px 12px; display:inline-flex; align-items:center; }
+  .aos-btns.icon.sm{ padding:5px 8px; }
+  /* 라벨 텍스트 오른쪽에 붙는 작은 아이콘 버튼 (이름 다시 뽑기) */
+  .aos-iconbtn{ border:none; background:transparent; color:#66625a; padding:2px 4px; margin-left:2px;
+    display:inline-flex; align-items:center; border-radius:2px; }
+  .aos-iconbtn:hover{ color:#a8442a; background:rgba(28,27,24,.06); }
+  .aos-iconbtn.spin svg{ animation:aosspin .8s linear; }
+  .aos-textbtn{ display:flex; align-items:center; justify-content:center; gap:6px; width:100%;
+    margin-top:10px; padding:9px 0; border:none; border-radius:2px; background:transparent;
+    font-size:13.5px; color:#5f5b53; }
+  .aos-textbtn:hover{ background:rgba(28,27,24,.05); }
+  .aos-joinrow{ display:flex; gap:8px; }
+  .aos-joinrow .aos-input{ flex:1; min-width:0; }
+  .aos-errslot{ min-height:20px; margin-top:8px; }
+  .aos-errslot p{ font-size:12.5px; line-height:20px; color:#dc2626; }
+  /* 이어하기 배너 */
+  .aos-resume{ position:relative; border:1px solid rgba(168,68,42,.4); background:rgba(168,68,42,.05);
+    border-radius:3px; padding:16px; margin-bottom:24px; }
+  .aos-resume .rx{ position:absolute; top:8px; right:8px; border:none; background:transparent; color:#5f5b53; padding:4px; border-radius:2px; }
+  .aos-resume .rx:hover{ color:#1c1b18; background:rgba(28,27,24,.1); }
+  .aos-resume .t{ font-size:14px; font-weight:700; color:#1c1b18; margin-bottom:4px; padding-right:24px; }
+  .aos-resume p{ font-size:12.5px; color:#5f5b53; line-height:1.6; margin-bottom:12px; }
+  /* 방 코드 패널 */
+  .aos-codebox{ background:#e9dfc9; border-radius:3px; text-align:center; padding:16px 12px; margin-bottom:16px; }
+  .aos-codebox .cap{ font-size:12.5px; color:#5f5b53; margin-bottom:4px; }
+  .aos-codebox .row{ display:flex; align-items:center; justify-content:center; gap:8px; }
+  .aos-codebox .code{ font-size:31px; font-weight:700; letter-spacing:.3em; color:#a8442a; text-indent:.3em; }
+  .aos-codebox .cpy{ border:none; background:transparent; color:#5f5b53; padding:8px; border-radius:2px; }
+  .aos-codebox .cpy:hover{ background:rgba(28,27,24,.1); }
+  .aos-codebox .cpy.ok{ color:#2f6b4f; }
+  .aos-codebox .cnt{ display:flex; align-items:center; justify-content:center; gap:5px;
+    font-size:12px; color:#66625a; margin-top:4px; }
+  /* 대기실 좌석 행 */
+  .aos-seats{ display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+  .aos-seat{ display:flex; align-items:center; gap:8px; padding:9px 13px; border-radius:2px;
+    border:1px solid rgba(28,27,24,.1); background:#fbf6ea; font-size:14px; }
+  .aos-seat.me{ border-color:#a8442a; background:rgba(168,68,42,.05); }
+  .aos-seat .ic-bot{ color:#457b9d; display:inline-flex; }
+  .ic-ink{ color:#6b5410; display:inline-flex; }
+  .aos-seatname{ flex:1; min-width:0; display:flex; align-items:center; gap:5px; overflow:hidden; }
+  .aos-seatname .nm{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .aos-seatname .nm.dim{ color:#66625a; }
+  .aos-seatname .pencil{ color:#66625a; display:inline-flex; }
+  .aos-nameinline{ border:none; background:transparent; font-family:inherit; font-size:14px; font-weight:600;
+    color:#1c1b18; width:100px; padding:2px 0; border-bottom:1px dashed transparent; }
+  .aos-nameinline:hover, .aos-nameinline:focus{ border-bottom-color:#a8442a; outline:none; }
+  .aos-badge{ display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px;
+    font-size:11.5px; font-weight:600; white-space:nowrap; }
+  .aos-badge.host{ background:rgba(234,179,8,.15); color:#a16207; }
+  .aos-badge.on{ background:rgba(47,107,79,.15); color:#2f6b4f; }
+  .aos-badge.off{ background:rgba(28,27,24,.1); color:#66625a; }
+  .aos-roundbtn{ display:inline-flex; align-items:center; gap:3px; padding:5px 8px; border-radius:999px;
+    border:none; background:#e9dfc9; color:#5f5b53; font-size:12px; }
+  .aos-roundbtn:hover{ background:rgba(28,27,24,.12); }
+  /* 공개/비공개 스위치 (방 만들기 헤더) */
+  .aos-pubtgl{ border:none; border-radius:999px; padding:4px 12px; font-size:12px; font-weight:700;
+    background:#e9dfc9; color:#66625a; }
+  .aos-pubtgl.on{ background:rgba(47,107,79,.15); color:#2f6b4f; }
+  .aos-pubtgl:hover{ filter:brightness(.97); }
+  /* 공개방 목록 */
+  .aos-pubroom{ display:flex; align-items:center; gap:10px; padding:8px 11px; border-radius:2px;
+    border:1px solid rgba(28,27,24,.1); background:#fbf6ea; margin-bottom:6px; }
+  .aos-pubroom .inf{ flex:1; min-width:0; }
+  .aos-pubroom .t{ font-size:13px; font-weight:700; color:#1c1b18; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .aos-pubroom .d{ font-size:11.5px; color:#5f5b53; }
+  .aos-pubjoin{ border:none; border-radius:2px; padding:6px 14px; font-size:12.5px; font-weight:700;
+    background:rgba(168,68,42,.12); color:#7d2f1c; }
+  .aos-pubjoin:hover{ background:rgba(168,68,42,.22); }
+  .aos-pubjoin:disabled{ opacity:.5; cursor:not-allowed; }
+  /* 대기실 채팅 */
+  .aos-chat{ border:1px solid rgba(28,27,24,.1); border-radius:2px; background:#fbf6ea;
+    margin-bottom:16px; overflow:hidden; }
+  .aos-chat .list{ max-height:128px; min-height:56px; overflow-y:auto; padding:8px 10px;
+    display:flex; flex-direction:column; gap:4px; }
+  .aos-chat .in{ display:flex; border-top:1px solid rgba(28,27,24,.1); }
+  .aos-chat .in input{ flex:1; min-width:0; border:none; background:transparent; padding:9px 12px;
+    font-family:inherit; font-size:13.5px; color:#1c1b18; }
+  .aos-chat .in input:focus{ outline:none; }
+  .aos-chat .in button{ border:none; background:transparent; color:#5f5b53; padding:0 12px; }
+  .aos-chat .in button:hover{ color:#a8442a; }
+  /* 시작 대기 상태 버튼 */
+  .aos-startwait{ display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
+    padding:13px 16px; border-radius:2px; border:none; background:#e9dfc9; color:#66625a;
+    font-size:13.5px; font-weight:600; text-align:center; line-height:1.5; }
+  .aos-startwait.center{ cursor:default; }
+  .aos-spin{ display:inline-flex; animation:aosspin 1s linear infinite; }
+  @keyframes aosspin{ to{ transform:rotate(360deg); } }
+  /* 우측 게임 요약 카드 (쇼케이스의 맵 특수룰 카드 자리) */
+  .aos-rules{ padding:26px 28px; }
+  .aos-rules h3{ font-family:inherit; font-size:20px; font-weight:700; color:#a8442a; margin-bottom:4px; }
+  .aos-rules .sub{ font-size:13px; color:#5f5b53; margin-bottom:18px; }
+  .aos-rules .it{ border-left:3px solid #ddd6c8; padding:2px 0 2px 14px; margin-bottom:16px; }
+  .aos-rules .it b{ display:block; font-size:14.5px; color:#1c1b18; margin-bottom:3px; }
+  .aos-rules .it p{ font-size:12.5px; color:#5f5b53; line-height:1.65; }
+  /* 채팅 공용 메시지 스타일 */
+  .cmsg{ font-size:12.5px; line-height:1.5; word-break:break-word; color:#1c1b18; }
+  .cmsg b{ color:#5f5b53; margin-right:4px; font-weight:600; }
+  .cmsg b.me{ color:#a8442a; }
+  .cempty{ color:#66625a; font-size:12px; text-align:center; padding:16px 0; }
+  /* 결과 확인 현황 (온라인) — 누가 눌렀고 누구를 기다리는지 */
+  .ap-acks{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin-top:12px;
+    padding-top:10px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--dim); }
+  .ap-acks .ok{ font-weight:700; color:var(--act); }
+  .ap-acks .waiting{ color:var(--accent-deep); }
+  /* ═══ 연결 끊김 안내 ═══ */
+  .overlay.netov{ z-index:130; }
+  .netbox{ max-width:420px; width:min(420px,92vw); background:var(--panel); border:1px solid var(--line);
+    border-top:4px solid var(--accent); border-radius:3px; padding:24px 26px; text-align:center;
+    box-shadow:0 14px 40px rgba(70,52,28,.34); }
+  .netbox h3{ font-size:18px; color:var(--ink); margin-bottom:10px; }
+  .netbox p{ font-size:13.5px; line-height:1.75; color:var(--dim); margin-bottom:18px; }
+  .netbox .btns{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .netbox .btns button{ flex:1 1 auto; min-width:130px; }
+  .netreconn{ position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:125;
+    display:flex; align-items:center; gap:7px; padding:8px 16px; border-radius:2px;
+    background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--accent);
+    box-shadow:0 6px 18px rgba(70,52,28,.24); font-size:13px; color:var(--dim); }
+  .netreconn svg{ animation:aosspin 1s linear infinite; color:var(--accent); }
+  /* 온라인 대기 배너 — 화면 정중앙에 크게 (클릭은 통과: pointer-events:none).
+     중앙 패널이 떠 있으면 .top으로 상단에 작게 비켜선다. */
+  .waitbanner{ position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:90;
+    pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:6px;
+    padding:22px 40px; border-radius:3px;
+    background:rgba(245,238,218,.95); border:1px solid var(--line); border-top:4px solid var(--pc);
+    box-shadow:0 14px 40px rgba(70,52,28,.3); color:var(--dim);
+    animation:wbIn .3s cubic-bezier(.2,.8,.3,1); }
+  @keyframes wbIn{ from{ opacity:0; transform:translate(-50%,-46%); } to{ opacity:1; transform:translate(-50%,-50%); } }
+  .waitbanner .txt{ display:flex; align-items:center; gap:8px; font-size:19px; color:var(--ink); }
+  .waitbanner b{ color:var(--pc); }
+  .waitbanner .sub{ font-size:12.5px; letter-spacing:.06em; }
+  .waitbanner .spin{ display:inline-flex; color:var(--pc); animation:aosspin 1s linear infinite; }
+  /* 패널이 떠 있을 때: 상단 한 줄로 축소 */
+  .waitbanner.top{ top:14px; transform:translateX(-50%); flex-direction:row; gap:7px;
+    padding:8px 16px; border-top-width:1px; border-left:4px solid var(--pc);
+    box-shadow:0 6px 18px rgba(70,52,28,.22); animation:none; }
+  .waitbanner.top .txt{ font-size:13px; }
+  .waitbanner.top .sub{ font-size:12px; }
+  .netbadge{ font-size:12px; font-weight:700; color:var(--act); border:1px solid var(--act);
+    border-radius:999px; padding:3px 10px; align-self:center; }
+
+  /* ═══ 게임 중 채팅 플로팅 위젯 (대기실은 인라인 박스) — 게임 테마 톤 ═══ */
+  /* 채팅 버튼 — 건물 버튼 바로 위, 같은 우측 정렬 (52px + 간격 10px = 62) */
+  #pr-chat{ position:fixed; right:var(--fab-right); bottom:136px; z-index:120;
+    display:flex; flex-direction:column; align-items:flex-end; }
+  #pr-chat .cfab{ position:relative; width:52px; height:52px; border-radius:50%;
+    border:1px solid var(--gold); background:var(--accent); color:#fff8ec; font-size:19px;
+    box-shadow:0 3px 12px rgba(70,52,28,.32); }
+  #pr-chat .cfab:hover{ background:var(--accent-deep); }
+  #pr-chat .cbadge{ position:absolute; top:-4px; right:-4px; min-width:19px; height:19px; padding:0 5px;
+    border-radius:999px; background:#b5533c; color:#fff; font-size:10.5px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; }
+  #pr-chat .cpanel{ width:280px; margin-bottom:10px; background:var(--panel); border:1px solid var(--line);
+    border-radius:10px; overflow:hidden; box-shadow:0 10px 28px rgba(70,52,28,.3); animation:apbIn .25s ease-out; }
+  #pr-chat .chead{ display:flex; justify-content:space-between; align-items:center; padding:8px 12px;
+    background:#efe8d6; border-bottom:1px solid var(--line); font-size:12.5px; font-weight:700; }
+  #pr-chat .chead button{ border:none; background:transparent; color:var(--dim); font-size:13px; }
+  #pr-chat .clist{ height:200px; overflow-y:auto; padding:9px 11px; display:flex; flex-direction:column; gap:5px; }
+  #pr-chat .cinput{ display:flex; border-top:1px solid var(--line); }
+  #pr-chat .cinput input{ flex:1; min-width:0; border:none; background:transparent; padding:9px 11px;
+    font-family:inherit; font-size:12.5px; }
+  #pr-chat .cinput input:focus{ outline:none; }
+  #pr-chat .cinput button{ border:none; background:transparent; color:var(--act); padding:0 12px; font-size:14px; }

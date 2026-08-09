@@ -299,6 +299,9 @@ function go(id){
   } else {
     enterCancel();   // 플레이를 떠나면 입장 막도 즉시 치운다
   }
+  /* 지금 탭을 주소에 남긴다 — 새로고침·튕김에도 보던 탭(특히 플레이)으로 돌아온다.
+     replaceState라 히스토리는 더럽히지 않고, 게임 자체는 game.html이 알아서 복구한다. */
+  try{ history.replaceState(null, '', '#'+id); }catch(e){}
   window.scrollTo(0,0);
 }
 let playReady=false;
@@ -341,4 +344,13 @@ function flowToggle(){
 }
 
 flowRender();
-go('intro');
+/* 시작 탭: 주소의 #해시를 따른다 (새로고침 복원). 없거나 모르는 값이면 소개부터. */
+(function(){
+  const h=(location.hash||'').replace(/^#/,'');
+  go(TABS.some(t=>t.id===h)?h:'intro');
+})();
+/* 뒤로/앞으로로 해시가 바뀌면 그 탭으로 (주소창에 직접 입력한 경우도) */
+window.addEventListener('hashchange', function(){
+  const h=(location.hash||'').replace(/^#/,'');
+  if(TABS.some(t=>t.id===h)) go(h);
+});

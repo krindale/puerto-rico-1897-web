@@ -57,7 +57,7 @@ function renderActionPanel(pd){
       }).map(b=>BUILDINGS[b.id].nm).join(' · ')||'—';
       const goods=GTYPES.filter(t=>q.goods[t]>0).map(t=>goodChip(t)+'×'+q.goods[t]).join(' ')||'—';
       return '<div class="ap-pcard" style="border-left:3px solid '+PCOLOR[q.i]+'">'
-        +'<div class="nm" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)+(G.governor===q.i?' 👑':'')+(q.i===pd.player?' (나)':'')+'</div>'
+        +'<div class="nm" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)+(G.governor===q.i?' 👑':'')+(q.i===pd.player?' (나)':'')+'</div>'
         // 접힌 개인 보드 카드와 같은 토큰 마크업(.cstat/.cpair) — 주화 $, 승점 VP, 일꾼 토큰
         +'<div class="cstat"><span class="cpair" title="주화"><span class="tok-coin sm">$</span><b>'+q.coins+'</b></span>'
         +'<span class="cpair" title="승점"><span class="tok-vp sm">VP</span><b>'+q.vp+'</b></span>'
@@ -114,7 +114,7 @@ function renderActionPanel(pd){
   }
   else if(pd.type==='craftBonus'){
     title='생산 단계';
-    const myTurn=!p.ai;
+    const myTurn=isLocalHuman(pd.player);
     const btns=myTurn
       ?'<div class="ap-msg" style="margin:8px 0 2px">생산자 혜택 — 방금 생산한 것 중 <b>1개</b>를 추가로 받으세요.</div>'
         +'<div class="ap-opts">'
@@ -128,7 +128,7 @@ function renderActionPanel(pd){
   }
   else if(pd.type==='trader'){
     title='판매 단계';
-    const myTurn=!p.ai;
+    const myTurn=isLocalHuman(pd.player);
     const M=G.supply.market; const isC=(pd.player===F.chooser);
     const slots='<div class="ap-slots">'
       +M.map((t,i)=>'<div class="ap-slot'+pfxCls('mktslot-'+i,'pfx-pop')+'">'+goodChip(t)+'</div>').join('')
@@ -156,7 +156,7 @@ function renderActionPanel(pd){
         inner='<div class="ap-prow">'+chips+'</div>';
       }
       return '<div class="ap-pl'+(isTurn?' turn':'')+pfxCls('plcard-'+q.i,'pfx-card')+'" style="--pc:'+PCOLOR[q.i]+'">'
-        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)
+        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)
         +(isTurn?(myTurn?' — 내 차례':' — 판매 중…'):'')+'</div>'
         +inner+'</div>';
     }).join('');
@@ -174,7 +174,7 @@ function renderActionPanel(pd){
   }
   else if(pd.type==='captain'){
     title='선적 단계';
-    const myTurn=!p.ai;
+    const myTurn=isLocalHuman(pd.player);
     // 내 차례에만 인터랙션: 상품을 고른다 (배로든 조선소로든 실을 수 있는 것만 클릭 가능)
     const shippable=t=>pd.opts.some(o=>o.type===t)||(pd.wharfOK&&p.goods[t]>0);
     // 이전 결정의 선택이 남아 있으면(차례가 돌아온 경우) 무효화
@@ -209,7 +209,7 @@ function renderActionPanel(pd){
         inner='<div class="ap-prow">'+chips+'</div>';
       }
       return '<div class="ap-pl'+(isTurn?' turn':'')+pfxCls('plcard-'+q.i,'pfx-card')+'" style="--pc:'+PCOLOR[q.i]+'">'
-        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)
+        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)
         +(isTurn?(myTurn?' — 내 차례':' — 선적 중…'):'')+'</div>'
         +inner+'</div>';
     }).join('');
@@ -227,7 +227,7 @@ function renderActionPanel(pd){
     const ships=G.supply.ships.map((s,si)=>{
       const shipFx=pfxCls('ship-'+si,'pfx-card');
       const name='<b>'+s.size+'칸 수송선</b>'
-        +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+' '+s.count+'/'+s.size+'</span>':'<span class="free">비어 있음</span>');
+        +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+'</span>':'<span class="free">비어 있음</span>');
       if(!selT) return '<div class="ap-ship'+shipFx+'"><div class="hd">'+name+'</div>'+slotsOf(s,si)+'</div>';
       const oi=pd.opts.findIndex(o=>o.type===selT&&o.ship===si);
       if(oi>=0){
@@ -274,7 +274,7 @@ function renderActionPanel(pd){
   }
   else if(pd.type==='storage'){
     title='선적 단계 — 상품 저장';
-    const myTurn=!p.ai;
+    const myTurn=isLocalHuman(pd.player);
     const cap=pd.cap; const sel=storeSel();
     const types=GTYPES.filter(t=>p.goods[t]>0);
     // 내 카드 안에 들어가는 저장 선택기
@@ -302,7 +302,7 @@ function renderActionPanel(pd){
       const chips=GTYPES.filter(t=>q.goods[t]>0).map(t=>'<span class="ap-g">'+goodChip(t)+'×'+q.goods[t]+'</span>').join('')
         ||'<span class="dim">상품 없음</span>';
       return '<div class="ap-pl'+(isTurn?' turn':'')+pfxCls('plcard-'+q.i,'pfx-card')+'" style="--pc:'+PCOLOR[q.i]+'">'
-        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)
+        +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)
         +(isTurn?(myTurn?' — 내 차례':' — 저장 정리 중…'):'')+'</div>'
         +'<div class="ap-prow">'+chips+'</div>'
         +(isTurn&&myTurn?picker:'')
@@ -310,7 +310,7 @@ function renderActionPanel(pd){
     }).join('');
     const shipCards=G.supply.ships.map(s=>
       '<div class="ap-ship"><div class="hd"><b>'+s.size+'칸 수송선</b>'
-      +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+' '+s.count+'/'+s.size+'</span>':'<span class="free">비어 있음</span>')
+      +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+'</span>':'<span class="free">비어 있음</span>')
       +'</div>'+shipSlotsHtml(s)+'</div>').join('');
     body='<div class="ap-msg">'+(myTurn
         ?'선적이 끝났습니다. 저장 한도를 넘는 상품을 정리하세요.'
@@ -339,7 +339,7 @@ function renderActionPanel(pd){
         const chips=GTYPES.filter(t=>q.goods[t]>0).map(t=>'<span class="ap-g">'+goodChip(t)+'×'+q.goods[t]+'</span>').join('')
           ||'<span class="dim">상품 없음</span>';
         return '<div class="ap-pl'+pfxCls('plcard-'+q.i,'pfx-card')+'" style="--pc:'+PCOLOR[q.i]+'">'
-          +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)+'</div>'
+          +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)+'</div>'
           +'<div class="ap-prow">'+chips+'</div></div>';
       }).join('');
       // 방금 실린 칸의 팝 이펙트(markPanelFx)가 이 화면에서 재생된다 — 진행 패널과 같은 마크업
@@ -352,7 +352,7 @@ function renderActionPanel(pd){
       const right=(pd.id==='captain')
         ?'<div class="ap-ships vert">'+G.supply.ships.map((s,si)=>
             '<div class="ap-ship'+pfxCls('ship-'+si,'pfx-card')+'"><div class="hd"><b>'+s.size+'칸 수송선</b>'
-            +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+' '+s.count+'/'+s.size+'</span>':'<span class="free">비어 있음</span>')
+            +(s.type?'<span class="cnt">'+PLANT_NM[s.type]+'</span>':'<span class="free">비어 있음</span>')
             +'</div>'+slotsOf(s,si)+'</div>').join('')+'</div>'
         :'<div class="ap-slots">'
           +G.supply.market.map((t,i)=>'<div class="ap-slot'+pfxCls('mktslot-'+i,'pfx-pop')+'">'+goodChip(t)+'</div>').join('')

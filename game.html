@@ -25,6 +25,11 @@
 <script src="js/render.js"></script>
 <script src="js/panel.js"></script>
 <script src="js/ui.js"></script>
+<!-- 온라인 멀티플레이 (Supabase) — vendor 번들은 저장소에 포함(CDN 금지 원칙 유지).
+     네트워크가 없거나 번들이 빠져도 netConfigured()가 false가 되어 로컬 플레이는 그대로 동작한다. -->
+<script src="js/vendor/supabase.js"></script>
+<script src="js/net-config.js"></script>
+<script src="js/net.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

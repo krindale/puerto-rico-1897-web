@@ -86,7 +86,7 @@ function craftStageHtml(rows, opts){
     const q=P(r.pi); const kinds=Object.keys(r.got);
     const isTurn=(q.i===opts.turnPi);
     return '<div class="ap-pl'+(isTurn?' turn':'')+'" style="--pc:'+PCOLOR[q.i]+'">'
-      +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+esc(q.name)+(isTurn&&opts.label?opts.label:'')+'</div>'
+      +'<div class="ap-pl-h" style="color:'+PCOLOR[q.i]+'">'+(q.ai?aosIcon('bot',12)+' ':'')+esc(q.name)+(isTurn&&opts.label?opts.label:'')+'</div>'
       +'<div class="ap-prow">'
       +(kinds.length
         ? kinds.map(t=>'<span class="ap-g">'+goodChip(t)+'×'+r.got[t]+'</span>').join('')
@@ -116,14 +116,27 @@ function shipSlotsHtml(s){
    호출 전에 G.phase는 정리되어 있어야 하며, 반환 false면 호출자가 직접 진행(nextChooser)한다. */
 function phaseReport(title, html, stage){
   if(G.players.some(p=>!p.ai)){
-    G.pending={type:'report', title, html, stage:stage||null};
+    // acks: 이 결과를 확인한 좌석들 — 온라인에서는 사람 좌석 전원이 확인해야 다음으로 넘어간다
+    G.pending={type:'report', title, html, stage:stage||null, acks:[]};
     schedule();
     return true;
   }
   phaseFlash(title, html);
   return false;
 }
-function actReportDone(){
+/* 결과 확인 — 로컬은 즉시 진행, 온라인은 사람 좌석 전원이 확인해야 진행한다.
+   seat: 확인한 좌석(호스트가 게스트 intent를 대신 적용할 때 전달). 생략하면 내 좌석. */
+function actReportDone(seat){
+  const pd=G.pending;
+  if(!pd||pd.type!=='report') return;
+  if(typeof NET!=='undefined'&&NET.on){
+    if(!NET.host) return;                      // 게스트는 intent만 보낸다 (netWrapActs가 감쌈)
+    const s=(seat===undefined||seat===null)?NET.mySeat:seat;
+    pd.acks=pd.acks||[];
+    if(s!==null&&s!==undefined&&!pd.acks.includes(s)) pd.acks.push(s);
+    const humans=G.players.filter(p=>!p.ai).map(p=>p.i);
+    if(!humans.every(i=>pd.acks.includes(i))){ schedule(); return; }   // 아직 안 누른 사람이 있다
+  }
   G.pending=null;
   nextChooser();
 }
@@ -153,7 +166,15 @@ let uiLastPend = '';     // pending 전환 감지용
 let uiHoldUntil = 0;     // 이 시각까지는 "당신 차례" 표시(역할 선택 가능 표시·액션바 등)를 숨긴다 — 직전 이펙트를 먼저 보여주기 위함
 let uiPrevShown = null;  // 직전 렌더에서 펼쳐져 있던 보드 — 바뀐 순간에만 넓어지는 애니메이션을 준다
 
-function humanPend(){ const pd=G&&G.pending; return (pd&&pd.player!==undefined&&pd.type!=='gameOver'&&!P(pd.player).ai)?pd:null; }
+/* "이 좌석의 결정을 이 화면에서 내리는가" — 로컬 게임이면 사람이면 전부,
+   온라인이면 내 좌석일 때만. "당신 차례" UI(패널·액션바·클릭 가능 표시)는 전부 이걸 봐야 한다 —
+   !p.ai 만 보면 온라인에서 남의(원격 사람) 차례에도 내 화면이 조작 가능해진다. */
+function isLocalHuman(pi){
+  if(pi===null||pi===undefined||!G||!G.players[pi]||G.players[pi].ai) return false;
+  if(typeof NET==='undefined'||!NET.on) return true;
+  return NET.mySeat===pi;
+}
+function humanPend(){ const pd=G&&G.pending; return (pd&&pd.player!==undefined&&pd.type!=='gameOver'&&isLocalHuman(pd.player))?pd:null; }
 function shownBoard(){
   if(!G) return 0;
   if(uiBoardSel!==null) return uiBoardSel;
