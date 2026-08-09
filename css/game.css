@@ -1,0 +1,584 @@
+  * { margin:0; padding:0; box-sizing:border-box; }
+  /* 팔레트: 웹규칙서(푸에르토리코1897_웹규칙서.pdf) 테마 기준 —
+     양피지 바탕 + 주황/앰버 배너(섹션 제목·강조) + 진갈색 프레임/잉크. 순검정·선홍 금지 */
+  :root{
+    --bg:#eadfc4;          /* 규칙서 양피지 */
+    --ink:#33291e;         /* 잉크: 프레임 진갈색 */
+    --line:#cfbd98;        /* 구분선 */
+    --panel:#f5eeda;       /* 밝은 양피지 카드 */
+    --accent:#d97f22;      /* 강조: 규칙서 배너 주황 (선택 가능 표시·주 버튼) */
+    --accent-deep:#b5651a; /* 강조 hover */
+    --dim:#867456;         /* 보조 텍스트 */
+    --gold:#b8770f;        /* 섹션 제목: 앰버 */
+    --act:#15837a;         /* 인터랙션: 카리브 청록 (선택 가능·확정 버튼) */
+    --act-deep:#0f665f;    /* 인터랙션 hover */
+  }
+  /* 양피지 질감(은은한 얼룩) + 규칙서식 갈색 장식 프레임 */
+  body{ color:var(--ink); font-family:'Noto Sans KR','Malgun Gothic',sans-serif; font-size:14px;
+    background:
+      linear-gradient(rgba(245,238,218,.7), rgba(245,238,218,.7)),
+      url('img/보드_배경.png') center/cover no-repeat fixed,
+      var(--bg); }
+  body::before{ content:''; position:fixed; inset:6px; border:2px solid #7a5c39; border-radius:10px; pointer-events:none; z-index:40; }
+  body::after{ content:''; position:fixed; inset:11px; border:1px solid rgba(122,92,57,.4); border-radius:7px; pointer-events:none; z-index:40; }
+  h1,h2,h3{ font-family:'Gowun Batang','Cormorant Garamond',serif; }
+  button{ font-family:inherit; cursor:pointer; }
+  /* 스크롤 없이 한 화면에 들어가는 것이 목표 — 세로 여백을 아껴 쓴다 */
+  .wrap{ max-width:1460px; margin:0 auto; padding:6px 18px 36px; }
+
+  /* ── header ── */
+  .hdr{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; padding:4px 2px 6px; border-bottom:2px solid var(--ink); }
+  .hdr h1{ font-size:22px; letter-spacing:.02em; }
+  .hdr .sub{ color:var(--accent); font-family:'Cormorant Garamond',serif; font-size:17px; font-style:italic; }
+  .hdr .meta{ margin-left:auto; display:flex; gap:14px; font-size:12.5px; color:var(--dim); align-items:baseline; }
+  .hdr .meta b{ color:var(--ink); }
+  /* ? 도움말 버튼 — 언제든 요약 규칙을 볼 수 있다.
+     .hdr button 공통 규칙(패딩·각진 모서리)이 이기지 않도록 선택자를 더 구체적으로 쓴다.
+     색은 헤더의 다른 요소들과 같은 차분한 톤(선 색 테두리 + 보조 텍스트 색) */
+  .hdr button.helpbtn{ border:2px solid var(--dim); background:transparent; color:var(--dim); font-weight:700;
+    width:27px; height:27px; padding:0; border-radius:50%; font-size:14px; line-height:1; align-self:center; }
+  .hdr button.helpbtn:hover{ background:#e2d7c2; color:var(--ink); border-color:var(--ink); }
+  /* 요약 규칙 팝업 — 액션 패널보다 위에 뜬다 (게임 중 아무 때나 참조) */
+  .overlay.help-ov{ z-index:95; }
+  .help-modal{ max-width:760px; }
+  .help-modal h3{ font-size:14px; color:var(--gold); letter-spacing:.08em; margin:16px 0 7px; }
+  .help-modal h3:first-of-type{ margin-top:4px; }
+  .help-modal p, .help-modal li{ font-size:13.5px; line-height:1.75; color:var(--ink); }
+  .help-modal ul{ padding-left:18px; }
+  .help-modal table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .help-modal td, .help-modal th{ border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top; }
+  .help-modal th{ background:#f0e9d8; white-space:nowrap; }
+  .help-modal td:first-child{ white-space:nowrap; font-weight:700; }
+  .help-modal .hm-dim{ color:var(--dim); font-size:12px; }
+  .hdr button{ border:1px solid var(--line); background:transparent; padding:5px 10px; font-size:12px; border-radius:2px; }
+  .hdr button:hover{ background:#e2d7c2; }
+  .hdr button:disabled{ opacity:.35; cursor:default; }
+  .hdr button:disabled:hover{ background:transparent; }
+  .hdr .ver{ font-size:11px; color:var(--dim); opacity:.75; }
+  /* 소개 페이지 안에 끼워져(iframe) 열렸을 때만 나오는 "소개로" 버튼.
+     혼자 열었을 때는 돌아갈 곳이 없으므로 아예 안 그린다 (renderSetup·rd-hdr 양쪽)
+     테두리 없는 텍스트 링크 스타일 — .hdr button 공통 규칙보다 구체적으로 선언해 네모 상자를 지운다 */
+  .backbtn, .hdr button.backbtn{ border:none; background:transparent; padding:5px 8px 5px 0; font-size:14.5px;
+    font-weight:600; border-radius:0; color:var(--dim); white-space:nowrap; align-self:center; }
+  .backbtn:hover, .hdr button.backbtn:hover{ background:transparent; color:var(--ink); }
+  .setup .backbtn{ margin-bottom:18px; }
+
+  /* ── setup ── */
+  .setup{ max-width:640px; margin:40px auto; background:var(--panel); border:1px solid var(--line); padding:34px 38px; }
+  .setup h2{ font-size:28px; margin-bottom:6px; }
+  .setup .lead{ color:var(--dim); font-size:13px; margin-bottom:24px; }
+  .setup .row{ display:flex; align-items:center; gap:10px; margin:10px 0; }
+  .setup label{ width:90px; font-weight:700; font-size:13px; }
+  .setup select,.setup input[type=text]{ font-family:inherit; font-size:14px; padding:7px 10px; border:1px solid var(--line); background:var(--panel); border-radius:2px; }
+  .setup .seat{ display:flex; gap:8px; align-items:center; margin:8px 0; }
+  .setup .seat .num{ width:26px; height:26px; border-radius:50%; background:var(--ink); color:var(--bg); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; }
+  .setup .seat input[type=text]{ flex:1; }
+  .setup .seat .tgl{ display:flex; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .setup .seat .tgl button{ border:none; padding:7px 14px; font-size:12.5px; background:transparent; }
+  .setup .seat .tgl button.on{ background:var(--ink); color:var(--bg); font-weight:700; }
+  .btn-primary{ border:none; background:var(--accent); color:#f7f2e8; padding:13px 26px; font-size:15px; font-weight:700; border-radius:2px; }
+  .btn-primary:hover{ background:var(--accent-deep); }
+  .btn-ghost{ border:1px solid var(--line); background:transparent; color:var(--ink); padding:12px 20px; font-size:14px; border-radius:2px; }
+  .btn-ghost:hover{ background:#e2d7c2; }
+
+  /* ── sections ── */
+  .sec{ margin-top:6px; }
+  .sec-title{ font-size:11px; letter-spacing:.28em; color:var(--gold); text-transform:uppercase; margin-bottom:8px; font-weight:700; }
+
+  /* ── 2단 레이아웃: 본문 + 우측 고정 패널 — 두 열의 아래 끝이 맞도록 서로 늘린다 ── */
+  .layout{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:16px; align-items:stretch; }
+  .main-col{ display:flex; flex-direction:column; min-width:0; }
+  .main-col .sec{ flex:1; display:flex; flex-direction:column; }
+  .main-col .players{ flex:1; }
+  .side-col{ position:sticky; top:8px; display:flex; flex-direction:column; gap:8px; height:100%; max-height:calc(100vh - 126px); overflow-y:auto; }  /* 하단 액션바와 살짝 띄움 */
+  .side-col .card{ flex-shrink:0; }
+  .side-col .log{ flex:1 1 auto; max-height:none; min-height:40px; }
+  @media (max-width:1000px){ .layout{ grid-template-columns:1fr; } .side-col{ position:static; max-height:none; } }
+
+  /* role tiles */
+  .roles{ display:flex; gap:8px; flex-wrap:wrap; padding:4px 0 4px; }
+  /* 역할 타일: 5인(탐험가 2장 = 8장)일 때도 한 줄에 들어가는 최대 폭.
+     화면이 낮으면 자동 축소해 하단 액션바와 겹치지 않게 */
+  .role{ position:relative; width:131px; border:1px solid var(--line); background:var(--panel); border-radius:3px; padding:0; overflow:hidden; text-align:left; }
+  @media (max-height:800px){ .role{ width:104px; } }
+  .role .coin{ position:absolute; top:5px; right:5px; background:#e8c95c; border:1px solid #b89a30; color:#4a3b0a; font-size:11px; font-weight:700; min-width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:3; }
+  .role.taken .img, .role.taken .rolefb{ opacity:.35; }
+  .role.pickable{ transform:scale(1.06); transform-origin:center; box-shadow:0 5px 14px rgba(70,52,28,.32); cursor:pointer; z-index:5; }
+  .role.pickable:hover{ filter:brightness(1.06); }
+  .role .img{ display:block; width:100%; aspect-ratio:241/379; height:auto; object-fit:cover; margin:0; }
+  .role .img ~ .rolefb{ display:none; }  /* 이미지 있으면 텍스트 폴백 숨김 */
+  .rolefb{ padding:10px; font-weight:700; font-size:14px; min-height:110px; }
+  .rolefb span{ font-weight:400; font-size:11px; color:var(--dim); }
+  .role .took{ position:absolute; left:0; right:0; bottom:0; background:rgba(51,41,30,.85); color:#f3ede1; font-size:10.5px; font-weight:700; text-align:center; padding:3px 0; z-index:3; }
+  .role.cur{ outline:3px solid var(--ink); }
+  /* 호버 확대: 레이아웃을 건드리지 않는 복제 이미지 방식.
+     원본 크기와 무관하게 고정 폭으로 확대 (작은 원본도 같은 크기로 보이게) */
+  img.zoom{ display:none; }
+  /* 건설 중에는 구입 가능한 건물만 호버 확대, 구경 모드에서는 전체 확대 */
+  .shop-modal.buying .shopb.buyable:hover img.zoom,
+  .shop-modal:not(.buying) .shopb:hover img.zoom{
+    display:block; position:fixed; inset:auto; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:380px; height:auto; z-index:999;
+    box-shadow:0 8px 30px rgba(0,0,0,.45); border-radius:4px; pointer-events:none; background:var(--panel); }
+  /* 역할 확대: 오버레이 대신 타일이 제자리에서 커진다 (카드게임식) */
+  .role{ transition:transform .14s ease; transform-origin:top center; }
+  .role.pickable:hover{ transform:scale(1.22); z-index:60; box-shadow:0 8px 20px rgba(0,0,0,.3); }  /* 내가 고를 수 있는 타일만 호버 확대 */
+
+  /* board strip: ships / market / supply / display */
+  .strip{ display:grid; grid-template-columns:auto auto 1fr auto; gap:14px; align-items:start; }
+  @media (max-width:1080px){ .strip{ grid-template-columns:1fr 1fr; } }
+  .card{ background:rgba(246,240,222,.78); border:1px solid var(--line); padding:7px 9px; border-radius:3px; }
+  /* 배 카드 폭은 적재 칸 수에 맞게 — 칸이 카드 밖으로 삐져나가지 않게 */
+  .ships{ display:flex; gap:5px; flex-wrap:nowrap; justify-content:space-between; }
+  .ship{ flex:0 1 auto; min-width:0; border:1px solid var(--line); border-radius:3px; background:var(--panel); padding:7px 10px 9px; text-align:center; }
+  .ship.full{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .ship .cap{ font-size:10px; color:var(--dim); margin-bottom:5px; }
+  .ship .cap b{ color:var(--ink); font-size:11px; }
+  /* 적재 칸은 위아래 2줄 (열 수는 배 크기에 따라 JS가 지정) — 칸 크기는 공급처 토큰과 동일 */
+  .ship .slots{ display:grid; gap:2px; justify-content:center; }
+  /* 상품 토큰: 보드게임식 자원 큐브(아이소메트릭) — 단색 + 모서리 실선 3개로 입체 표현.
+     글자는 넣지 않는다(색으로 구분, 이름은 옆에 텍스트로). */
+  .goodchip{ position:relative; display:inline-block; width:20px; height:23px;
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+    background:var(--gc,#999);
+    filter:drop-shadow(0 0 1px rgba(90,77,61,.8)); }
+  .goodchip::before{ content:''; position:absolute; inset:0;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 23'%3E%3Cpath d='M10 11.5L0 5.75M10 11.5L20 5.75M10 11.5V23' fill='none' stroke='rgba(0,0,0,0.35)' stroke-width='1.2'/%3E%3C/svg%3E") no-repeat;
+    background-size:100% 100%; }
+  /* 빈 적재 칸: 흐린 테두리의 원 */
+  .slot{ position:relative; width:20px; height:20px; border-radius:50%; border:1px solid #ddd3c0; background:var(--panel);
+    align-self:center; justify-self:center; }
+  .slot.g{ width:20px; height:23px; border:none; border-radius:0; background:none; }
+  .slot.g .goodchip{ position:absolute; inset:0; width:100%; height:100%; }
+  /* 상자에 딱 담긴 작물 느낌 — 여백 최소 */
+  .market-slots{ display:grid; grid-template-columns:repeat(2,20px); gap:3px; justify-content:center;
+    border:1px solid var(--line); border-radius:2px; background:var(--panel); padding:4px; width:max-content; margin:0 auto; }
+  /* 상점 + 인력 시장을 한 줄에 */
+  .cardrow{ display:flex; gap:8px; }
+  .cardrow .card{ flex:1; min-width:0; }
+  .labor-row{ display:flex; gap:3px; flex-wrap:wrap; align-items:center; min-height:16px; }
+  .labor-row .wtok{ width:25px; height:25px; border:none; }  /* 개인 보드 일꾼 토큰과 동일 크기 · 테두리 없음 */
+  .hintline{ font-size:10.5px; color:var(--dim); margin-top:6px; line-height:1.5; }
+  .supply-line{ display:flex; gap:12px; flex-wrap:wrap; font-size:12.5px; }
+  .supply-line b{ font-size:14px; }
+  .sup-item{ display:flex; align-items:center; gap:5px; }
+
+  /* plantation display */
+  /* 항상 농장 2줄 높이를 확보 — 타일 수가 변해도 레이아웃이 흔들리지 않게.
+     배치는 위아래 반반 (홀수면 윗줄이 1개 더) */
+  .plants{ display:flex; flex-direction:column; gap:6px; align-items:center; min-height:174px; }
+  .plants .prow{ display:flex; gap:6px; justify-content:center; }
+  .plant{ width:62px; border:1px solid var(--line); border-radius:3px; overflow:hidden; background:var(--panel); text-align:center; }
+  .plant .art{ position:relative; width:100%; aspect-ratio:1; }
+  .plant .art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .plant .lbl{ background:rgba(251,247,238,.95); font-size:11px; font-weight:700; padding:3px 0; border-top:1px solid var(--line); }
+  .plant.pickable{ transform:scale(1.06); box-shadow:0 4px 12px rgba(70,52,28,.3); cursor:pointer; z-index:5; transition:transform .12s ease; }
+
+  /* players — 좌우 배치: 펼친 보드 1개 + 요약 카드들이 한 줄. 스크롤 없이 한눈에 보이는 게 목표 */
+  .players{ display:flex; gap:8px; align-items:stretch; overflow-x:hidden; }  /* 접힌 패널도 펼친 보드와 같은 높이. overflow-x: 전환 애니메이션 중 잠깐 폭 합이 넘쳐도 안 튀어나오게 */
+  /* 폭은 전부 "확정된 px"이다 (render()가 --w-open / --cbw 를 계산해 얹는다).
+     예전에는 접힌 카드가 flex:1 1 0 으로 남는 폭을 나눠 가졌는데, 그러면 보드를 펼칠 때마다
+     남는 폭이 재분배되어 **관계없는 카드들의 폭까지 같이 변했다**. 지금은 어느 보드를 펼치든
+     펼친 폭·접힌 폭이 같은 값이라, 전환할 때 움직이는 건 열리는 판과 닫히는 판 둘뿐이다. */
+  .pboard{ position:relative; background:rgba(246,240,222,.8); border:1px solid var(--line); border-radius:3px; padding:8px 10px;
+    flex:0 0 var(--w-open, auto); min-width:0; }
+  .pboard.cur{ box-shadow:inset 6px 0 0 var(--pc); }  /* 이번 역할을 고른 사람(선택 단계에는 고르는 중인 사람): 본인 색 띠가 두꺼워진다 */
+  /* 실제 내용(.pcontent)은 항상 자기 내용 기준 고유 폭으로만 그려진다 — 바깥 .pboard(애니메이션 중인 폭)에
+     맞춰 안쪽 flex(자원 패널 등)가 재계산되면서 갑자기 튀어나오듯 보이는 걸 막는다. 바깥은 그 위에서
+     넓어지거나(overflow:hidden으로) 가리는 창 역할만 한다 — 내용 자체는 한 번만 배치되고 안 움직인다. */
+  .pcontent{ width:max-content; }
+  /* 요약 카드만 예외 — 카드 폭에 맞춰 줄어든다(이름은 …로 잘리고 칩은 줄바꿈).
+     펼친 보드가 필요한 폭을 먼저 가져가고 남는 걸 접힌 카드들이 나눠 가지는 구조라,
+     접힌 쪽이 유연해야 펼친 보드의 건설 부지가 안 잘린다. */
+  .pboard.collapsed .pcontent{ width:auto; min-width:0; flex:1; display:flex; flex-direction:column; gap:2px; }
+  /* 펼침↔접힘 전환 — 폭이 px로 확정돼 있으므로 두 판의 flex-basis만 서로 맞바꾼다.
+     (예전에는 flex-grow를 애니메이션해서, 남는 폭을 나눠 갖던 다른 카드들까지 매 프레임 흔들렸다.)
+     A가 늘어나는 만큼 B가 정확히 줄어드니 한 줄의 총 폭은 내내 그대로 — 나머지 판은 미동도 없다.
+     px 보간이라 이징도 그냥 걸면 된다(키프레임 구간마다 이징이 걸리는 함정도 없다). */
+  @keyframes boardGrow{ from{ flex-basis:var(--cbw,118px); } to{ flex-basis:var(--w-open,100%); } }
+  @keyframes boardShrink{ from{ flex-basis:var(--w-open,100%); } to{ flex-basis:var(--cbw,118px); } }
+  @keyframes unclip{ from{ overflow:hidden; } to{ overflow:visible; } }
+  .pboard.board-in{ animation:boardGrow var(--board-anim) var(--board-ease), unclip var(--board-anim) step-end forwards; }
+  .pboard.board-out{ animation:boardShrink var(--board-anim) var(--board-ease), unclip var(--board-anim) step-end forwards; }
+  /* 슬라이드와 이펙트의 순서 보장 —
+     ① 보드가 열리는 동안(.board-in) 안의 타일·일꾼 팝은 슬라이드가 끝난 뒤에 시작한다.
+        (동시에 돌리면 보드 전체가 움직이는 데 눈이 뺏겨 작은 팝이 안 보인다)
+        fill-mode:backwards → 대기 중에는 0% 키프레임(확대+금빛)으로 떠서 시선을 미리 끈다.
+     ② .cardflash(보드 전체 금빛 테두리)가 .board-in/.board-out과 같은 요소에 겹치면 animation
+        속성이 서로를 덮어써 플래시가 통째로 무시된다 — 반드시 쉼표로 합쳐 둘 다 재생시킨다.
+     ③ 연속된 애니메이션은 붙여 돌리지 않는다 — 앞 동작이 끝나고 --fx-gap(0.3초)을 쉰 뒤에 시작한다.
+        그래서 대기 시간 --fx-step = 보드 슬라이드(--board-anim) + 간격(--fx-gap).
+        (JS 쪽 BOARD_ANIM·SHOP_DELAY도 같은 규칙이다 — 값을 바꾸면 양쪽을 같이 바꿀 것) */
+  :root{ --board-anim:.42s; --board-ease:cubic-bezier(.4,0,.2,1); --fx-gap:.3s; --fx-step:.72s; }
+  .pboard.board-in .fx-pop{ animation-delay:var(--fx-step); }   /* 보드가 열리는 중이면 그 뒤로 더 민다 */
+  .pboard.board-in.cardflash{ animation:boardGrow var(--board-anim) var(--board-ease), unclip var(--board-anim) step-end forwards, cardflash 1.3s ease var(--fx-step) backwards; }
+  .pboard.board-out.cardflash{ animation:boardShrink var(--board-anim) var(--board-ease), unclip var(--board-anim) step-end forwards, cardflash 1.3s ease var(--fx-step) backwards; }
+  /* 팝이 칸 밖으로 나갈 수 있게 — 일꾼 토큰은 칸 안에 있어서 .cell의 overflow:hidden에 잘렸다.
+     그리고 팝이 진행 중인 보드를 옆 보드보다 위로 올려 잘려 보이지 않게 한다. */
+  .cell:has(.fx-pop), .cell.fx-pop{ overflow:visible; }
+  .pboard:has(.fx-pop){ z-index:20; }
+  /* 요약 카드: 자리 순서대로 좌우 배치. 폭은 render()가 정한 --cbw 로 고정 —
+     어느 보드를 펼치든 같은 값이라 전환할 때 다른 카드가 흔들리지 않는다.
+     기본값은 CB_MIN(농장·건물 이름이 들어가는 최소 폭)이고, 타일이 상한에 걸려 폭이 남으면
+     남는 만큼을 접힌 카드들이 똑같이 나눠 갖는다(그 값도 전환과 무관하게 일정하다). */
+  .pboard.collapsed{ flex:0 0 var(--cbw,118px); display:flex; flex-direction:column; gap:2px; padding:6px 8px; cursor:pointer; }
+  .pboard.collapsed:hover{ background:#f3ecdb; }
+  .pboard.collapsed .chead{ flex-wrap:nowrap; gap:4px; font-size:13px; }
+  .cnm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  .ctags{ display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+  .ctags .tag{ font-size:9.5px; padding:1px 4px; }
+  .ctags .gov-ic{ width:18px; height:12px; }
+  .csec{ font-size:10.5px; letter-spacing:.15em; color:var(--gold); font-weight:700; margin-top:2px; }
+  .clist{ font-size:11.5px; line-height:1.35; color:#4b4237; }
+  .clist .bk-prod{ color:var(--act); }    /* 생산 건물: 카리브 청록 */
+  .clist .bk-big{ color:var(--gold); font-weight:700; }   /* 고급 건물: 앰버 */
+  .clist .un{ color:var(--dim); }   /* 일꾼 미배치 건물 — 종류 색보다 우선(뒤에 선언) */
+  .pdot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; flex-shrink:0; }
+  .chead{ display:flex; gap:5px; align-items:center; font-weight:700; font-size:14px; flex-wrap:wrap; }
+  /* 주화·승점·일꾼 — 카드가 좁으면 알아서 다음 줄로 접힌다 (고정 2열이면 좁을 때 카드 밖으로 넘친다) */
+  .cstat{ font-size:12.5px; color:var(--dim); display:flex; flex-wrap:wrap; gap:2px 9px; }
+  .cpair{ display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
+  .cstat .tok-coin.sm{ width:17px; height:17px; font-size:9.5px; }
+  .cstat .tok-vp.sm{ width:15px; height:17px; font-size:6px; }
+  .cstat .wtok.smw{ width:15px; height:15px; }
+  .cstat b{ color:var(--ink); font-size:14px; }
+  .crow{ display:flex; flex-wrap:wrap; gap:3px 8px; font-size:11px; }
+  .crow>*{ white-space:nowrap; }
+  .cg{ display:flex; align-items:center; gap:3px; }
+  .crow .goodchip{ width:15px; height:17px; }
+  .dim{ color:var(--dim); }
+  /* 목록을 뺀 만큼 카드 아래가 비었다 — 그 자리에 "펼치면 다 볼 수 있다"는 힌트를 둔다 */
+  .pboard.collapsed .expand{ margin-top:auto; padding-top:4px; font-size:10px; text-align:center; color:var(--dim); }
+  .players>.pboard:last-child .expand{ display:none; }  /* 이 자리 우측 하단은 건물 보관판 버튼이 쓴다 */
+  .kbd-hint{ letter-spacing:0; text-transform:none; color:var(--dim); font-weight:400; margin-left:8px; }
+  /* 펼친 보드: 토지 옆 빈자리를 자원 패널이 가득 채운다
+     (아래는 토지 타일 바닥, 오른쪽은 건설 부지 오른쪽 끝까지) */
+  .landrow{ display:flex; gap:12px; align-items:stretch; }
+  /* 자원 패널: 보드와 같은 언어 — 빈 칸 톤의 감싸는 레이어 + 타일 그래픽과 같은 토큰 아이콘.
+     토지 옆 영역을 가득 채우고, 내용이 넘치면 세로 기준으로 다음 열에 이어진다 */
+  .preswrap{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  /* 높이 = 토지 그리드(타일 2줄 + 간격)와 동일 — 아래 끝이 토지 타일 바닥과 맞는다 */
+  .pres{ min-height:calc(var(--lw,59px) * 92 / 70 * 2 + 4px); min-width:0; display:flex; flex-direction:column; flex-wrap:wrap; align-content:flex-start;
+    gap:6px; column-gap:22px; font-size:12px;
+    background:rgba(245,238,218,.55); border:1px solid var(--line); border-radius:3px; padding:9px 12px; }
+  .pres{ flex-wrap:nowrap; flex-direction:column; gap:10px; align-items:stretch; }
+  .pgroup{ min-width:0; }
+  .pgroup.pg-goods{ border-top:1px solid var(--line); padding-top:9px; }
+  .pg-title{ font-size:10.5px; letter-spacing:.22em; color:var(--gold); font-weight:700; margin-bottom:5px; }
+  /* 자원: 2×2 — 주화·승점 / 일꾼 */
+  /* 2열이 기본이지만 폭이 모자라면 1열로 접힌다 — 고정 2열이면 이 패널의 최소 폭이 보드 전체를
+     못 줄어들게 붙잡아, 창이 좁을 때 건설 부지가 잘리는 원인이 된다 */
+  .pres-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(88px,1fr)); gap:8px 18px; }
+  .prow{ display:flex; align-items:center; gap:8px; font-size:13px; }
+  .prow b{ margin-left:auto; font-size:14.5px; }
+  /* 상품: 가로 3개씩 2줄 */
+  .pres-goods{ display:grid; grid-template-columns:repeat(auto-fit,minmax(76px,1fr)); gap:8px 14px; }
+  .pgood{ display:flex; align-items:center; gap:7px; font-size:12.5px; white-space:nowrap; }
+  .pgood b{ margin-left:auto; font-size:13.5px; }
+  .pres-empty{ color:var(--dim); font-size:12px; }
+  /* 타일에 인쇄된 것과 같은 금화(숫자 포함)·검은 육각 승점 */
+  .tok-coin{ flex-shrink:0; width:22px; height:22px; border-radius:50%; border:1px solid #b89a30;
+    background:radial-gradient(circle at 35% 30%, #f4e096, #e8c95c 55%, #d4af4a);
+    box-shadow:inset 0 0 0 2px rgba(184,154,48,.45);
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#7a5f16; }
+  .tok-vp{ flex-shrink:0; width:20px; height:22px;
+    background:radial-gradient(circle at 35% 30%, #e8e8e3, #bcbcb4 55%, #97978e);  /* 은회색 승점 칩 */
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+    display:flex; align-items:center; justify-content:center; font-size:7.5px; font-weight:800; letter-spacing:.04em; color:#4b4b45; }
+  .pres .wtok{ width:20px; height:20px; flex-shrink:0; }
+  /* 1000px 이하: 한 줄에 다 못 들어가므로 줄바꿈 배치. 폭은 CSS가 정하고 전환 애니메이션은 끈다
+     (고정 px 폭을 전제로 한 애니메이션이라 이 레이아웃에서는 맞지 않는다) */
+  @media (max-width:1000px){
+    .players{ flex-wrap:wrap; }
+    .pboard{ flex:1 1 100%; }
+    .pboard.collapsed{ flex:1 1 45%; }
+    .pboard.board-in, .pboard.board-out{ animation:none; overflow:visible; }
+  }
+  .phead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+  .phead .nm{ font-weight:700; font-size:15px; }
+  .gov-ic{ display:inline-flex; width:22px; height:15px; flex-shrink:0; }
+  .gov-ic svg{ width:100%; height:100%; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
+  .phead .tag{ font-size:10.5px; padding:2px 7px; border-radius:2px; background:#e2d7c2; color:#5d5346; }
+  .phead .tag.gov{ background:var(--ink); color:var(--bg); }
+  .phead .tag.acting{ background:var(--act); color:#fff; }  /* 자동으로 펼쳐진 게 이 사람 차례라서일 때, 지금 뭘 하는 중인지 */
+  .phead .stats{ margin-left:auto; display:flex; gap:10px; font-size:12.5px; }
+  .phead .stats b{ font-size:14px; }
+  /* 토지: 6×2 그리드, 공개된 농장과 같은 비율 */
+  /* 타일 폭은 --lw(토지) / --bw(건설 부지). 기본값은 원래 크기이고, 남는 폭이 모자랄 때만
+     render()가 #rd-players에 더 작은 값을 얹는다 — 자세한 이유는 boardMetrics() 참고 */
+  .grid12{ display:grid; grid-template-columns:repeat(6,var(--lw,59px)); gap:4px; margin:4px 0; }
+  .cell{ position:relative; border:1px solid transparent; border-radius:2px; min-height:58px; background:rgba(245,238,218,.55); overflow:hidden; }
+  .cell img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:var(--panel); }
+  /* 토지 칸: 이미지(위) + 이름표(아래) 분리, 확대 없음. 공개된 농장과 같은 비율 */
+  .cell.land{ display:flex; flex-direction:column; aspect-ratio:70/92; min-height:0; }
+  .cell.land .art{ position:relative; flex:1; min-height:30px; }  /* 타일이 줄어들 때 aspect-ratio를 이 값이 밀어내지 않게 낮게 */
+  .cell.land .art img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:none; }
+  .cell.land .lbl{ position:static; border-top:1px solid #d9cfbc; background:rgba(251,247,238,.95); }
+  .cell .lbl{ position:absolute; left:0; right:0; bottom:0; font-size:9.5px; font-weight:700; text-align:center; background:rgba(251,247,238,.85); padding:1px 0; line-height:1.25; }
+  /* 일꾼 토큰: 타일에 인쇄된 원 위에 올린다.
+     농장: 좌하단 원(27.5%, 70%) · 건물: 원이 왼쪽부터 20% + 25%씩 (y 60%) · 고급 건물: 원이 없어 좌측 중단 */
+  .cell.land .wk{ position:absolute; left:28%; top:71%; margin:-12.5px 0 0 -12.5px; z-index:2; }
+  .cell.land .wk .wtok{ display:block; width:25px; height:25px; }
+  .bimg{ position:relative; }
+  .bimg .wtok{ position:absolute; margin:-12.5px 0 0 -12.5px; width:25px; height:25px; z-index:2; }
+  .wtok{ width:11px; height:11px; border-radius:50%; background:#7b5230; border:1px solid #4a2f16; }
+  .wtok.empty{ background:transparent; border:1px dashed #a08a6a; }
+  /* 빈 토지·건설 부지: 채워진 칸(그림으로 구분)과 달리 테두리로 "빈 자리"임을 표시 */
+  .cell.empty{ border:1px dashed #a08a6a; background:rgba(245,238,218,.35); }
+  .cell .vpmark{ position:absolute; top:1px; right:2px; font-size:9px; color:#fff; background:var(--ink); border-radius:2px; padding:0 3px; z-index:2; }
+  .cell.clickable{ cursor:pointer; box-shadow:0 3px 10px rgba(70,52,28,.32); z-index:5; }
+  .cell.clickable:hover{ box-shadow:0 5px 14px rgba(70,52,28,.45); z-index:200; }
+  .portrait{ font-size:12px; color:var(--dim); display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+  .goodrow{ display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
+
+  /* 건설 부지: 12칸이 항상 6×2 그리드로 보인다 (빈 칸 포함).
+     타일은 건물 이미지 비율 그대로 핏하게 — 정사각형 강제 없음. 고급 건물은 세로형 원본이라 자연히 큼 */
+  /* 6열 × 2행 고정 — 자리는 렌더가 직접 지정한다(고급 건물은 항상 1행부터 2행까지).
+     행을 2개로 못박아 어떤 조합에서도 3행이 생겨 보드가 아래로 늘어나지 않게 한다. */
+  .bgrid{ grid-template-columns:repeat(6,var(--bw,119px)); grid-template-rows:repeat(2,auto); gap:3px; }
+  /* 빈 칸도 건물 놓인 칸과 같은 높이(이미지 79 + 이름표 15) — 배치 전후 높이가 안 변하게.
+     타일이 줄어들면 이미지도 같이 줄어드니 높이도 같은 비율(94/119)로 따라간다 */
+  .bgrid .cell{ min-height:calc(var(--bw,119px) * 94 / 119); display:flex; flex-direction:column; }
+  /* 고급 건물: 부지 2칸을 위아래로 차지 — 이미지는 그 안에서 세로 가운데 */
+  .cell.b2{ grid-row:span 2; }
+  .cell.b2 .bimg{ margin:auto 0; }
+  .bgrid .cell img:not(.zoom){ position:static; display:block; width:100%; height:auto; background:var(--panel); }
+  .bgrid .cell .lbl{ position:static; margin-top:auto; border-top:1px solid var(--line); background:rgba(251,247,238,.95); }
+
+  /* 건물 보관판 플로팅 버튼 — 가장 우측(마지막 자리) 개인 보드 우측 하단에 붙는다 */
+  .fab-shop{ position:absolute; right:8px; bottom:8px; z-index:20; width:50px; height:50px; border-radius:50%;
+    border:1px solid var(--line); background:var(--panel); box-shadow:0 3px 10px rgba(0,0,0,.28);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; font-size:16px; }
+  .fab-shop span{ font-size:9px; font-weight:700; }
+  .fab-shop:hover{ background:#e2d7c2; }
+
+  /* action bar */
+  .actionbar{ position:fixed; left:0; right:0; bottom:0; background:rgba(51,41,30,.97); color:#f3ede1; padding:12px 18px; z-index:85; box-shadow:0 -3px 14px rgba(0,0,0,.25); }
+  .actionbar .inner{ max-width:1280px; margin:0 auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .actionbar .who{ font-weight:700; color:#e8c95c; white-space:nowrap; }
+  .actionbar .msg{ font-size:13.5px; }
+  .actionbar .btns{ display:flex; gap:8px; flex-wrap:wrap; margin-left:auto; }
+  .actionbar button{ border:1px solid #7a6a55; background:#4a3c2c; color:#f3ede1; padding:8px 14px; font-size:13px; border-radius:2px; }
+  .actionbar button:hover{ background:#5c4c39; }
+  .actionbar button.hot{ background:var(--accent); border-color:var(--accent); font-weight:700; }
+  .actionbar button.hot:hover{ background:var(--accent-deep); }
+  .actionbar button:disabled{ opacity:.4; cursor:default; }
+
+  /* 배치 팝 이펙트: 새로 놓인 타일·일꾼이 커졌다 자리잡으며 금빛으로 빛난다 */
+  /* scale 속성은 transform(translate 중심정렬)과 독립 합성 — 토큰이 제자리에서 커진다 */
+  @keyframes fxpop{ 0%{ scale:1.55; filter:brightness(1.5) drop-shadow(0 0 12px rgba(232,178,60,.95)); }
+    55%{ scale:.96; filter:brightness(1.15) drop-shadow(0 0 6px rgba(232,178,60,.5)); }
+    100%{ scale:1; filter:none; } }
+  /* 배치 이펙트(일꾼·농장·건물)는 항상 한 박자 뒤에 시작한다 —
+     보드가 열리는 중이면 그게 끝나고 0.3초 뒤(--fx-step), 이미 열려 있으면 0.3초 뒤(--fx-gap).
+     backwards: 기다리는 동안 0% 키프레임(확대+금빛)으로 떠 있어 "여기를 보라"는 예고가 된다. */
+  .fx-pop{ animation:fxpop .95s ease var(--fx-gap) backwards; z-index:6; }
+  @keyframes cardflash{ 0%{ box-shadow:0 0 0 3px rgba(217,127,34,.85), 0 0 20px rgba(217,127,34,.6); }
+    100%{ box-shadow:none; } }
+  .cardflash{ animation:cardflash 1.3s ease var(--fx-gap) backwards; }
+
+  /* 이벤트 토스트: 양피지 카드 + 플레이어 색 띠, 해당 패널 위에서 떠오르며 사라진다 */
+  .toast{ position:fixed; transform:translateX(-50%); z-index:300; pointer-events:none;
+    display:flex; align-items:center; gap:9px;
+    background:var(--panel); color:var(--ink); border:1px solid #a98e5f; border-left:4px solid var(--tc,#7a5c39);
+    padding:7px 16px; border-radius:3px; font-size:13.5px; white-space:nowrap;
+    box-shadow:0 6px 18px rgba(60,45,20,.35);
+    animation:toastup 2.4s ease-out forwards; }
+  .toast .ticon{ height:38px; width:auto; display:block; border-radius:2px; box-shadow:0 1px 4px rgba(0,0,0,.3); }
+  .toast .goodchip{ flex-shrink:0; }
+  .toast b{ color:var(--accent-deep); }
+  .toast.big{ font-size:16px; padding:12px 26px; border-left-width:5px; animation-duration:2.6s; }
+  @keyframes toastup{ 0%{opacity:0; margin-top:10px;} 10%{opacity:1; margin-top:0;} 70%{opacity:1; margin-top:-14px;} 100%{opacity:0; margin-top:-38px;} }
+  /* 역할 선택 스플래시: 고른 역할 카드가 화면 가운데에 부드럽게 떴다가 부드럽게 사라진다.
+     들어오고(0.32초) 나가는(0.42초) 구간을 길게 잡고 ease-in-out으로 — 예전엔 0.08초 만에
+     튀어나왔다가 훅 사라져서 딱딱해 보였다. 전체 시간은 JS의 ROLE_ANIM과 같아야 한다. */
+  .rsplash{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:310; pointer-events:none;
+    text-align:center; animation:rsplash 1.4s cubic-bezier(.33,0,.2,1) forwards; }
+  .rsplash img{ width:168px; border-radius:6px; box-shadow:0 16px 44px rgba(0,0,0,.5); display:block; margin:0 auto; }
+  .rsplash .who{ margin-top:9px; font-weight:700; font-size:15px; color:#fff; background:var(--tc,#7a5c39);
+    display:inline-block; padding:4px 16px; border-radius:3px; box-shadow:0 3px 10px rgba(0,0,0,.35); }
+  @keyframes rsplash{
+    0%  { opacity:0; scale:.90; }
+    23% { opacity:1; scale:1; }     /* 0.32초에 걸쳐 스르르 뜨고 */
+    70% { opacity:1; scale:1; }     /* 잠시 머무른 뒤 */
+    100%{ opacity:0; scale:1.05; }  /* 0.42초에 걸쳐 스르르 사라진다 */
+  }
+
+  /* log */
+  .log{ margin-top:16px; background:var(--panel); border:1px solid var(--line); border-radius:3px; padding:8px 12px; max-height:110px; overflow-y:auto; font-size:12px; line-height:1.7; color:#4b4237; }
+  .log .r{ color:var(--accent); font-weight:700; }
+  .log div b{ color:var(--ink); }
+
+  /* buildings shop — 팝업 카드는 보드 타일(110px)보다 20% 크게 */
+  .shop{ display:grid; grid-template-columns:repeat(6,158px); gap:6px; }
+  .shopb{ position:relative; border:1px solid transparent; background:transparent; border-radius:3px; padding:0; font-size:12px; }
+  .shopb .nm{ font-weight:700; font-size:12.5px; }
+  .shopb .inf{ color:var(--dim); font-size:11px; margin-top:1px; }
+  .shopb .cnt{ position:absolute; top:4px; right:5px; font-size:11px; font-weight:700; color:#4b4237; background:rgba(251,247,238,.92); padding:0 5px; border-radius:2px; z-index:2; }
+  .shopb.buyable{ box-shadow:0 4px 12px rgba(70,52,28,.32); background:var(--panel); cursor:pointer; z-index:5; }
+  .shopb.buyable:hover{ box-shadow:0 6px 18px rgba(70,52,28,.42); z-index:200; }
+  .shopb.none{ opacity:.35; }
+  /* 건설 단계: 살 수 있으면 가격+잔액, 못 사면 이유를 보여준다 */
+  .shopb.cant{ opacity:.5; }
+  .shopb .inf.ok{ text-align:center; color:var(--gold); font-weight:700; }
+  .shopb .inf.ok span{ color:var(--dim); font-weight:400; }
+  .shopb .inf.no{ text-align:center; color:#8d5340; }
+  .shopb .band{ position:absolute; left:0; top:0; bottom:0; width:4px; }
+  /* 스캔마다 미세하게 다른 이미지 비율을 강제로 통일 — 고급 건물(마지막 구역)만 원본 비율 유지 */
+  .shopb img.card{ display:block; width:100%; height:105px; object-fit:cover; }
+  /* 고급 건물만 원본 비율 유지 — 단, aspect-ratio로 "로드되기 전에도" 높이를 잡아둔다.
+     height:auto만 두면 이미지가 도착하는 순간 0 → 177px로 줄 높이가 튀어(팝업이 통째로 다시 앉는다) */
+  .zone:last-of-type .shopb img.card{ height:auto; aspect-ratio:391/439; object-fit:fill; }
+  .shopb img.card ~ .imgless-only{ display:none; }  /* 이미지 로드 성공 시 이름 숨김(폴백 전용) */
+  .zone{ display:flex; gap:8px; align-items:stretch; margin-top:5px; }
+  .zone:first-of-type{ margin-top:0; }
+  .zone-h{ width:60px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:3px; font-size:11px; font-weight:700; color:var(--ink); border-right:2px solid var(--line); padding-right:7px; }
+  .zone-h span{ font-size:10px; font-weight:500; color:var(--dim); line-height:1.4; }
+  .zone .shop{ flex:1; min-width:0; }
+  .side-col .log{ margin-top:0; }
+
+  .overlay{ position:fixed; inset:0; background:rgba(51,41,30,.5); z-index:80; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal{ background:var(--panel); border:1px solid var(--line); max-width:720px; width:100%; max-height:86vh; overflow-y:auto; padding:26px 30px; border-radius:3px; }
+  /* 팝업은 툭 나타나지 않고 스르르 — 어둠막이 먼저 깔리고(.22s) 패널이 살짝 커지며 떠오른다.
+     보드 펼침이 끝난 뒤 --fx-gap 쉬고 이게 시작하므로, 움직임끼리 겹치지 않는다. */
+  @keyframes ovIn{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes modalIn{ from{ opacity:0; transform:translateY(10px) scale(.975); } to{ opacity:1; transform:none; } }
+  .overlay.pop{ animation:ovIn .22s ease-out; }
+  .overlay.pop .modal{ animation:modalIn .3s cubic-bezier(.2,.8,.3,1) .06s backwards; }
+  /* 건물 보관소 팝업: 어둠막은 화면 전체, 패널은 (액션바 제외 영역의) 세로 가운데 */
+  .overlay.shop-ov{ align-items:center; padding-top:16px; padding-bottom:88px; }
+  .shop-modal{ max-width:1110px; padding:20px 24px; }
+  .shop-modal-h{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .shop-modal-h h2{ margin:0; font-size:22px; }
+  .shop-modal-h button{ padding:6px 12px; font-size:12.5px; }
+  .modal h2{ font-size:24px; margin-bottom:10px; }
+  .modal table{ width:100%; border-collapse:collapse; font-size:13.5px; margin:8px 0; }
+  .modal td,.modal th{ border:1px solid var(--line); padding:6px 10px; text-align:left; }
+  .modal th{ background:#f0e9d8; }
+  .scorewin{ color:var(--accent); font-weight:700; }
+  .hint{ font-size:12px; color:var(--dim); margin-top:6px; line-height:1.6; }
+
+  /* ── 중앙 액션 패널 — 내 차례의 선택지를 건물 보관소처럼 화면 가운데에 모아 보여준다 ── */
+  .act-modal{ max-width:800px; padding:20px 24px; }
+  .act-modal.wide{ max-width:1150px; }
+  /* 선적·판매·생산 상시 패널: 단계 동안 내용이 계속 바뀌므로 높이를 고정한다 — 넘치면 안에서 스크롤.
+     진행 창과 결과 창이 같은 flex column 레이아웃을 써야 전환 때 내용이 튀지 않는다 */
+  .act-modal.stage{ height:min(620px, 84vh); display:flex; flex-direction:column; }
+  .act-modal.stage>*{ flex-shrink:0; }
+  .ap-sub{ color:var(--dim); font-size:13px; margin-left:14px; margin-right:auto; }
+  .ap-roles{ display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start; }
+  .ap-rolecell{ width:128px; display:flex; flex-direction:column; gap:5px; }
+  .ap-rolecell .role{ width:100%; }
+  .ap-rolename{ font-size:12.5px; font-weight:700; }
+  .ap-rolename .dim{ color:var(--dim); font-weight:400; }
+  .ap-roledesc{ font-size:11px; line-height:1.5; color:var(--dim); }
+  .ap-rolecoin{ font-size:11.5px; font-weight:700; color:var(--accent-deep); }
+  .ap-msg{ font-size:14px; margin-bottom:12px; line-height:1.6; }
+  .ap-msg b{ color:var(--accent-deep); }
+  .ap-sec{ margin-top:14px; }
+  .ap-sec-h{ font-size:11.5px; font-weight:700; color:var(--dim); letter-spacing:.06em; margin-bottom:7px; }
+  .ap-tiles{ display:flex; gap:10px; flex-wrap:wrap; }
+  .ap-tiles .plant{ width:88px; }
+  .ap-tiles .plant .lbl{ font-size:12px; padding:4px 0; }
+  .ap-tiles .plant .note{ font-size:10.5px; color:var(--dim); padding:0 2px 3px; background:rgba(251,247,238,.95); }
+  .ap-btns{ display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .ap-opts{ display:flex; gap:8px; flex-wrap:wrap; }
+  .ap-opt{ display:flex; align-items:center; gap:8px; border:1px solid var(--line); background:var(--panel);
+    padding:10px 14px; font-size:14px; border-radius:2px; cursor:pointer; text-align:left; }
+  .ap-opt:hover{ background:#efe6d0; }
+  .ap-opt.hot{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); font-weight:700; }
+  .ap-opt.hot:hover{ background:#f3e3d8; }
+  .ap-opt.on{ background:var(--accent); border-color:var(--accent); color:#f7f2e8; }
+  .ap-opt.no{ opacity:.6; cursor:default; }
+  .ap-opt.no:hover{ background:var(--panel); }
+  .ap-opt .why{ color:var(--accent-deep); font-size:12px; margin-left:auto; }
+  .ap-opt .gain{ color:var(--accent-deep); font-weight:700; margin-left:auto; }
+  .ap-opt.on .gain,.ap-opt.on .why{ color:#f7f2e8; }
+  .ap-stat{ font-size:15px; display:flex; align-items:center; gap:18px; margin:6px 0 2px; }
+  .ap-stat b{ font-size:26px; color:var(--accent-deep); }
+  .ap-ships{ display:flex; gap:8px; flex-wrap:wrap; }
+  .ap-ships.vert{ flex-direction:column; flex-wrap:nowrap; }
+  /* 수송선 카드 — [이름·상태 한 줄] + [적재 칸 시각화 한 줄]. 왼쪽 상품 버튼과 같은 높이 리듬 */
+  .ap-ship{ border:1px solid var(--line); padding:10px 14px; border-radius:2px; font-size:14px; width:100%;
+    background:var(--panel); display:flex; flex-direction:column; gap:7px; font-family:inherit; text-align:left; color:var(--ink); }
+  .ap-ship .hd{ display:flex; align-items:center; gap:7px; }
+  .ap-ship .free,.ap-ship .cnt{ color:var(--dim); font-size:12.5px; }
+  .ap-ship.pick{ cursor:pointer; border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .ap-ship.pick:hover{ background:#f3e3d8; }
+  .ap-ship.dim{ opacity:.55; }
+  .ap-ship .why{ color:var(--accent-deep); font-size:11.5px; margin-left:auto; }
+  .ap-ship .gain{ color:var(--accent-deep); font-weight:700; margin-left:auto; font-size:13px; }
+  .ap-shipslots{ display:flex; gap:3px; flex-wrap:wrap; }
+  .ap-shipslot{ width:17px; height:20px; border:1px dashed var(--line); border-radius:2px; position:relative; background:rgba(251,247,238,.7); }
+  .ap-shipslot .goodchip{ position:absolute; inset:1px; width:auto; height:auto; }
+  .ap-shipslot.pv{ border:1.5px solid var(--accent); }         /* 지금 선택한 상품이 실릴 자리 미리보기 */
+  .ap-shipslot.pv .goodchip{ opacity:.55; }
+  /* 선적·판매 패널 액션 애니메이션 — 방금 바뀐 요소만 움직인다 */
+  @keyframes pfxPop{ 0%{ transform:scale(.2); opacity:0; } 60%{ transform:scale(1.18); opacity:1; } 100%{ transform:scale(1); } }
+  .pfx-pop{ animation:pfxPop .5s cubic-bezier(.2,.8,.3,1) backwards; }
+  @keyframes pfxCard{ 0%{ box-shadow:0 0 0 3px var(--accent); background:#f3e3d8; } 100%{ } }
+  .pfx-card{ animation:pfxCard .9s ease-out; }
+  @keyframes pfxRow{ from{ opacity:0; transform:translateX(-10px); } to{ opacity:1; transform:none; } }
+  .pfx-row{ animation:pfxRow .45s ease-out backwards; }
+  /* 단계 종료 배너 — 결과 화면임을 확실히 구분 */
+  .ap-endbanner{ border:1px solid var(--accent); border-left:5px solid var(--accent); background:#f3e3d8;
+    padding:10px 14px; font-weight:700; font-size:15px; border-radius:2px; margin-top:14px; }
+  /* 공급처 재고 줄 (생산 패널 우측) */
+  .ap-supline{ display:flex; align-items:center; justify-content:space-between; border:1px solid var(--line);
+    border-radius:2px; background:var(--panel); padding:8px 12px; font-size:13px; }
+  .ap-supline b{ color:var(--accent-deep); }
+  /* 선적·판매 단계 상시 패널 — 전원의 상품 카드 목록 */
+  .ap-pls{ display:flex; flex-direction:column; gap:8px; }
+  .ap-pl{ border:1px solid var(--line); border-left:3px solid var(--pc); border-radius:2px;
+    background:rgba(251,247,238,.6); padding:8px 11px; }
+  .ap-pl.turn{ box-shadow:0 0 0 1px var(--pc); background:var(--panel); }
+  .ap-pl-h{ font-weight:700; font-size:13px; margin-bottom:5px; }
+  .ap-prow{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-size:13px; }
+  .ap-g{ display:inline-flex; align-items:center; gap:3px; }
+  /* 선적 패널: 좌(내 상품) / 우(수송선) 1:1 2단.
+     컬럼 헤더는 카드 콘텐츠보다 한 단계 위 레벨 — 굵은 제목 + 구분선, 좌우 같은 높이라 카드 시작선이 나란하다 */
+  .ap-cols{ display:flex; gap:24px; align-items:flex-start; margin-top:4px; }
+  .ap-cols .ap-col{ flex:1 1 0; min-width:0; }
+  .ap-col-h{ font-size:14.5px; font-weight:700; padding-bottom:8px; margin-bottom:10px;
+    border-bottom:1px solid var(--line); white-space:nowrap; }
+  .ap-opts.vert{ flex-direction:column; align-items:stretch; }
+  @media (max-width:1000px){
+    .ap-cols{ flex-direction:column; }
+    .ap-cols .ap-col{ width:100%; }
+  }
+  .ap-slots{ display:flex; gap:8px; }
+  .ap-slot{ width:40px; height:40px; border:1px dashed var(--line); border-radius:2px;
+    display:flex; align-items:center; justify-content:center; background:rgba(251,247,238,.6); }
+  .ap-slot .goodchip{ width:24px; height:28px; }
+  .ap-hist{ margin-top:16px; border-top:1px dashed var(--line); padding-top:10px; }
+  .ap-hist .hrow{ font-size:13px; padding:2.5px 0; display:flex; gap:7px; align-items:center; }
+  .ap-hist .hrow .goodchip{ width:15px; height:17px; }
+  .ap-hist .hrow .dim{ color:var(--dim); }
+  .ap-prod{ margin-bottom:6px; }
+  .ap-prod .hrow{ font-size:14px; padding:3px 0; display:flex; gap:7px; align-items:center; }
+  /* 생산 결과 패널 — 토스트 대신 전원 요약을 한 장으로 (클릭하면 닫힘) */
+  .prodflash{ position:fixed; left:50%; top:36%; transform:translate(-50%,-50%); z-index:300;
+    background:var(--panel); border:1px solid var(--line); border-left:5px solid var(--gold);
+    box-shadow:0 10px 34px rgba(51,41,30,.4); padding:16px 24px; border-radius:3px; min-width:280px;
+    cursor:pointer; animation:modalIn .3s cubic-bezier(.2,.8,.3,1) backwards; }
+  /* pf-* 는 지나가는 패널(.prodflash)과 확인 대기 모달(.act-modal.report) 양쪽에서 쓴다 */
+  .pf-h{ font-weight:700; font-size:16px; margin-bottom:9px; }
+  .pf-row{ display:flex; align-items:center; gap:7px; padding:3.5px 0; font-size:14px; }
+  .pf-row b{ color:var(--accent-deep); }
+  .pf-nm{ font-weight:700; min-width:92px; }
+  .pf-none{ color:var(--dim); }
+  .pf-hint{ font-size:11px; color:var(--dim); margin-top:8px; }
+  .pf-div{ border-top:1px dashed var(--line); margin:9px 0; }
+  .act-modal.report{ max-width:480px; }
+  .act-modal.report .ap-btns{ justify-content:flex-end; }
+  /* stage 보고(선적·판매·생산 결과): 진행 패널과 같은 폭·높이·레이아웃, 확인 버튼은 아래에 고정 */
+  .act-modal.report.stage{ max-width:800px; }
+  .act-modal.report.stage .ap-btns{ margin-top:auto; }
+  /* 역할 선택 패널 하단 — 각 플레이어 요약 (접힌 카드와 같은 정보) */
+  .ap-pstrip{ display:flex; gap:10px; margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; align-items:stretch; }
+  .ap-pcard{ flex:1 1 0; min-width:0; border:1px solid var(--line); border-radius:2px; background:rgba(251,247,238,.6); padding:9px 11px; font-size:12px; line-height:1.55; }
+  .ap-pcard .nm{ font-weight:700; display:flex; align-items:center; gap:5px; margin-bottom:3px; }
+  .ap-pcard .row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .ap-pcard .row .goodchip{ width:14px; height:16px; }
+  .ap-pcard .sec{ color:var(--dim); font-size:10.5px; font-weight:700; letter-spacing:.05em; margin-top:5px; }
+  @media (max-width:1000px){ .ap-pstrip{ flex-wrap:wrap; } .ap-pstrip .ap-pcard{ flex:1 1 45%; } }

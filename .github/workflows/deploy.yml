@@ -1,0 +1,48 @@
+# main 브랜치에 푸시할 때마다 GitHub Pages로 자동 배포한다.
+# 사이트에 필요한 파일(index.html·game.html·css·js·img)만 골라 올린다 —
+# 구버전 번들(9.8MB×2)·규칙서 PDF(16MB)·스크린샷은 배포에 포함하지 않는다.
+name: GitHub Pages 배포
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # Actions 탭에서 수동 실행도 가능
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 사이트 파일만 모으기
+        run: |
+          mkdir -p _site
+          cp index.html game.html _site/
+          cp -r css js img _site/
+
+      - name: Pages 설정 (처음 실행 시 자동 활성화)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: 아티팩트 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: 배포
+        id: deployment
+        uses: actions/deploy-pages@v4
