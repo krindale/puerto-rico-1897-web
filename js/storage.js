@@ -18,6 +18,12 @@ function lsDel(k){
   delete memStore[k];
 }
 function save(){
+  // 온라인 게임: 로컬 저장 대신 호스트가 snapshot을 브로드캐스트 + DB에 저장한다.
+  // (로컬 키에 쓰면 혼자 하던 게임의 저장을 온라인 게임이 덮어쓴다)
+  if(typeof NET!=='undefined'&&NET.on){
+    if(NET.host) netPushState();
+    return;
+  }
   lsSet('pr1897_save', JSON.stringify(G));
 }
 function loadSave(){

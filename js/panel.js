@@ -114,7 +114,7 @@ function renderActionPanel(pd){
   }
   else if(pd.type==='craftBonus'){
     title='생산 단계';
-    const myTurn=!p.ai;
+    const myTurn=isLocalHuman(pd.player);
     const btns=myTurn
       ?'<div class="ap-msg" style="margin:8px 0 2px">생산자 혜택 — 방금 생산한 것 중 <b>1개</b>를 추가로 받으세요.</div>'
         +'<div class="ap-opts">'
@@ -128,7 +128,7 @@ function renderActionPanel(pd){
   }
   else if(pd.type==='trader'){
     title='판매 단계';
-    const myTurn=!p.ai;
+    const myTurn=isLocalHuman(pd.player);
     const M=G.supply.market; const isC=(pd.player===F.chooser);
     const slots='<div class="ap-slots">'
       +M.map((t,i)=>'<div class="ap-slot'+pfxCls('mktslot-'+i,'pfx-pop')+'">'+goodChip(t)+'</div>').join('')
@@ -174,7 +174,7 @@ function renderActionPanel(pd){
   }
   else if(pd.type==='captain'){
     title='선적 단계';
-    const myTurn=!p.ai;
+    const myTurn=isLocalHuman(pd.player);
     // 내 차례에만 인터랙션: 상품을 고른다 (배로든 조선소로든 실을 수 있는 것만 클릭 가능)
     const shippable=t=>pd.opts.some(o=>o.type===t)||(pd.wharfOK&&p.goods[t]>0);
     // 이전 결정의 선택이 남아 있으면(차례가 돌아온 경우) 무효화
@@ -274,7 +274,7 @@ function renderActionPanel(pd){
   }
   else if(pd.type==='storage'){
     title='선적 단계 — 상품 저장';
-    const myTurn=!p.ai;
+    const myTurn=isLocalHuman(pd.player);
     const cap=pd.cap; const sel=storeSel();
     const types=GTYPES.filter(t=>p.goods[t]>0);
     // 내 카드 안에 들어가는 저장 선택기

@@ -7,6 +7,8 @@ const PHASE_END_HOLD_SHORT=300;
 let aiTimer=null;
 function schedule(){
   render(); save();
+  // 온라인 게스트는 엔진(AI·phaseEnd 타이머)을 돌리지 않는다 — 호스트가 굴리고 snapshot으로 받는다
+  if(typeof NET!=='undefined'&&NET.on&&!NET.host) return;
   const pd=G.pending;
   if(!pd || pd.type==='gameOver') return;
   if(pd.type==='phaseEnd'){

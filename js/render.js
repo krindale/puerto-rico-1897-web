@@ -58,47 +58,146 @@ function buildingTip(B){
   return bits.join('\n');
 }
 
-/* 설정 화면 */
-let setupSeats=[{name:'플레이어 1',ai:false},{name:'AI 가영',ai:true},{name:'AI 나정',ai:true},{name:'AI 도준',ai:true}];
+/* ── 설정 화면 (aos_showcase 스타일: 히어로 + 좌 비주얼 / 우 설정 카드) ── */
+let setupName='선장';
 let setupN=4;
+let setupKinds=['me','ai','ai','ai','ai'];   // 좌석 0=나 고정, 1~4는 'ai'|'human'(친구·같은 기기)
+function uiSetupCount(n){ setupN=n; renderSetup(); }
+function uiSetupToggle(i){ setupKinds[i]=(setupKinds[i]==='ai')?'human':'ai'; renderSetup(); }
 function renderSetup(){
   rdReset();   // 설정 화면은 통짜 렌더 — 게임 스켈레톤·캐시를 비운다
+  const netOK=typeof netConfigured==='function'&&netConfigured();
+  // 온라인 대기실·연결 중이면 그쪽 화면으로
+  if(netOK&&typeof NET!=='undefined'&&NET.on&&(NET.status==='lobby'||NET.status==='connecting')){ renderLobby(); return; }
   const canResume=!!lsGet('pr1897_save');
-  let seatRows='';
-  for(let i=0;i<setupN;i++){
-    const s=setupSeats[i];
-    seatRows+='<div class="seat"><span class="num">'+(i+1)+'</span>'
-      +'<input type="text" value="'+esc(s.name)+'" onchange="setupSeats['+i+'].name=this.value">'
-      +'<span class="tgl">'
-      +'<button class="'+(!s.ai?'on':'')+'" onclick="setupSeats['+i+'].ai=false;renderSetup()">사람</button>'
-      +'<button class="'+(s.ai?'on':'')+'" onclick="setupSeats['+i+'].ai=true;renderSetup()">AI</button>'
-      +'</span></div>';
-  }
+  const netSess=netOK&&typeof netSavedSession==='function'?netSavedSession():null;
+  const seatChips=Array.from({length:setupN},(_,i)=>{
+    if(i===0) return '<button class="s2-chip me" disabled>👤 나</button>';
+    const isAi=setupKinds[i]==='ai';
+    return '<button class="s2-chip'+(isAi?' ai':' fr')+'" onclick="uiSetupToggle('+i+')" title="눌러서 '+(isAi?'친구 자리로':'AI로')+'">'
+      +(isAi?'🤖 AI':'🧑‍🤝‍🧑 친구')+'</button>';
+  }).join('');
   $app.innerHTML=
-  '<div class="setup">'
-  +backBtnHtml()
-  +'<h2>푸에르토리코 <span style="color:var(--accent);font-style:italic">1897</span></h2>'
-  +'<div class="lead">기본 게임 · 2~5인 · 각 자리를 사람 또는 AI로 정할 수 있습니다.</div>'
-  +'<div class="row"><label>인원수</label><select onchange="setupN=+this.value;renderSetup()">'
-  +[2,3,4,5].map(n=>'<option value="'+n+'" '+(n===setupN?'selected':'')+'>'+n+'인</option>').join('')
-  +'</select></div>'
-  +seatRows
-  +'<div style="display:flex;gap:10px;margin-top:26px">'
-  +'<button class="btn-primary" onclick="startNewGame()">게임 시작</button>'
-  +(canResume?'<button class="btn-ghost" onclick="resumeGame()">이어서 하기</button>':'')
+  '<div class="setup2">'
+  +'<div class="s2-top">'+backBtnHtml()+'</div>'
+  +'<div class="s2-hero">'
+    +'<div class="s2-eyebrow">PUERTO RICO 1897 · 웹에서 바로 플레이</div>'
+    +'<h2>푸에르토리코 <em>1897</em></h2>'
+    +'<p>역할을 고르고, 농장을 일구고, 상품을 수송선에 실어 승점을 모으세요.</p>'
   +'</div>'
-  +(storageBlocked?'<div class="hint" style="color:var(--accent)">이 브라우저에서는 저장이 막혀 있어(파일을 직접 열었을 때 흔합니다) <b>새로고침하면 진행 중인 게임이 사라집니다</b>. 한 판은 그대로 즐길 수 있습니다.</div>':'')
-  +'<div class="hint">이 화면이 읽고 있는 게임 파일: <b>'+fileStamp()+'</b> 저장본 — 고친 내용이 안 보이면 <b>⇧⌘R</b>로 강제 새로고침하세요.</div>'
-  +'<div class="hint">타일 이미지를 넣으려면 이 파일과 같은 폴더에 <b>img/</b> 폴더를 만들고<br>'
-  +'<b>역할_개척자.png · 건물_소형과일공장.png · 농장_옥수수.png</b> 형식(띄어쓰기 없이)으로 저장하세요. 없으면 텍스트 타일로 표시됩니다.</div>'
+  +'<div class="s2-grid">'
+    +'<section class="s2-visual">'
+      +'<div class="s2-art"><img src="img/보드_배경.png" alt="" onerror="this.remove()"><div class="s2-art-shade"></div>'
+        +'<div class="s2-art-cap"><span class="tag">2~5인</span><span class="tag">역할 7종</span><span class="tag">건물 23종</span><span class="tag">AI 봇</span><span class="tag">온라인</span></div>'
+      +'</div>'
+      +'<div class="s2-feats">'
+        +'<div class="s2-feat"><b>혼자서도, 함께도</b>빈자리는 AI가 채웁니다. 온라인 방을 열면 친구가 코드로 들어옵니다.</div>'
+        +'<div class="s2-feat"><b>규칙을 몰라도</b>매 차례 화면이 할 일을 알려주고, 못 하는 선택지엔 이유가 붙습니다.</div>'
+        +'<div class="s2-feat"><b>이어서 하기</b>진행 상황은 자동 저장 — 새로고침해도 그 자리에서 계속됩니다.</div>'
+      +'</div>'
+    +'</section>'
+    +'<section class="s2-card">'
+      +'<label class="s2-field"><span>내 이름</span>'
+        +'<input type="text" value="'+escAttr(setupName)+'" maxlength="12" onchange="setupName=this.value">'
+      +'</label>'
+      +'<div class="s2-field"><span>인원</span><div class="s2-pills">'
+        +[2,3,4,5].map(n=>'<button class="s2-pill'+(n===setupN?' on':'')+'" onclick="uiSetupCount('+n+')">'+n+'인</button>').join('')
+      +'</div></div>'
+      +'<div class="s2-field"><span>자리 (눌러서 AI ↔ 친구)</span><div class="s2-chips">'+seatChips+'</div>'
+        +'<div class="s2-note">친구 자리: 온라인 방에서는 초대석, 혼자 시작하면 같은 기기에서 번갈아 플레이</div>'
+      +'</div>'
+      +'<button class="btn-primary s2-main" onclick="startNewGame()">게임 시작 (이 기기에서)</button>'
+      +(canResume?'<button class="btn-ghost s2-sub" onclick="resumeGame()">저장된 게임 이어서 하기</button>':'')
+      +'<div class="s2-div"><span></span>온라인<span></span></div>'
+      +(netOK
+        ?'<button class="btn-online s2-main" onclick="uiNetCreate()">🌐 온라인 방 만들기</button>'
+          +'<div class="s2-join"><input type="text" id="s2-code" placeholder="방 코드" maxlength="8" '
+            +'oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key===\'Enter\')uiNetJoin()">'
+            +'<button class="btn-ghost" onclick="uiNetJoin()">입장</button></div>'
+          +(netSess?'<button class="btn-ghost s2-sub" onclick="uiNetResume()">🌐 온라인 게임 이어서 ('+esc(netSess.code)+')</button>':'')
+        :'<div class="s2-note">이 환경에서는 온라인 기능을 쓸 수 없습니다 (네트워크 모듈 미로드). 봇과 하는 게임은 그대로 즐길 수 있습니다.</div>')
+      +(typeof NET!=='undefined'&&NET.err?'<div class="s2-err">'+esc(NET.err)+'</div>':'')
+      +(storageBlocked?'<div class="hint" style="color:var(--accent)">이 브라우저에서는 저장이 막혀 있어 <b>새로고침하면 진행 중인 게임이 사라집니다</b>.</div>':'')
+      +'<div class="hint s2-stamp">파일 '+fileStamp()+' — 고친 내용이 안 보이면 ⇧⌘R</div>'
+    +'</section>'
+  +'</div>'
   +'</div>';
 }
+function uiNetCreate(){
+  netCreateRoom((setupName||'플레이어').trim(), setupN, setupKinds.slice());
+}
+function uiNetJoin(){
+  const inp=document.getElementById('s2-code');
+  if(!inp||!inp.value.trim()) return;
+  netJoinRoom(inp.value.trim().toUpperCase(), (setupName||'게스트').trim());
+}
+/* ── 온라인 대기실 ── */
+function renderLobby(){
+  rdReset();
+  const connecting=NET.status==='connecting';
+  const seats=NET.room?NET.room.seats:[];
+  const seatCards=seats.map((s,i)=>{
+    const online=s.clientId&&NET.presence.includes(s.clientId);
+    const isMe=i===NET.mySeat;
+    let stat, cls;
+    if(s.kind==='ai'){ stat='AI'; cls='ai'; }
+    else if(isMe){ stat=NET.host?'나 (호스트)':'나'; cls='me'; }
+    else if(s.clientId){ stat=online?'접속 중':'연결 끊김'; cls=online?'on':'off'; }
+    else { stat='기다리는 중…'; cls='wait'; }
+    return '<div class="lb-seat '+cls+'" style="--pc:'+PCOLOR[i]+'">'
+      +'<span class="dot"></span>'
+      +'<b>'+(s.name?esc(s.name):'친구 초대석')+'</b>'
+      +'<span class="st">'+stat+'</span>'
+      +(NET.host&&!s.clientId&&i!==0?'<button class="sw" onclick="uiNetToggleSeat('+i+')">'+(s.kind==='ai'?'친구 자리로':'AI로 바꾸기')+'</button>':'')
+      +'</div>';
+  }).join('');
+  const emptyN=seats.filter(s=>s.kind==='human'&&!s.clientId).length;
+  $app.innerHTML=
+  '<div class="setup2">'
+  +'<div class="s2-hero">'
+    +'<div class="s2-eyebrow">ONLINE · 친구와 함께</div>'
+    +'<h2>대기실</h2>'
+    +(connecting?'<p>연결하는 중…</p>':'<p>친구에게 방 코드를 알려주세요. 자리가 차면 호스트가 시작합니다.</p>')
+  +'</div>'
+  +(connecting
+    ?'<div class="s2-card lb-conn">서버에 연결하는 중…</div>'
+    :'<div class="s2-grid lb-grid">'
+      +'<section class="s2-card lb-code-card">'
+        +'<div class="s2-field"><span>방 코드</span></div>'
+        +'<div class="lb-code">'+esc(NET.room.code)+'</div>'
+        +'<button class="btn-ghost" onclick="uiNetCopyCode(this)">코드 복사</button>'
+        +'<div class="s2-note">같은 페이지의 "방 코드 입장"에 이 코드를 넣으면 들어옵니다.</div>'
+        +(NET.host
+          ?'<button class="btn-primary s2-main" onclick="uiNetStartGame()"'+(emptyN>0?'':'')+'>게임 시작'+(emptyN>0?' (빈자리 '+emptyN+')':'')+'</button>'
+            +(emptyN>0?'<div class="s2-note">빈 친구 자리는 기다리거나 [AI로 바꾸기]로 채우세요.</div>':'')
+          :'<div class="lb-waitmsg">호스트가 시작하기를 기다리는 중<span class="lb-dots"></span></div>')
+        +'<button class="btn-ghost s2-sub" onclick="uiNetLeave()">'+(NET.host?'방 닫기':'나가기')+'</button>'
+        +(NET.err?'<div class="s2-err">'+esc(NET.err)+'</div>':'')
+      +'</section>'
+      +'<section class="lb-seats"><div class="s2-field"><span>자리 ('+seats.length+'인)</span></div>'+seatCards
+        +'<div class="s2-note">채팅은 오른쪽 아래 💬 버튼 — 대기실과 게임에서 계속 이어집니다.</div>'
+      +'</section>'
+    +'</div>')
+  +'</div>';
+  netChatRender();
+}
+function uiNetCopyCode(btn){
+  try{ navigator.clipboard.writeText(NET.room.code); btn.textContent='복사됨 ✓'; setTimeout(()=>{ btn.textContent='코드 복사'; },1500); }catch(e){}
+}
 function startNewGame(){
-  while(setupSeats.length<setupN) setupSeats.push({name:'AI '+['가영','나정','도준','민수','서연'][setupSeats.length%5], ai:true});
-  newGame(setupSeats.slice(0,setupN).map(s=>({name:s.name||'플레이어', ai:s.ai})));
+  const seats=[{name:(setupName||'플레이어').trim(), ai:false}];
+  let ai=0, fr=2;
+  for(let i=1;i<setupN;i++){
+    if(setupKinds[i]==='human') seats.push({name:'플레이어 '+fr++, ai:false});
+    else seats.push({name:['AI 가영','AI 나정','AI 도준','AI 민수'][ai++%4], ai:true});
+  }
+  newGame(seats);
 }
 function resumeGame(){ if(loadSave()){ render(); schedule(); } }
-function confirmNew(){ if(confirm('현재 게임을 버리고 새 게임을 시작할까요?')){ lsDel('pr1897_save'); G=null; renderSetup(); } }
+function confirmNew(){
+  if(typeof NET!=='undefined'&&NET.on){ uiNetLeave(); return; }
+  if(confirm('현재 게임을 버리고 새 게임을 시작할까요?')){ lsDel('pr1897_save'); G=null; renderSetup(); }
+}
 
 /* 본 게임 렌더 */
 function render(){
@@ -111,7 +210,7 @@ function render(){
   if(pendKey!==uiLastPend){
     const prevPendType=uiLastPend.split(':')[0];
     uiLastPend=pendKey;
-    const isHumanTurn=curPi!==null&&pd.type!=='gameOver'&&!P(curPi).ai;
+    const isHumanTurn=pd.type!=='gameOver'&&isLocalHuman(curPi);
     // 직전에 다른 사람(주로 봇)의 행동 이펙트가 아직 살아있으면, 그걸 먼저 보여준 뒤에
     // 내 보드로 전환하고 팝업을 연다 (즉시 전환하면 방금 무슨 일이 있었는지 못 봄)
     const showingOther=fxMark&&fxMark.pi!==curPi&&(Date.now()-fxMark.t)<FX_HOLD;
@@ -159,7 +258,7 @@ function render(){
   const phaseRole=G.phase?G.phase.id:null;
   const rolesHtml=G.roles.map((r,i)=>{
     const R=ROLES[r.id];
-    const pickable=(!holding&&pd.type==='pickRole'&&!P(curPi).ai&&r.takenBy===null);
+    const pickable=(!holding&&pd.type==='pickRole'&&isLocalHuman(curPi)&&r.takenBy===null);
     const cls='role'+(r.takenBy!==null?' taken':'')+(pickable?' pickable':'')+(phaseRole===r.id&&r.takenBy!==null?' cur':'');
     const tip=R.rn+'. '+R.nm+' — '+R.ph+'\n'+R.desc+(r.coins>0?'\n올려둔 주화 '+r.coins+'개를 함께 가져갑니다.':'');
     return '<div class="'+cls+'" '+(pickable?'onclick="pickRole('+curPi+','+i+')"':'')+' title="'+escAttr(tip)+'">'
@@ -209,7 +308,7 @@ function render(){
     +'</div>';
 
   /* 공개 농장 */
-  const settlerActive=(!holding&&pd.type==='settler'&&!P(curPi).ai);
+  const settlerActive=(!holding&&pd.type==='settler'&&isLocalHuman(curPi));
   const plantCell=(t,i)=>{
     const g=GOODS[t];
     return '<div class="plant'+(settlerActive?' pickable':'')+'" '+(settlerActive?'onclick="actSettler(\'display\','+i+')"':'')+'>'
@@ -222,7 +321,7 @@ function render(){
     +(S.display.length>phalf?'<div class="prow">'+S.display.slice(phalf).map((t,i)=>plantCell(t,phalf+i)).join('')+'</div>':'');
 
   /* 건물 상점 (건설 단계 또는 항상 표시) */
-  const builderActive=(!holding&&pd.type==='builder'&&!P(curPi).ai);
+  const builderActive=(!holding&&pd.type==='builder'&&isLocalHuman(curPi));
   const shopCell=id=>{
     const B=BUILDINGS[id]; const cnt=S.stock[id];
     let cls='shopb'; let click=''; let info='';
@@ -258,7 +357,7 @@ function render(){
   ).join('');
 
   /* 플레이어 보드 — 펼친 보드 1개(좌) + 요약 카드 세로 스택(우) */
-  const mayorActive=(!holding&&pd.type==='mayorPlace'&&!P(curPi).ai);
+  const mayorActive=(!holding&&pd.type==='mayorPlace'&&isLocalHuman(curPi));
   const shown=shownBoard();
   // 펼쳐진 보드가 바뀐 프레임에만 새 모양(펼침 쪽·접힘 쪽 둘 다)에 페이드 클래스를 준다 — 폭은 건드리지 않는다
   const prevShown=uiPrevShown;
@@ -402,10 +501,17 @@ function render(){
   let bar='';
   if(pd.type==='gameOver'){
     bar='';
-  } else if(!holding && pd.type && curPi!==null && !P(curPi).ai){
+  } else if(!holding && pd.type && isLocalHuman(curPi)){
     bar=renderActionBar(pd);
   } else if(curPi!==null && P(curPi).ai){
     bar='<div class="actionbar"><div class="inner"><span class="who">'+esc(P(curPi).name)+'</span><span class="msg">AI가 생각 중…</span></div></div>';
+  } else if(curPi!==null && !P(curPi).ai){
+    // 온라인: 원격 플레이어 차례 — 연결이 끊겼으면 호스트가 AI로 대체할 수 있다 (필수 기능)
+    const dis=typeof netSeatDisconnected==='function'&&netSeatDisconnected(curPi);
+    bar='<div class="actionbar"><div class="inner"><span class="who">'+esc(P(curPi).name)+'</span>'
+      +'<span class="msg">'+(dis?'연결이 끊긴 것 같습니다':'차례를 진행하는 중…')+'</span>'
+      +(dis&&NET.host?'<div class="btns"><button class="hot" onclick="uiNetAiTakeover('+curPi+')">AI가 이어받기</button></div>':'')
+      +'</div></div>';
   }
 
   /* 종료 모달 */
@@ -487,8 +593,9 @@ function render(){
     +'<div class="meta"><span>라운드 <b>'+G.round+'</b></span><span>주지사 <b>'+esc(P(G.governor).name)+'</b></span>'
     +(G.phase?'<span>단계 <b>'+ROLES[G.phase.id].ph+'</b></span>':'')
     +stampHtml()
+    +(typeof NET!=='undefined'&&NET.on?'<span class="netbadge" title="온라인 게임 — 방 코드">🌐 '+esc(NET.room.code)+'</span>':'')
     +'<button class="helpbtn" onclick="uiToggleHelp()" title="요약 규칙 — 언제든 볼 수 있습니다">?</button>'
-    +'<button onclick="confirmNew()">새 게임</button></div>');
+    +'<button onclick="confirmNew()">'+(typeof NET!=='undefined'&&NET.on?'나가기':'새 게임')+'</button></div>');
   setPart('rd-roles', rolesHtml);
   /* 폭 배분 — 스켈레톤이 선 뒤에 재야 한다(컨테이너 실제 폭이 필요).
      타일(--bw/--lw)과 판 폭(--w-open/--cbw)을 한 번에 확정해 얹는다. */

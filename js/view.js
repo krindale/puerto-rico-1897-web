@@ -153,7 +153,15 @@ let uiLastPend = '';     // pending 전환 감지용
 let uiHoldUntil = 0;     // 이 시각까지는 "당신 차례" 표시(역할 선택 가능 표시·액션바 등)를 숨긴다 — 직전 이펙트를 먼저 보여주기 위함
 let uiPrevShown = null;  // 직전 렌더에서 펼쳐져 있던 보드 — 바뀐 순간에만 넓어지는 애니메이션을 준다
 
-function humanPend(){ const pd=G&&G.pending; return (pd&&pd.player!==undefined&&pd.type!=='gameOver'&&!P(pd.player).ai)?pd:null; }
+/* "이 좌석의 결정을 이 화면에서 내리는가" — 로컬 게임이면 사람이면 전부,
+   온라인이면 내 좌석일 때만. "당신 차례" UI(패널·액션바·클릭 가능 표시)는 전부 이걸 봐야 한다 —
+   !p.ai 만 보면 온라인에서 남의(원격 사람) 차례에도 내 화면이 조작 가능해진다. */
+function isLocalHuman(pi){
+  if(pi===null||pi===undefined||!G||!G.players[pi]||G.players[pi].ai) return false;
+  if(typeof NET==='undefined'||!NET.on) return true;
+  return NET.mySeat===pi;
+}
+function humanPend(){ const pd=G&&G.pending; return (pd&&pd.player!==undefined&&pd.type!=='gameOver'&&isLocalHuman(pd.player))?pd:null; }
 function shownBoard(){
   if(!G) return 0;
   if(uiBoardSel!==null) return uiBoardSel;
