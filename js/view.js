@@ -275,7 +275,15 @@ function uiPreviewConfirm(){
    펼침을 기억하지 않는 이유: 펼치면 개인 보드가 아래로 밀리는데, 그 상태가 다음 차례까지 남으면
    "내 보드가 어디 갔지"가 된다. 그래서 결정이 바뀔 때마다 접는다 (render의 pending 전환 처리). */
 let uiFold={board:false, log:false};
-function uiToggleFold(k){ uiFold[k]=!uiFold[k]; render(); }
+function uiToggleFold(k){
+  uiFold[k]=!uiFold[k]; render();
+  /* 접힌 동안 #logbox는 display:none이라 render()의 "바닥으로 스크롤"이 먹지 않는다(scrollHeight=0).
+     그래서 펼치면 120줄 중 가장 오래된 줄이 보였다 — 펼친 직후 다시 바닥으로 내린다. */
+  if(k==='log'&&uiFold.log&&typeof document!=='undefined'){
+    const lb=document.getElementById('logbox');
+    if(lb) lb.scrollTop=lb.scrollHeight;
+  }
+}
 let uiHelpOpen=false;
 function uiToggleHelp(){ uiHelpOpen=!uiHelpOpen; render(); }
 function renderHelpPop(){

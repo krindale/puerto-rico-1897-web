@@ -340,9 +340,10 @@
       -webkit-overflow-scrolling:touch; scrollbar-width:thin; padding-bottom:4px; }
     .pboard{ flex:0 0 100%; }
     .pboard.collapsed{ flex:0 0 132px; }
-    /* 오른쪽에 더 있다는 신호 — 이게 없으면 상대 보드가 있는 줄도 모른다 (가로 스크롤은 안 보인다) */
-    .players{ -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
-      mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent); }
+    /* 오른쪽 끝 페이드(mask)는 쓰지 않는다 — 마스크는 스크롤 내용이 아니라 컨테이너 테두리 기준이라,
+       펼친 보드가 컨테이너 폭과 똑같은(flex:0 0 100%) 이 레이아웃에서는 더 볼 게 없을 때도
+       보드의 오른쪽 끝(건설 부지 6번째 칸)이 늘 흐려진다 — 6칸을 다 보이게 한 수정을 스스로 깎아먹는다.
+       "옆에 더 있다"는 안내는 아래 .touch-hint 문구가 맡는다. */
     .kbd-hint{ display:none; }
     .touch-hint{ display:inline; letter-spacing:0; text-transform:none; color:var(--dim); font-weight:400; margin-left:8px; }
     .pboard.board-in, .pboard.board-out{ animation:none; overflow:visible; }

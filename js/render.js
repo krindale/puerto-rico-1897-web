@@ -947,7 +947,9 @@ function render(){
      매 렌더마다 하면 사용자가 옆으로 밀어 둔 것을 도로 끌고 온다.
      scrollIntoView 대신 scrollLeft를 직접 쓴다 (그쪽은 페이지를 세로로도 움직일 수 있다).
      ←/→ 키의 짝은 접힌 카드를 탭하는 것(uiSelectBoard)이고, 스와이프는 이 스트립 자체의 스크롤이다. */
-  if($pl && boardJustSwitched && bm && bm.narrow && $pl.querySelector){
+  /* prevShown===null = 이번이 이 화면의 첫 렌더(새로고침·게임 시작). boardJustSwitched는 그때 false라
+     예전에는 스크롤이 아예 안 걸렸고, 새로고침하면 내 보드가 앞선 접힌 카드들에 밀려 화면 밖에서 시작했다. */
+  if($pl && (boardJustSwitched||prevShown===null) && bm && bm.narrow && $pl.querySelector){
     const el=$pl.querySelector('.pboard:not(.collapsed)');
     if(el){
       /* rect 기준으로 "지금 스크롤 위치 + 컨테이너 왼쪽에서 얼마나 떨어져 있는지"를 더한다.
