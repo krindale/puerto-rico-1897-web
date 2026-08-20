@@ -35,6 +35,9 @@ global.document = {
 global.window = { addEventListener(){}, self: {}, top: {}, parent: { postMessage(){} } };
 global.window.self = global.window; global.window.top = global.window; // EMBEDDED=false
 global.innerWidth = 1400; global.innerHeight = 900;
+// 브라우저에서는 window.innerWidth === innerWidth 다. 스텁의 window에 없으면 boardMetrics의
+// 1단(모바일) 분기를 영영 못 타서, 폭 회귀 테스트가 데스크톱 경로만 검사하게 된다.
+global.window.innerWidth = 1400; global.window.innerHeight = 900;
 global.localStorage = (() => { const m = {}; return {
   getItem: k => (k in m ? m[k] : null), setItem: (k,v) => { m[k]=String(v); }, removeItem: k => { delete m[k]; },
 };})();
@@ -61,6 +64,44 @@ for (const f of order) {
   try {
     vm.runInThisContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), { filename: f });
   } catch (e) { console.error('로드 실패 (' + f + '):', e); process.exit(1); }
+}
+
+/* ── 보드 폭 회귀 테스트 ──
+   1단(모바일) 레이아웃에서 boardMetrics가 "건설 부지·토지 6칸이 컨테이너 안에 다 들어가는"
+   타일 폭을 주는지. 예전에는 1000px 이하에서 null을 반환해 축소가 통째로 꺼졌고,
+   그래서 모바일에서 오른쪽 칸이 화면 밖으로 잘려나갔다 — 그 사고를 막는 잠금장치다.
+   2단(데스크톱) 경로는 값을 바꾸지 않았으므로 "예전과 같은 범위인지"만 확인한다. */
+{
+  const players = document.getElementById('rd-players');
+  const BOARD_PAD = 31, BGRID_GAP = 15, LGRID_GAP = 20;
+  const setW = (screenW, contW) => {
+    global.innerWidth = screenW; global.window.innerWidth = screenW; players.clientWidth = contW;
+  };
+  const failed = [];
+  // 1단: (화면 폭, #rd-players 폭) — 화면 폭에서 .wrap 좌우 여백만 뺀 값
+  for (const [screenW, contW] of [[320,300],[360,340],[390,370],[430,410],[768,748],[1000,980]]) {
+    for (const n of [2,3,4,5]) {
+      setW(screenW, contW);
+      const m = vm.runInThisContext('boardMetrics(' + n + ')');
+      if (!m || !m.narrow) { failed.push(screenW + 'px ' + n + '인 → 1단 분기를 타지 않음'); continue; }
+      const need = 6 * m.bw + BGRID_GAP + BOARD_PAD, needL = 6 * m.lw + LGRID_GAP + BOARD_PAD;
+      if (need > contW + 1) failed.push(screenW + 'px ' + n + '인 → 건설 부지 ' + need + 'px > ' + contW + 'px');
+      if (needL > contW + 1) failed.push(screenW + 'px ' + n + '인 → 토지 ' + needL + 'px > ' + contW + 'px');
+    }
+  }
+  // 2단: 기존 동작 유지 확인 (타일 폭이 상·하한 안, 판 폭이 내용보다 넓지 않음)
+  for (const [screenW, contW] of [[1200,872],[1512,1108]]) {
+    for (const n of [2,3,4,5]) {
+      setW(screenW, contW);
+      const m = vm.runInThisContext('boardMetrics(' + n + ')');
+      if (!m || m.narrow) { failed.push(screenW + 'px ' + n + '인 → 2단 분기를 타지 않음'); continue; }
+      if (m.bw < 62 || m.bw > 119) failed.push(screenW + 'px ' + n + '인 → 타일 ' + m.bw + 'px가 상·하한 밖');
+      if (m.cbw < 118) failed.push(screenW + 'px ' + n + '인 → 접힌 카드 ' + m.cbw + 'px < 118px');
+    }
+  }
+  setW(1400, 1400);
+  if (failed.length) { console.error('보드 폭 회귀:\n  ' + failed.join('\n  ')); process.exit(1); }
+  console.log('보드 폭 OK — 1단 6개 폭 · 2단 2개 폭 × 2~5인');
 }
 
 /* ── AI 4인 게임 완주 (설정 화면을 거치지 않고 newGame 직접 호출) ── */

@@ -430,6 +430,9 @@ function render(){
   if(pendKey!==uiLastPend){
     const prevPendType=uiLastPend.split(':')[0];
     uiLastPend=pendKey;
+    // 모바일 접이식은 다음 결정으로 넘어가면 접힌다 — 펼쳐 둔 채로 두면 개인 보드가 아래로 밀린 채 남는다
+    uiFold.board=false; uiFold.log=false;
+    uiPreview=null;   // 다른 결정으로 넘어갔는데 앞 결정의 미리보기가 떠 있으면 안 된다
     const isHumanTurn=pd.type!=='gameOver'&&isLocalHuman(curPi);
     // 직전에 다른 사람(주로 봇)의 행동 이펙트가 아직 살아있으면, 그걸 먼저 보여준 뒤에
     // 내 보드로 전환하고 팝업을 연다 (즉시 전환하면 방금 무슨 일이 있었는지 못 봄)
@@ -490,7 +493,10 @@ function render(){
        어두운 타일에서 지저분했다 (사용자 결정). CSS의 .role.cur 규칙도 같이 지웠다. */
     const cls='role'+(r.takenBy!==null?' taken':'')+(pickable?' pickable':'');
     const tip=R.rn+'. '+R.nm+' — '+R.ph+'\n'+R.desc+(r.coins>0?'\n올려둔 주화 '+r.coins+'개를 함께 가져갑니다.':'');
-    return '<div class="'+cls+'" '+(pickable?'onclick="pickRole('+curPi+','+i+')"':'')+' title="'+escAttr(tip)+'">'
+    const roleClick=pickable
+      ?(tapPreviewMode()?'onclick="uiPreviewOpen(\'role\','+i+','+curPi+')"':'onclick="pickRole('+curPi+','+i+')"')
+      :'';
+    return '<div class="'+cls+'" '+roleClick+' title="'+escAttr(tip)+'">'
       +imgTag('역할',R.nm,'img')
       +'<div class="rolefb">'+R.rn+' '+R.nm+'<br><span>'+R.ph+'</span></div>'
       +(r.coins>0?'<div class="coin">'+r.coins+'</div>':'')
@@ -555,11 +561,15 @@ function render(){
     const B=BUILDINGS[id]; const cnt=S.stock[id];
     let cls='shopb'; let click=''; let info='';
     if(cnt<=0) cls+=' none';
+    /* 터치 기기에서는 어떤 카드든 탭하면 미리보기 시트가 열린다 —
+       데스크톱은 호버로 모든 카드가 확대되는데(구경 모드 포함), 터치에는 그 수단이 없다.
+       못 사는 카드도 열려야 "왜 못 사는지"를 큰 글씨로 읽을 수 있다 (UI/UX 원칙 2). */
+    if(tapPreviewMode()) click='onclick="uiPreviewOpen(\''+'bld'+'\',\''+id+'\')"';
     if(builderActive){
       const me=P(curPi), isC=(curPi===G.phase.chooser);
       if(canBuild(me,id,isC)){
         cls+=' buyable';
-        click='onclick="actBuild(\''+id+'\')"';
+        if(!tapPreviewMode()) click='onclick="actBuild(\''+id+'\')"';
         const c=buildCost(me,id,isC);
         // 지금 얼마고, 사고 나면 얼마 남는지 미리 보여준다
         info='<div class="inf ok">'+c+'주화 <span>→ 남음 '+(me.coins-c)+'</span></div>';
@@ -575,11 +585,14 @@ function render(){
       +info
       +'<div class="cnt">×'+cnt+'</div></div>';
   };
+  /* 두 줄(<br>)이 아니라 두 조각(<i>)으로 둔다 — 좁은 화면에서는 구역 이름이 가로 배너가 되는데,
+     <br>를 CSS로 없애면 "할인최대"처럼 붙어버린다. 조각이면 flex 방향만 바꿔 세로/가로를 다 만든다. */
+  const zoneSub=n=>'<span class="zh-sub"><i>채석장 할인</i><i>최대 '+n+'개</i></span>';
   const ZONE_LABELS={
-    1:'1구역<span>채석장 할인<br>최대 1개</span>',
-    2:'2구역<span>채석장 할인<br>최대 2개</span>',
-    3:'3구역<span>채석장 할인<br>최대 3개</span>',
-    4:'고급<span>채석장 할인<br>최대 4개</span>'};
+    1:'1구역'+zoneSub(1),
+    2:'2구역'+zoneSub(2),
+    3:'3구역'+zoneSub(3),
+    4:'고급'+zoneSub(4)};
   const shopHtml=[1,2,3,4].map(z=>
     '<div class="zone"><div class="zone-h">'+ZONE_LABELS[z]+'</div>'
     +'<div class="shop">'+BORDER.filter(id=>BUILDINGS[id].zone===z).map(shopCell).join('')+'</div></div>'
@@ -781,6 +794,51 @@ function render(){
       +'</div></div>';
   }
 
+  /* 탭 미리보기 시트 — 터치에서 첫 탭으로 열린다. 확대 이미지 + 효과 + "이 선택을 하면 어떻게 되는지".
+     확정 버튼은 여기 하나뿐이고, 바깥을 탭하면 취소된다. */
+  let pvPop='';
+  if(uiPreview){
+    if(uiPreview.kind==='bld'){
+      const B=BUILDINGS[uiPreview.id];
+      const me=curPi!==null?P(curPi):null;
+      const isC=(G.phase&&curPi===G.phase.chooser);
+      const ok=me&&builderActive&&canBuild(me,uiPreview.id,isC);
+      const cost=me?buildCost(me,uiPreview.id,isC):B.cost;
+      const why=me?buildBlockReason(me,uiPreview.id,isC):'';
+      const sz=B.size||1;
+      pvPop='<div class="overlay pv-ov pop" onclick="if(event.target===this)uiPreviewClose()"><div class="modal pv-modal">'
+        +imgTag('건물',B.nm,'pv-art')
+        +'<h2>'+B.nm+'</h2>'
+        +'<div class="pv-sub">'+B.cost+'주화 · 승점 '+B.vp+(sz===2?' · 부지 2칸':'')
+        +(B.kind==='prod'?' · '+PLANT_NM[B.prod]+' 생산 (일꾼 '+B.slots+'칸)':'')+'</div>'
+        +(B.fx?'<p class="pv-fx">'+B.fx+'</p>':'')
+        +((me&&builderActive)?'<div class="pv-prev">'
+            +'<div><span>주화</span><b>'+me.coins+' → '+(ok?me.coins-cost:me.coins)+'</b></div>'
+            +'<div><span>남은 부지</span><b>'+(12-sitesUsed(me))+' → '+(ok?12-sitesUsed(me)-sz:12-sitesUsed(me))+'</b></div>'
+          +'</div>':'')
+        // 내 건설 차례가 아니면(구경 모드) 불가 사유를 띄우지 않는다 — 지금 살 수 있는지 묻는 상황이 아니다
+        +(ok
+          ?'<div class="pv-acts"><button class="btn-primary" onclick="uiPreviewConfirm()">'+cost+'주화로 건설</button>'
+             +'<button class="btn-ghost" onclick="uiPreviewClose()">취소</button></div>'
+          :(builderActive?'<div class="pv-no">'+(why||'지금은 건설할 수 없습니다')+'</div>':'')
+             +'<div class="pv-acts"><button class="btn-ghost" onclick="uiPreviewClose()">닫기</button></div>')
+        +'</div></div>';
+    } else {
+      const r=G.roles[uiPreview.id], R=r?ROLES[r.id]:null;
+      const still=R&&pd.type==='pickRole'&&r.takenBy===null&&isLocalHuman(curPi);
+      if(R) pvPop='<div class="overlay pv-ov pop" onclick="if(event.target===this)uiPreviewClose()"><div class="modal pv-modal">'
+        +imgTag('역할',R.nm,'pv-art')
+        +'<h2>'+R.rn+'. '+R.nm+'</h2>'
+        +'<div class="pv-sub">'+R.ph+(r.coins>0?' · 타일 위 '+r.coins+'주화':'')+'</div>'
+        +'<p class="pv-fx">'+esc(R.desc).replace(/\n/g,'<br>')+'</p>'
+        +(still
+          ?'<div class="pv-acts"><button class="btn-primary" onclick="uiPreviewConfirm()">이 역할 선택</button>'
+             +'<button class="btn-ghost" onclick="uiPreviewClose()">취소</button></div>'
+          :'<div class="pv-acts"><button class="btn-ghost" onclick="uiPreviewClose()">닫기</button></div>')
+        +'</div></div>';
+    }
+  }
+
   /* 중앙 액션 패널 — 내 차례의 선택지 (개척·모집·생산 보너스·판매·선적·저장) / 단계 결과 보고.
      배경 오버레이·창(스켈레톤)은 패널이 떠 있는 동안 유지하고 제목·본문만 갈아끼운다 —
      매 행동마다 통째로 다시 만들면 진행→마무리→결과 전환이 뚝뚝 끊겨 보인다. */
@@ -829,21 +887,28 @@ function render(){
     '<div class="hdr" id="rd-hdr"></div>'
     +'<div class="layout" style="margin-top:4px">'
       +'<div class="main-col">'
-        +'<div><div class="sec-title">역할</div><div class="roles" id="rd-roles"></div></div>'
-        +'<div class="sec"><div class="sec-title">플레이어<span class="kbd-hint">←/→ 키 또는 클릭으로 보드 전환</span></div><div class="players" id="rd-players"></div></div>'
+        +'<div class="rolesec"><div class="sec-title">역할</div><div class="roles" id="rd-roles"></div></div>'
+        +'<div class="sec playersec"><div class="sec-title">플레이어<span class="kbd-hint">←/→ 키 또는 클릭으로 보드 전환</span><span class="touch-hint">옆으로 밀어 상대 보기</span></div><div class="players" id="rd-players"></div></div>'
       +'</div>'
-      +'<div class="side-col">'
-        +'<div class="card" id="card-plants"><div class="sec-title">공개된 농장</div><div class="plants" id="rd-plants"></div></div>'
-        +'<div class="card" id="card-ships"><div class="sec-title">수송선</div><div class="ships" id="rd-ships"></div></div>'
-        +'<div class="cardrow">'
-          +'<div class="card" id="card-market"><div class="sec-title">상점</div><div class="market-slots" id="rd-market"></div><div class="hintline">가득 차면 비워짐 · 중복 종류 판매 불가</div></div>'
-          +'<div class="card" id="card-labor"><div class="sec-title">인력 시장</div><div id="rd-labor"></div></div>'
+      /* 사이드 컬럼 — 데스크톱에서는 지금 그대로 오른쪽 열이고, 1000px 이하에서는 CSS가
+         역할 타일 바로 아래로 순서를 옮기고 아래 두 접이식 머리(.mfold)로 접는다.
+         카드들을 .side-body로 한 번 묶어야 "공용 보드"만 통째로 접을 수 있다. */
+      +'<div class="side-col" id="rd-side">'
+        +'<div class="mfold" id="mfold-board" onclick="uiToggleFold(\'board\')"><b>공용 보드</b><span class="sum" id="rd-foldsum-board"></span></div>'
+        +'<div class="side-body">'
+          +'<div class="card" id="card-plants"><div class="sec-title">공개된 농장</div><div class="plants" id="rd-plants"></div></div>'
+          +'<div class="card" id="card-ships"><div class="sec-title">수송선</div><div class="ships" id="rd-ships"></div></div>'
+          +'<div class="cardrow">'
+            +'<div class="card" id="card-market"><div class="sec-title">상점</div><div class="market-slots" id="rd-market"></div><div class="hintline">가득 차면 비워짐 · 중복 종류 판매 불가</div></div>'
+            +'<div class="card" id="card-labor"><div class="sec-title">인력 시장</div><div id="rd-labor"></div></div>'
+          +'</div>'
+          +'<div class="card" id="card-supply"><div class="sec-title">공급처</div><div id="rd-supply"></div></div>'
         +'</div>'
-        +'<div class="card" id="card-supply"><div class="sec-title">공급처</div><div id="rd-supply"></div></div>'
+        +'<div class="mfold" id="mfold-log" onclick="uiToggleFold(\'log\')"><b>기록</b><span class="sum" id="rd-foldsum-log"></span></div>'
         +'<div class="log" id="logbox"></div>'
       +'</div>'
     +'</div>'
-    +'<div id="rd-fabs"></div><div id="rd-net"></div><div id="rd-wait"></div><div id="rd-bar"></div><div id="rd-modal"></div><div id="rd-panel"></div><div id="rd-shop"></div><div id="rd-help"></div>';
+    +'<div id="rd-fabs"></div><div id="rd-net"></div><div id="rd-wait"></div><div id="rd-bar"></div><div id="rd-modal"></div><div id="rd-panel"></div><div id="rd-shop"></div><div id="rd-preview"></div><div id="rd-help"></div>';
   }
 
   setPart('rd-hdr',
@@ -862,22 +927,63 @@ function render(){
   /* 폭 배분 — 스켈레톤이 선 뒤에 재야 한다(컨테이너 실제 폭이 필요).
      타일(--bw/--lw)과 판 폭(--w-open/--cbw)을 한 번에 확정해 얹는다. */
   const $pl=document.getElementById('rd-players');
+  let bm=null;   // 아래 "펼친 보드 따라가기"에서도 쓴다 — 두 번 재면 그때마다 레이아웃을 강제로 다시 계산하게 된다
   if($pl){
-    const m=boardMetrics(G.n);
+    const m=bm=boardMetrics(G.n);
     ['--bw','--lw','--w-open','--cbw'].forEach(k=>$pl.style.removeProperty(k));
     if(m){
       $pl.style.setProperty('--bw', m.bw+'px');
       $pl.style.setProperty('--lw', m.lw+'px');
-      $pl.style.setProperty('--w-open', m.openW+'px');
-      $pl.style.setProperty('--cbw', m.cbw+'px');
+      // 1단 레이아웃에서는 판 폭을 CSS(가로 스크롤 스트립)가 정한다 — 고정 폭을 얹으면 스트립이 어긋난다
+      if(!m.narrow){
+        $pl.style.setProperty('--w-open', m.openW+'px');
+        $pl.style.setProperty('--cbw', m.cbw+'px');
+      }
     }
   }
   setBoards(boardParts);
+  /* 1단 레이아웃에서는 개인 보드가 가로 스크롤 스트립이라, 자동으로 펼쳐진 보드(=지금 차례인 사람)가
+     화면 밖에 있을 수 있다. 펼친 보드가 "바뀐 순간"에만 그 보드로 밀어 준다 —
+     매 렌더마다 하면 사용자가 옆으로 밀어 둔 것을 도로 끌고 온다.
+     scrollIntoView 대신 scrollLeft를 직접 쓴다 (그쪽은 페이지를 세로로도 움직일 수 있다).
+     ←/→ 키의 짝은 접힌 카드를 탭하는 것(uiSelectBoard)이고, 스와이프는 이 스트립 자체의 스크롤이다. */
+  /* prevShown===null = 이번이 이 화면의 첫 렌더(새로고침·게임 시작). boardJustSwitched는 그때 false라
+     예전에는 스크롤이 아예 안 걸렸고, 새로고침하면 내 보드가 앞선 접힌 카드들에 밀려 화면 밖에서 시작했다. */
+  if($pl && (boardJustSwitched||prevShown===null) && bm && bm.narrow && $pl.querySelector){
+    const el=$pl.querySelector('.pboard:not(.collapsed)');
+    if(el){
+      /* rect 기준으로 "지금 스크롤 위치 + 컨테이너 왼쪽에서 얼마나 떨어져 있는지"를 더한다.
+         offsetLeft는 offsetParent가 무엇이냐에 따라 기준이 달라져 믿을 수 없다. */
+      const left=Math.max(0, $pl.scrollLeft + (el.getBoundingClientRect().left - $pl.getBoundingClientRect().left));
+      /* 즉시 이동한다. behavior:'smooth'는 애니메이션 프레임에 기대는데, 이 스크롤 직후
+         보드 폭이 바뀌며 다시 렌더되면 그 애니메이션이 취소돼 스크롤이 통째로 무시됐다 —
+         실제로 "다른 플레이어 보드를 탭하면 펼쳐지기만 하고 화면 밖에 남는" 증상이 났다. */
+      $pl.scrollLeft=left;
+    }
+  }
   setPart('rd-plants', plantsHtml);
   setPart('rd-ships', shipsHtml);
   setPart('rd-market', mkt);
   setPart('rd-labor', laborHtml);
   setPart('rd-supply', supHtml);
+  /* 접힌 줄의 요약 — 펼치지 않고도 판단에 필요한 세 수치를 보여준다.
+     인력시장(모집·시장 역할의 가치) · 수송선 사용(내 상품이 실릴지) · 상점(상인 역할이 도는지).
+     색만으로 알리지 않도록 전부 숫자로 쓰고, 바닥나거나 가득 찬 값에만 경고색을 덧입힌다. */
+  const shipsUsed=S.ships.filter(s=>s.count>0).length;
+  const mktUsed=S.market.filter(x=>x!==undefined).length;
+  setPart('rd-foldsum-board',
+    '<span'+(S.labor<=0?' class="warn"':'')+'>인력 <b>'+S.labor+'</b></span>'
+    +'<span>배 <b>'+shipsUsed+'/'+S.ships.length+'</b></span>'
+    +'<span'+(mktUsed>=4?' class="warn"':'')+'>상점 <b>'+mktUsed+'/4</b></span>'
+    +'<span class="more">'+(uiFold.board?'접기':'펼치기')+'</span>');
+  // 기록 요약: 가장 최근 한 줄만 흘려보낸다 (로그 문자열에 태그가 섞여 있어 벗겨서 쓴다)
+  const lastLog=G.log.length?String(G.log[G.log.length-1]).replace(/<[^>]*>/g,''):'';
+  setPart('rd-foldsum-log',
+    '<span class="line">'+esc(lastLog)+'</span>'
+    +'<span class="more">'+(uiFold.log?'접기':G.log.length+'건')+'</span>');
+  setCls('mfold-board','mfold'+(uiFold.board?' open':''));
+  setCls('mfold-log','mfold'+(uiFold.log?' open':''));
+  setCls('rd-side','side-col'+(uiFold.board?' open-board':'')+(uiFold.log?' open-log':''));
   /* 사이드 카드 번쩍임: 클래스만 갈아끼운다 (innerHTML은 건드리지 않음 → 애니메이션 안 끊김) */
   setCls('card-plants','card'+cardFxCls('#card-plants'));
   setCls('card-ships','card'+cardFxCls('#card-ships'));
@@ -934,6 +1040,7 @@ function render(){
     setPart('ap-bodyc', apParts.body);
   }
   setPart('rd-shop', shopPop);
+  setPart('rd-preview', pvPop);
   setPart('rd-help', renderHelpPop());
   /* 로그: 내용이 바뀐 렌더에서만 바닥으로 스크롤 */
   if(setPart('logbox', G.log.slice(-120).map(l=>'<div>'+l+'</div>').join(''))){

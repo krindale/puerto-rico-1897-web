@@ -33,13 +33,16 @@ function renderActionPanel(pd){
     const cells=G.roles.map((r,i)=>{
       const R=ROLES[r.id];
       const open=(r.takenBy===null);
-      const tile='<div class="role'+(open?' pickable':' taken')+'" '+(open?'onclick="pickRole('+pd.player+','+i+')"':'')+'>'
+      // 클릭 영역은 타일이 아니라 칸 전체 — 좁은 화면에서는 [작은 타일 | 이름·설명]이 한 줄이라
+      // 48px 타일만 눌리면 사실상 못 누른다 (사용자 요청). 넓은 화면에서도 설명까지 누르면 선택된다.
+      const pick=open?' onclick="pickRole('+pd.player+','+i+')"':'';
+      const tile='<div class="role'+(open?' pickable':' taken')+'">'
         +imgTag('역할',R.nm,'img')
         +'<div class="rolefb">'+R.rn+' '+R.nm+'<br><span>'+R.ph+'</span></div>'
         +(r.coins>0?'<div class="coin">'+r.coins+'</div>':'')
         +(r.takenBy!==null?'<div class="took" style="background:'+PCOLOR[r.takenBy]+'">'+esc(P(r.takenBy).name)+'</div>':'')
         +'</div>';
-      return '<div class="ap-rolecell">'+tile
+      return '<div class="ap-rolecell'+(open?' pickable':'')+'"'+pick+'>'+tile
         +'<div class="ap-rolename">'+R.nm+'<span class="dim"> · '+R.ph+'</span></div>'
         +'<div class="ap-roledesc">'+esc(R.desc).replace(/\n/g,'<br>')+'</div>'
         +(r.coins>0?'<div class="ap-rolecoin">+ 타일 위 주화 '+r.coins+'개</div>':'')

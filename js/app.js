@@ -11,11 +11,18 @@ function schedule(){
   if(typeof NET!=='undefined'&&NET.on&&!NET.host) return;
   const pd=G.pending;
   if(!pd || pd.type==='gameOver') return;
+  /* 예약과 발동 사이에 게임이 통째로 바뀔 수 있다 (새 게임·온라인 복귀).
+     타이머를 걸 때의 G를 기억해 두고, 발동 시점에 그대로인지 확인한다 —
+     예전에는 봇 차례 중에 [새 게임]을 누르면 이전 게임의 봇 타이머가 살아남아
+     새 게임의 내 첫 차례에 aiDecide()를 돌려 역할을 대신 골라버렸다.
+     (schedule 맨 위에서 무조건 clearTimeout 하는 방법도 있지만, 그러면 온라인에서
+      호스트가 굴리던 엔진 타이머까지 끊겨 진행이 멈춘다 — 실제로 루프백 테스트가 잡았다.) */
+  const gAtSchedule=G;
   if(pd.type==='phaseEnd'){
     // 단계 마무리 일시정지 — 직렬화된 pending이므로 새로고침해도 여기서 타이머가 다시 걸린다
     clearTimeout(aiTimer);
     const short=(pd.id==='settler'||pd.id==='mayor'||pd.id==='builder');  // 결과 창 없는 단계
-    aiTimer=setTimeout(actPhaseEnd, short?PHASE_END_HOLD_SHORT:PHASE_END_HOLD);
+    aiTimer=setTimeout(()=>{ if(G!==gAtSchedule) return; actPhaseEnd(); }, short?PHASE_END_HOLD_SHORT:PHASE_END_HOLD);
     return;
   }
   const p=(pd.player!==undefined)?P(pd.player):null;
@@ -23,7 +30,8 @@ function schedule(){
     clearTimeout(aiTimer);
     // 봇은 일정한 1.5초 리듬으로 움직인다 — 여기에 이펙트 대기를 얹지 않는다 (게임이 굼떠진다).
     // 이펙트를 기다리는 건 "사람 차례 UI가 뜰 때"(FX_HOLD 홀드)와 "단계 끝"(phaseEnd)뿐.
-    aiTimer=setTimeout(()=>{ try{ aiDecide(); }catch(e){ console.error(e); log('⚠️ AI 오류: '+e.message); render(); } }, 1500);
+    aiTimer=setTimeout(()=>{ if(G!==gAtSchedule) return;
+      try{ aiDecide(); }catch(e){ console.error(e); log('⚠️ AI 오류: '+e.message); render(); } }, 1500);
   }
 }
 

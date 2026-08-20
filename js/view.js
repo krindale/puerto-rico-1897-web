@@ -198,7 +198,9 @@ function shopVisibleNow(){
   return !!pd && pd.type==='builder';
 }
 function uiSelectBoard(i){ uiBoardSel=i; render(); }
-function uiToggleShop(){ uiShopOpen=!shopVisibleNow(); render(); }
+// 보관판을 닫으면 그 위에 떠 있던 탭 미리보기 시트도 같이 닫는다 —
+// 안 그러면 뒤가 비어 있는 시트만 덩그러니 남는다
+function uiToggleShop(){ uiShopOpen=!shopVisibleNow(); if(!uiShopOpen) uiPreview=null; render(); }
 
 /* ── 중앙 액션 패널 ──
    내 차례의 선택지(개척·모집·생산 보너스·판매·선적·저장)를 건물 보관소처럼 가운데 팝업으로 보여준다.
@@ -249,6 +251,39 @@ function uiSelectShipGood(t){
   render();
 }
 /* ? 도움말 — 언제든 볼 수 있는 요약 규칙 팝업 (뷰 상태) */
+/* ── 탭 미리보기 ──
+   터치 기기에는 호버가 없다. 데스크톱에서 호버가 하던 일(카드 확대 + 효과 확인)을 첫 탭이 맡고,
+   확정은 시트의 버튼에서만 일어난다 — 카드를 탭했다고 건물이 지어지면 되돌릴 방법이 없다.
+   (UI/UX 원칙 2: 불가능한 이유를 보여준다 · 3: 확정 전까지 되돌릴 수 있다)
+   포인터가 있는 기기(데스크톱)에서는 이 경로를 아예 타지 않는다 — 지금의 호버 확대가 그대로다. */
+function tapPreviewMode(){
+  try{ return window.matchMedia('(hover:none)').matches; }catch(e){ return false; }
+}
+let uiPreview=null;   // {kind:'bld'|'role', id, pi} — 뷰 상태이므로 G에 넣지 않는다
+function uiPreviewOpen(kind,id,pi){ uiPreview={kind:kind,id:id,pi:pi}; render(); }
+function uiPreviewClose(){ uiPreview=null; render(); }
+function uiPreviewConfirm(){
+  const pv=uiPreview; uiPreview=null;
+  if(!pv) return;
+  if(pv.kind==='bld') actBuild(pv.id);
+  else pickRole(pv.pi, pv.id);
+}
+
+/* 모바일 접이식 — 공용 보드(공개 농장·수송선·상점·인력시장·공급처)와 기록을 역할 타일 바로 아래
+   한 줄로 접어 둔다. 접힌 줄에도 요약 수치를 얹어, 펼치지 않고도 대부분의 판단이 끝나게 한다.
+   뷰 상태이므로 G에 넣지 않는다 — 새로고침하면 접힌 기본값으로 돌아간다.
+   펼침을 기억하지 않는 이유: 펼치면 개인 보드가 아래로 밀리는데, 그 상태가 다음 차례까지 남으면
+   "내 보드가 어디 갔지"가 된다. 그래서 결정이 바뀔 때마다 접는다 (render의 pending 전환 처리). */
+let uiFold={board:false, log:false};
+function uiToggleFold(k){
+  uiFold[k]=!uiFold[k]; render();
+  /* 접힌 동안 #logbox는 display:none이라 render()의 "바닥으로 스크롤"이 먹지 않는다(scrollHeight=0).
+     그래서 펼치면 120줄 중 가장 오래된 줄이 보였다 — 펼친 직후 다시 바닥으로 내린다. */
+  if(k==='log'&&uiFold.log&&typeof document!=='undefined'){
+    const lb=document.getElementById('logbox');
+    if(lb) lb.scrollTop=lb.scrollHeight;
+  }
+}
 let uiHelpOpen=false;
 function uiToggleHelp(){ uiHelpOpen=!uiHelpOpen; render(); }
 function renderHelpPop(){
@@ -327,22 +362,37 @@ if(EMBEDDED){ try{ window.parent.postMessage('pr1897:ready','*'); }catch(e){} }
 const CB_MIN=118;     // 접힌 요약 카드 최소 폭 — 농장·건물 이름이 들어가야 한다. CSS --cbmin 기본값과 같을 것
 const CB_GAP=8;       // .players의 gap
 const BW_MAX=119, BW_MIN=62;   // 건설 부지 타일 폭 상·하한 (하한은 "작아도 6칸 다 보이는 게 낫다"는 판단)
+const BW_MIN_NARROW=40;        // 1단(모바일) 레이아웃 전용 하한 — 390px 화면에서 6칸이 다 들어가려면 62로는 모자란다
+const LW_MAX=59;               // 토지 타일 폭 상한 (2단 레이아웃의 원래 크기)
 const BOARD_PAD=31, BGRID_GAP=15;   // 펼친 보드 좌우 패딩·테두리 / 건설 부지 칸 사이 gap 3px×5
+const LGRID_GAP=20;   // 토지 그리드 칸 사이 gap 4px×5
+const NARROW_W=1000;  // 1단 레이아웃 전환점 — css/game.css의 @media (max-width:1000px)와 같아야 한다
 /* 한 줄의 폭 배분을 통째로 계산한다 —
    펼친 폭(openW)과 접힌 폭(cbw)이 "어느 보드를 펼치든 같은 값"이어야
    보드를 전환할 때 관계없는 카드들이 흔들리지 않는다. */
 function boardMetrics(n){
   const cont=document.getElementById('rd-players');
   const w=cont?cont.clientWidth:0;
-  // 1000px 이하에서는 .players가 줄바꿈돼 폭을 CSS가 알아서 정한다 — 고정 폭을 얹지 않는다
-  if(!w||window.innerWidth<=1000) return null;
+  if(!w) return null;
+  /* 1단(모바일) 레이아웃: .players가 가로 스크롤 스트립이라 펼친 보드가 컨테이너 폭을 통째로 쓴다
+     — 접힌 카드 몫을 미리 뗄 필요가 없다. 예전에는 여기서 null을 반환해 축소가 통째로 꺼져 있었고,
+     그래서 390px 화면에서 건설 부지(6×119=760px)의 오른쪽 칸이 그냥 잘려나갔다.
+     토지는 자원 패널 옆이 아니라 위에 놓이므로(.landrow 세로 전환) 건설 부지와 같은 폭을 쓴다. */
+  if(window.innerWidth<=NARROW_W){
+    const inner=w-BOARD_PAD;
+    return {
+      bw: Math.max(BW_MIN_NARROW, Math.min(BW_MAX, Math.floor((inner-BGRID_GAP)/6))),
+      lw: Math.max(BW_MIN_NARROW, Math.min(LW_MAX, Math.floor((inner-LGRID_GAP)/6))),
+      narrow: true,
+    };
+  }
   const avail=w-(n-1)*(CB_MIN+CB_GAP);                                  // 펼친 보드가 쓸 수 있는 폭
   const bw=Math.max(BW_MIN, Math.min(BW_MAX, Math.floor((avail-BOARD_PAD-BGRID_GAP)/6)));
   const contentW=6*bw+BGRID_GAP+BOARD_PAD;                              // 그 타일 폭일 때 보드 내용 폭
   const openW=Math.min(avail, contentW);                                // 내용보다 넓게 늘리지 않는다
   const slack=Math.max(0, avail-openW);                                 // 타일이 상한(BW_MAX)에 걸려 남는 폭
   const cbw=CB_MIN+Math.floor(slack/(n-1));                             // 남는 폭은 접힌 카드들이 똑같이 나눠 갖는다
-  return {bw, lw:Math.round(bw*59/119), openW, cbw};
+  return {bw, lw:Math.round(bw*LW_MAX/BW_MAX), openW, cbw, narrow:false};
 }
 // 창 크기가 바뀌면 다시 계산해야 한다 (타일 폭이 창 폭에 달려 있으므로)
 let rzT=0;
@@ -356,6 +406,8 @@ document.addEventListener('keydown', function(e){
   if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
     uiBoardSel=(shownBoard()+(e.key==='ArrowRight'?1:G.n-1))%G.n;
     e.preventDefault(); render();
+  } else if(e.key==='Escape'&&uiPreview){
+    uiPreviewClose();
   } else if(e.key==='Escape'&&uiHelpOpen){
     uiHelpOpen=false; render();
   } else if(e.key==='Escape'&&shopVisibleNow()){

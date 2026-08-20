@@ -90,10 +90,50 @@
   .main-col{ display:flex; flex-direction:column; min-width:0; }
   .main-col .sec{ flex:1; display:flex; flex-direction:column; }
   .main-col .players{ flex:1; }
-  .side-col{ position:sticky; top:8px; display:flex; flex-direction:column; gap:8px; height:100%; max-height:calc(100vh - 126px); overflow-y:auto; }  /* 하단 액션바와 살짝 띄움 */
+  .side-col{ position:sticky; top:8px; display:flex; flex-direction:column; gap:8px; height:100%; max-height:calc(100vh - 126px); max-height:calc(100dvh - 126px); overflow-y:auto; }  /* 하단 액션바와 살짝 띄움 */
   .side-col .card{ flex-shrink:0; }
   .side-col .log{ flex:1 1 auto; max-height:none; min-height:40px; }
-  @media (max-width:1000px){ .layout{ grid-template-columns:1fr; } .side-col{ position:static; max-height:none; } }
+  /* 사이드 카드 묶음 — 데스크톱에서는 예전처럼 side-col의 카드들이 세로로 늘어선 것과 같다
+     (side-col의 gap 8px를 이 묶음이 그대로 물려받는다). 좁은 화면에서 통째로 접기 위한 그릇이다. */
+  .side-body{ display:flex; flex-direction:column; gap:8px; }
+  /* 모바일 접이식 머리 — 데스크톱에는 없다 */
+  .mfold{ display:none; align-items:center; gap:7px; cursor:pointer;
+    border:1px solid var(--line); border-radius:3px; background:var(--panel);
+    padding:7px 10px; font-size:12px; color:var(--ink); }
+  .mfold::before{ content:'▸'; color:var(--dim); font-size:10px; flex:none; }
+  .mfold.open::before{ content:'▾'; }
+  .mfold>b{ flex:none; font-size:12px; }
+  .mfold .sum{ display:flex; align-items:center; gap:9px; min-width:0; flex:1;
+    color:var(--dim); font-size:11px; white-space:nowrap; overflow:hidden; }
+  .mfold .sum b{ color:var(--ink); font-size:12px; }
+  .mfold .sum .warn, .mfold .sum .warn b{ color:var(--accent-deep); font-weight:700; }
+  .mfold .sum .line{ overflow:hidden; text-overflow:ellipsis; }
+  .mfold .sum .more{ margin-left:auto; flex:none; color:var(--dim); }
+  .mfold.open{ border-color:var(--accent); }
+
+  @media (max-width:1000px){
+    .layout{ grid-template-columns:1fr; }
+    /* 하단 액션바는 fixed라 문서 흐름에서 자리를 차지하지 않는다 — 그 높이만큼 본문 아래를 비워야
+       맨 아래까지 스크롤했을 때 개인 보드의 건설 부지가 액션바에 깔리지 않는다.
+       (기본 36px으로는 83px짜리 액션바에 19px이 잘렸다) */
+    .wrap{ padding-bottom:112px; }
+    .side-col{ position:static; max-height:none; overflow:visible; }
+    /* 공용 보드·기록을 역할 타일 바로 아래, 개인 보드 위로 —
+       main-col을 display:contents로 풀어 [역할] [공용 정보] [플레이어] 세 덩어리를
+       한 줄 그리드에 직접 놓고 순서만 지정한다. DOM은 그대로라 데스크톱은 아무것도 달라지지 않는다. */
+    .main-col{ display:contents; }
+    /* display:contents로 풀면 .main-col이 갖고 있던 min-width:0이 사라진다 —
+       그러면 그리드 항목의 기본값(min-width:auto)이 되어 max-content인 보드가 열을 밀어내고
+       페이지 전체에 가로 스크롤이 생긴다. 풀어낸 세 덩어리에 다시 걸어 준다. */
+    .rolesec{ order:1; min-width:0; }
+    .side-col{ order:2; min-width:0; }
+    .playersec{ order:3; min-width:0; }
+    .mfold{ display:flex; }
+    /* 기본은 접힘 — 펼친 줄만 내용이 나온다 */
+    .side-col .side-body, .side-col .log{ display:none; }
+    .side-col.open-board .side-body{ display:flex; }
+    .side-col.open-log .log{ display:block; max-height:180px; }
+  }
 
   /* role tiles */
   /* 한 줄 유지: 좁아지면 줄바꿈 대신 타일이 줄어든다 (5인=8장까지 한 줄).
@@ -253,6 +293,7 @@
   .pboard.collapsed .expand{ margin-top:auto; padding-top:4px; font-size:10px; text-align:center; color:var(--dim); }
   .players>.pboard:last-child .expand{ display:none; }  /* 이 자리 우측 하단은 건물 보관판 버튼이 쓴다 */
   .kbd-hint{ letter-spacing:0; text-transform:none; color:var(--dim); font-weight:400; margin-left:8px; }
+  .touch-hint{ display:none; }   /* 좁은 화면에서만 나오는 가로 스크롤 안내 */
   /* 펼친 보드: 토지 옆 빈자리를 자원 패널이 가득 채운다
      (아래는 토지 타일 바닥, 오른쪽은 건설 부지 오른쪽 끝까지) */
   .landrow{ display:flex; gap:12px; align-items:stretch; }
@@ -288,13 +329,49 @@
     clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
     display:flex; align-items:center; justify-content:center; font-size:7.5px; font-weight:800; letter-spacing:.04em; color:#4b4b45; }
   .pres .wtok{ width:20px; height:20px; flex-shrink:0; }
-  /* 1000px 이하: 한 줄에 다 못 들어가므로 줄바꿈 배치. 폭은 CSS가 정하고 전환 애니메이션은 끈다
-     (고정 px 폭을 전제로 한 애니메이션이라 이 레이아웃에서는 맞지 않는다) */
+  /* 1000px 이하(1단·모바일): 펼친 보드가 화면 폭을 통째로 쓰고, 접힌 카드들은 그 오른쪽으로 이어지는
+     가로 스크롤 스트립이 된다 (세로로 쌓으면 5인에서 화면 두 배 높이가 된다).
+     타일 폭은 boardMetrics가 이 컨테이너 폭에 맞춰 줄여 준다 — 여기서 고정 폭을 주지 않는다.
+     전환 애니메이션은 끈다 (고정 px 폭을 전제로 한 애니메이션이라 이 레이아웃에서는 맞지 않는다) */
   @media (max-width:1000px){
-    .players{ flex-wrap:wrap; }
-    .pboard{ flex:1 1 100%; }
-    .pboard.collapsed{ flex:1 1 45%; }
+    /* scroll-snap은 쓰지 않는다 — 보드를 전환하면 폭(132px↔100%)이 바뀌는데, 그때 브라우저가
+       가까운 스냅 지점으로 다시 붙으면서 방금 코드가 맞춰 둔 스크롤을 되돌려 버린다. */
+    .players{ flex-wrap:nowrap; overflow-x:auto;
+      -webkit-overflow-scrolling:touch; scrollbar-width:thin; padding-bottom:4px; }
+    .pboard{ flex:0 0 100%; }
+    .pboard.collapsed{ flex:0 0 132px; }
+    /* 오른쪽 끝 페이드(mask)는 쓰지 않는다 — 마스크는 스크롤 내용이 아니라 컨테이너 테두리 기준이라,
+       펼친 보드가 컨테이너 폭과 똑같은(flex:0 0 100%) 이 레이아웃에서는 더 볼 게 없을 때도
+       보드의 오른쪽 끝(건설 부지 6번째 칸)이 늘 흐려진다 — 6칸을 다 보이게 한 수정을 스스로 깎아먹는다.
+       "옆에 더 있다"는 안내는 아래 .touch-hint 문구가 맡는다. */
+    .kbd-hint{ display:none; }
+    .touch-hint{ display:inline; letter-spacing:0; text-transform:none; color:var(--dim); font-weight:400; margin-left:8px; }
     .pboard.board-in, .pboard.board-out{ animation:none; overflow:visible; }
+    /* .pboard.board-in.cardflash(특정도 0,3,0)가 위 규칙(0,2,0)을 이기기 때문에, 같은 특정도로 한 번 더 끈다.
+       안 그러면 폭 애니메이션(boardGrow)이 좁은 화면에서도 돌아 flex-basis가 --cbw 기본값 118px에서
+       시작한 채 남는다 — 봇이 일꾼을 배치할 때(그때만 .cardflash가 붙는다) 펼친 보드가 118px로
+       찌그러져 보이던 원인이다. 폭 애니메이션만 빼고 금빛 테두리 플래시는 그대로 살린다. */
+    .pboard.board-in.cardflash, .pboard.board-out.cardflash{
+      animation:cardflash 1.3s ease var(--fx-gap) backwards; overflow:visible; }
+    /* 토지 옆에 자원 패널을 두면 둘 다 못 쓸 폭이 된다 — 세로로 쌓고 토지가 6칸 폭을 다 쓴다 */
+    .landrow{ flex-direction:column; }
+    .pres{ min-height:0; }
+    /* 펼친 보드 내용은 max-content라 컨테이너보다 넓어질 수 있다 — 그럴 땐 보드 안에서 가로 스크롤 */
+    .pboard:not(.collapsed){ overflow-x:auto; }
+  }
+  /* 아주 좁은 화면에서는 바깥 여백부터 줄인다 — 그만큼 타일이 커진다.
+     헤더는 한 줄로 눌러 담는다 (그냥 두면 "새 게임" 버튼이 두 줄로 깨진다) */
+  @media (max-width:640px){
+    /* 단축 padding으로 쓰면 위 1000px 블록의 padding-bottom(액션바 자리)까지 덮어쓴다 — 좌우만 건드린다 */
+    .wrap{ padding-left:10px; padding-right:10px; }
+    .hdr{ gap:7px; padding:2px 2px 4px; }
+    .hdr h1{ font-size:17px; }
+    .hdr .sub{ font-size:14px; }
+    .hdr .meta{ gap:9px; font-size:11.5px; flex-wrap:wrap; justify-content:flex-end; }
+    .hdr .meta>span{ white-space:nowrap; }
+    .hdr button{ white-space:nowrap; padding:5px 8px; }
+    .hdr .ver{ display:none; }   /* 파일 저장 시각 — 좁은 화면에서는 자리만 먹는다 */
+    .sec-title{ letter-spacing:.14em; }
   }
   .phead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
   .phead .nm{ font-weight:700; font-size:15px; }
@@ -451,11 +528,17 @@
   .zone:first-of-type{ margin-top:0; }
   .zone-h{ width:60px; flex-shrink:0; display:flex; flex-direction:column; justify-content:center; gap:3px; font-size:11px; font-weight:700; color:var(--ink); border-right:2px solid var(--line); padding-right:7px; }
   .zone-h span{ font-size:10px; font-weight:500; color:var(--dim); line-height:1.4; }
+  /* 구역 설명은 두 조각 — 넓으면 세로로 쌓이고(예전 <br>과 같은 모양), 좁으면 가로로 눕는다 */
+  .zone-h .zh-sub{ display:flex; flex-direction:column; }
+  .zone-h .zh-sub i{ font-style:normal; }
   .zone .shop{ flex:1; min-width:0; }
+
   .side-col .log{ margin-top:0; }
 
   .overlay{ position:fixed; inset:0; background:rgba(51,41,30,.5); z-index:80; display:flex; align-items:center; justify-content:center; padding:20px; }
-  .modal{ background:var(--panel); border:1px solid var(--line); max-width:720px; width:100%; max-height:86vh; overflow-y:auto; padding:26px 30px; border-radius:3px; }
+  /* overflow:auto — 예전엔 overflow-y만 열려 있어서, 내용이 가로로 넘치면(모바일의 건물 보관판)
+     스크롤도 안 되고 그냥 잘려 나갔다. dvh는 iOS 주소창이 접혔다 펴질 때 창이 튀지 않게 한다. */
+  .modal{ background:var(--panel); border:1px solid var(--line); max-width:720px; width:100%; max-height:86vh; max-height:86dvh; overflow:auto; padding:26px 30px; border-radius:3px; }
   /* 팝업은 툭 나타나지 않고 스르르 — 어둠막이 먼저 깔리고(.22s) 패널이 살짝 커지며 떠오른다.
      보드 펼침이 끝난 뒤 --fx-gap 쉬고 이게 시작하므로, 움직임끼리 겹치지 않는다. */
   @keyframes ovIn{ from{ opacity:0; } to{ opacity:1; } }
@@ -489,7 +572,7 @@
   .act-modal.wide{ max-width:1150px; }   /* 역할 선택 — 타일이 한 줄에 들어가야 한다 */
   /* 선적·판매·생산 상시 패널: 단계 동안 내용이 계속 바뀌므로 높이를 고정한다 — 넘치면 안에서 스크롤.
      진행 창과 결과 창이 같은 flex column 레이아웃을 써야 전환 때 내용이 튀지 않는다 */
-  .act-modal.stage{ height:min(620px, 84vh); }
+  .act-modal.stage{ height:min(620px, 84vh); height:min(620px, 84dvh); }
   .act-modal.stage>*{ flex-shrink:0; }
   .act-modal.stage>#ap-bodyc{ flex:1 1 auto; overflow-y:auto; overflow-x:hidden; }
   /* 패널 스켈레톤: 창 = [머리 #ap-head + 본문 #ap-bodyc]. 본문은 세로 flex —
@@ -509,6 +592,9 @@
   .ap-roles{ display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start; }
   .ap-rolecell .role{ flex:none; }
   .ap-rolecell{ width:116px; display:flex; flex-direction:column; gap:5px; }
+  /* 칸 전체가 선택 버튼이다 (타일만이 아니라) */
+  .ap-rolecell.pickable{ cursor:pointer; }
+  .ap-rolecell.pickable:active{ filter:brightness(.97); }
   .ap-rolecell .role{ width:100%; }
   .ap-rolename{ font-size:12.5px; font-weight:700; }
   .ap-rolename .dim{ color:var(--dim); font-weight:400; }
@@ -634,7 +720,7 @@
   /* stage 보고(선적·판매·생산 결과): 진행 패널과 같은 폭·높이·레이아웃, 확인 버튼은 아래에 고정 */
   /* 결과 보고는 인원수만큼 세로로 길어진다 — .act-modal.stage의 고정 높이(620px)에 갇혀 스크롤이 생기던 것을
      "620px는 최소치, 화면의 84%까지는 늘어난다"로 바꾼다. 그래도 모자라면 #ap-bodyc가 스크롤(최후 수단). */
-  .act-modal.report.stage{ max-width:800px; height:auto; min-height:min(620px,84vh); max-height:84vh; }
+  .act-modal.report.stage{ max-width:800px; height:auto; min-height:min(620px,84vh); min-height:min(620px,84dvh); max-height:84vh; max-height:84dvh; }
   .act-modal.report.stage .ap-btns{ margin-top:auto; }
   /* 역할 선택 패널 하단 — 각 플레이어 요약 (접힌 카드와 같은 정보) */
   .ap-pstrip{ display:flex; gap:10px; margin-top:16px; border-top:1px dashed var(--line); padding-top:12px; align-items:stretch; }
@@ -882,3 +968,146 @@
   #pr-chat .cinput input:focus{ outline:none; }
   #pr-chat .cinput button{ border:none; background:transparent; color:var(--act); padding:0 12px;
     display:flex; align-items:center; justify-content:center; }
+
+  /* ══════════ 탭 미리보기 시트 ══════════
+     터치에서 건물·역할 카드를 처음 탭하면 열린다. 아래에서 올라오는 시트 —
+     확대 이미지 · 효과 · "이 선택을 하면 어떻게 되는지"(주화/부지) · 확정 버튼.
+     건물 보관판(z-index 80) 위에 떠야 하므로 도움말(95)보다도 높게 둔다. */
+  .overlay.pv-ov{ z-index:97; align-items:flex-end; justify-content:center; padding:0; }
+  .pv-modal{ max-width:520px; width:100%; max-height:92vh; max-height:92dvh;
+    border-radius:10px 10px 0 0; border-bottom:none; padding:16px 18px 20px;
+    display:flex; flex-direction:column; gap:9px; text-align:center; }
+  .overlay.pv-ov.pop .pv-modal{ animation:pvUp .26s cubic-bezier(.2,.8,.3,1); }
+  @keyframes pvUp{ from{ transform:translateY(26px); opacity:.4; } to{ transform:none; opacity:1; } }
+  .pv-art{ display:block; width:min(210px,58%); height:auto; margin:2px auto 0; border-radius:4px;
+    box-shadow:0 6px 20px rgba(51,41,30,.32); background:var(--panel); }
+  .pv-modal h2{ font-size:20px; margin:0; }
+  .pv-sub{ font-size:12.5px; color:var(--dim); }
+  .pv-fx{ font-size:13.5px; line-height:1.65; color:var(--ink); }
+  /* 이 선택을 하면 어떻게 되는지 — 지금 값 → 바뀔 값 */
+  .pv-prev{ display:flex; gap:8px; }
+  .pv-prev>div{ flex:1; background:rgba(245,238,218,.7); border:1px solid var(--line); border-radius:3px; padding:7px 9px; }
+  .pv-prev span{ display:block; font-size:10.5px; color:var(--dim); }
+  .pv-prev b{ font-size:15px; }
+  .pv-no{ font-size:13px; color:#8d5340; font-weight:700; }
+  .pv-acts{ display:flex; gap:8px; margin-top:2px; }
+  .pv-acts button{ flex:1; min-height:46px; }
+  .pv-acts .btn-primary{ flex:2; }
+
+  /* ══════════ 터치 기기 보정 ══════════
+     hover:none = 마우스 포인터가 없는 기기(폰·태블릿). 호버 전용 연출은 여기서 되돌린다 —
+     터치에서는 "첫 탭"이 호버로 해석돼 확대가 눌러붙은 채 남고, 그 상태로 두 번째 탭을 하게 된다.
+     이 블록은 hover가 되는 기기(데스크톱)에는 전혀 적용되지 않는다. */
+  @media (hover:none){
+    /* 역할 타일: 제자리 확대는 끄고, 고를 수 있다는 표시(scale 1.06)는 그대로 둔다 */
+    .role.pickable:hover{ transform:scale(1.06); box-shadow:0 5px 14px rgba(70,52,28,.32); filter:none; z-index:5; }
+    /* 건물 카드 확대 오버레이: 호버로는 못 띄운다 (탭하면 곧장 구매로 가버린다) */
+    .shop-modal.buying .shopb.buyable:hover img.zoom,
+    .shop-modal:not(.buying) .shopb:hover img.zoom{ display:none; }
+    .shopb.buyable:hover{ box-shadow:0 4px 12px rgba(70,52,28,.32); z-index:5; }
+    .cell.clickable:hover{ box-shadow:none; z-index:auto; }
+    .pboard.collapsed:hover{ background:transparent; }
+    .hdr button:hover, .btn-ghost:hover, .fab-shop:hover{ background:transparent; }
+    .actionbar button:hover{ background:#4a3c2c; }
+    .actionbar button.hot:hover{ background:var(--accent); }
+    .btn-primary:hover{ background:var(--accent); }
+    .ap-opt:hover{ background:var(--panel); }
+  }
+  /* 손가락으로 누르는 곳은 최소 44px, 눌린 것이 보이게 (탭 하이라이트는 강조색으로) */
+  @media (max-width:1000px){
+    button, .role, .shopb, .plant, .cell.clickable, .mfold, .pboard.collapsed{
+      -webkit-tap-highlight-color:rgba(217,127,34,.22); }
+    .actionbar{ padding:9px 12px; }
+    .actionbar button{ padding:11px 15px; min-height:44px; }
+    .actionbar .inner{ gap:9px; }
+    .mfold{ min-height:40px; }
+    .hdr button.helpbtn{ width:32px; height:32px; }
+    /* 패널 안 선택지·확정 버튼도 손가락 크기로 (기본 10px 패딩이면 39px밖에 안 된다) */
+    .ap-opt, .ap-acts button, .modal .btn-primary, .modal .btn-ghost{ min-height:44px; }
+    .ap-opt{ padding:11px 14px; }
+  }
+  /* 선적 단계의 액션바는 선택지를 버튼으로 다 늘어놓아 폰에서 세 줄(140px)이 된다 —
+     같은 선택지가 중앙 패널에도 있으므로, 여기서는 눌러 담아 두 줄 안에 들어가게 한다 */
+  @media (max-width:560px){
+    .actionbar{ padding:8px 10px; }
+    .actionbar .inner{ gap:6px 7px; }
+    .actionbar .who{ font-size:12px; }
+    .actionbar .msg{ font-size:12px; line-height:1.4; }
+    .actionbar .btns{ gap:6px; margin-left:0; width:100%; }
+    .actionbar button{ padding:10px 11px; font-size:12px; min-height:44px; flex:1 1 auto; }
+    /* 선택지가 4~5개인 단계(판매·선적·저장)에서는 버튼이 두 줄이 되어 액션바가 133px까지 커진다.
+       한 줄에 두 개로 고정하면 오히려 세 줄(183px)이 됐다 — 줄바꿈 대신 가로 스크롤로 한 줄을 지킨다.
+       역할 타일·개인 보드 스트립과 같은 방식이고, 오른쪽 페이드로 더 있다는 것을 알린다. */
+    .actionbar .btns{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none;
+      -webkit-overflow-scrolling:touch;
+      -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent);
+      mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent); }
+    .actionbar .btns::-webkit-scrollbar{ display:none; }
+    .actionbar .btns button{ flex:0 0 auto; white-space:nowrap; }
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     좁은 화면 보정 — 반드시 파일 끝에 둔다.
+     .overlay/.modal/.ap-rolecell 같은 기본 규칙이 파일 뒤쪽에 선언돼 있어서,
+     이 블록을 위에 두면 같은 특정도(specificity)의 기본 규칙이 나중에 나와 조용히 덮어쓴다.
+     실제로 그렇게 해서 역할 선택 패널·팝업 여백 보정이 통째로 무시됐다.
+     ══════════════════════════════════════════════════════════════ */
+  /* 1000px 이하(모바일): 6열 158px 고정(=948px)은 성립하지 않는다 —
+     칸 수를 폭에 맞춰 자동으로 정하고, 구역 이름은 왼쪽 세로 바 대신 위쪽 가로 배너로 돌린다.
+     (예전에는 .modal이 가로로 잘라버려 고급 건물 구역에 아예 닿을 수 없었다) */
+  @media (max-width:1000px){
+    .shop{ grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:5px; }
+    .zone{ flex-direction:column; gap:5px; margin-top:10px; }
+    .zone-h{ width:auto; flex-direction:row; align-items:baseline; gap:7px; flex-wrap:wrap;
+      border-right:none; border-bottom:2px solid var(--line); padding:0 0 4px; }
+    .zone-h span{ font-size:9.5px; }
+    .zone-h .zh-sub{ flex-direction:row; gap:4px; }   /* 가로 배너에서는 한 줄로 눕힌다 */
+    .shop-modal{ padding:14px 14px; }
+    .shopb img.card{ height:66px; }
+    .shopb .nm{ font-size:11px; }
+    .shopb .inf{ font-size:10px; }
+    .overlay{ padding:10px; }
+    /* 하단 액션바(폰에서는 두 줄, 88px)에 팝업이 닿지 않게 — 76px면 2px 모자랐다 */
+    .overlay.shop-ov{ padding-bottom:100px; }
+  }
+  /* 폰 폭: 팝업 제목이 낱글자로 쪼개져 두 줄이 되지 않게 ("건물 보관 / 소").
+     한국어는 어절 단위로 끊어야 한다 — keep-all이 그 규칙이다. */
+  @media (max-width:560px){
+    .modal{ padding:16px 15px; }
+    .modal h2, .shop-modal-h h2{ font-size:18px; line-height:1.3; word-break:keep-all; }
+    /* ── 역할 선택 패널 ──
+       기본은 116px 타일을 격자로 늘어놓는데, 390px에서는 2열 × 4줄이 되어
+       7개 역할을 다 보려면 팝업 안에서 960px를 스크롤해야 했다(매 라운드 첫 결정인데도).
+       좁은 화면에서는 [작은 타일 | 이름 + 설명] 가로 줄로 바꿔 한 화면에 담는다. */
+    .ap-roles{ flex-direction:column; gap:6px; }
+    .ap-rolecell{ width:100%; display:grid; grid-template-columns:48px minmax(0,1fr);
+      gap:1px 10px; align-items:center;
+      border:1px solid var(--line); border-radius:3px; background:var(--panel); padding:5px 8px; }
+    /* .role의 기본 min-width:62px를 풀지 않으면 타일이 48px 칸을 14px 넘어
+       오른쪽 설명 첫 글자를 덮는다 (실제로 그렇게 잘려 보였다) */
+    .ap-rolecell .role{ grid-column:1; grid-row:1 / span 3; width:48px; min-width:0; flex:none; }
+    .ap-rolename{ grid-column:2; font-size:13px; }
+    .ap-roledesc{ grid-column:2; font-size:10.5px; line-height:1.45; }
+    .ap-rolecoin{ grid-column:2; font-size:11px; }
+    /* 고를 수 있는 역할은 줄 전체가 강조된다 — 48px 타일만으로는 눈에 안 띈다 */
+    .ap-rolecell:has(.role.pickable){ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+    .ap-rolecell:has(.role.taken){ opacity:.55; }
+    .ap-rolecell .role.pickable{ transform:none; box-shadow:none; }
+    /* 스크롤은 한 겹만 — 팝업 자체와 본문이 둘 다 스크롤되면 손가락이 어느 쪽을 밀고 있는지 알 수 없다 */
+    .act-modal{ max-height:86vh; max-height:86dvh; overflow:hidden; }
+    .act-modal>#ap-bodyc{ overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
+    /* 역할 선택 패널의 플레이어 요약: 좁은 화면에서는 한 줄 요약만 (농장·건물·상품 목록은 보드에 있다) */
+    .ap-pstrip .ap-pcard .sec, .ap-pstrip .ap-pcard .row{ display:none; }
+    .ap-pstrip .ap-pcard{ padding:5px 7px; }
+    .shop-modal-h{ gap:8px; align-items:flex-start; }
+    .shop-modal-h h2{ flex:1; min-width:0; }
+    .ap-sub{ white-space:nowrap; }
+    .shop-modal-h button{ white-space:nowrap; flex:none; }
+  }
+  /* 폰 폭: 칸 수를 자동에 맡기면 2열(카드 130px)이 되어 23종을 훑는 데 12줄이 걸린다 — 3열로 고정 */
+  @media (max-width:560px){
+    .shop{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .shopb img.card{ height:56px; }
+    .shopb .nm{ font-size:10px; }
+    .shopb .cnt{ font-size:10px; padding:0 3px; }
+  }
